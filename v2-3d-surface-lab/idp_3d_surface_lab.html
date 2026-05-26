@@ -432,7 +432,8 @@
         ],
         minimaText: '⬤  Global minimum: (0, 0)  →  L = 0',
         colorscale: 'Viridis',
-        defaultCamera: { eye: { x: 1.55, y: -1.75, z: 1.25 }, up: { x: 0, y: 0, z: 1 } }
+        defaultCamera: { eye: { x: 1.15, y: -1.35, z: 0.8 }, up: { x: 0, y: 0, z: 1 } },
+        aspectratio: { x: 1, y: 1, z: 0.65 }
       },
 
       rosenbrock: {
@@ -443,13 +444,14 @@
         f: (x, y) => Math.pow(1 - x, 2) + 100 * Math.pow(y - x * x, 2),
         domain: { xmin: -2, xmax: 2, ymin: -1, ymax: 3 },
         gridResolution: 70,
-        displayZMax: 1800,          // clip visual height; hover shows true values
+        displayZMax: 600,          // Clipped lower to strongly reveal the curved valley floor
         minima: [
           { x: 1, y: 1, z: 0, label: '(1, 1)' }
         ],
         minimaText: '⬤  Global minimum: (1, 1)  →  L = 0',
         colorscale: 'Plasma',
-        defaultCamera: { eye: { x: 1.8, y: -1.8, z: 1.4 }, up: { x: 0, y: 0, z: 1 } }
+        defaultCamera: { eye: { x: 1.25, y: -1.45, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
+        aspectratio: { x: 1, y: 1, z: 0.65 }
       },
 
       himmelblau: {
@@ -460,7 +462,7 @@
         f: (x, y) => Math.pow(x * x + y - 11, 2) + Math.pow(x + y * y - 7, 2),
         domain: { xmin: -5, xmax: 5, ymin: -5, ymax: 5 },
         gridResolution: 72,
-        displayZMax: 600,
+        displayZMax: 400,          // Clipped lower to expose the four basins clearly
         minima: [
           { x:  3.000000, y:  2.000000, z: 0, label: '(3.00, 2.00)' },
           { x: -2.805118, y:  3.131312, z: 0, label: '(−2.81, 3.13)' },
@@ -469,7 +471,8 @@
         ],
         minimaText: '⬤  4 equivalent global minima  →  L = 0 at each',
         colorscale: 'Hot',
-        defaultCamera: { eye: { x: 1.65, y: -1.9, z: 1.35 }, up: { x: 0, y: 0, z: 1 } }
+        defaultCamera: { eye: { x: 1.1, y: -1.4, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
+        aspectratio: { x: 1, y: 1, z: 0.65 }
       },
 
       rastrigin: {
@@ -487,7 +490,8 @@
         ],
         minimaText: '⬤  Global minimum: (0, 0)  →  L = 0  (surrounded by many local minima)',
         colorscale: 'Turbo',
-        defaultCamera: { eye: { x: 1.7, y: -1.7, z: 1.6 }, up: { x: 0, y: 0, z: 1 } }
+        defaultCamera: { eye: { x: 1.15, y: -1.35, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
+        aspectratio: { x: 1, y: 1, z: 0.55 }
       }
     };
 
@@ -619,10 +623,10 @@
         z:     s.minima.map(m => m.z + lift),
         mode:  'markers+text',
         marker: {
-          size:    10,
-          color:   '#10b981',
+          size:    11,
+          color:   '#00ff9d',
           symbol:  'circle',
-          line:    { color: '#ffffff', width: 2 },
+          line:    { color: '#ffffff', width: 2.5 },
           opacity: 1,
         },
         text:         s.minima.map(m => m.label),
@@ -671,7 +675,8 @@
         scene: {
           bgcolor: '#09090f',
           camera:  s.defaultCamera,
-          aspectmode: 'cube',
+          aspectmode: 'manual',
+          aspectratio: s.aspectratio || { x: 1, y: 1, z: 0.7 },
 
           xaxis: {
             ...axisCommon,
