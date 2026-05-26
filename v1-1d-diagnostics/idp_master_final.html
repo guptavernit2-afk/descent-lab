@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDP Live Diagnostics - Master Edition</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #07080f;
+      --panel: #13152a;
+      --card: #1a1d35;
+      --border: #2e3260;
+      --text: #dde1f0;
+      --muted: #7a80a0;
+      --c-van: #f04747;
+      --c-mom: #f5a623;
+      --c-nag: #23d18b;
+      --c-ada: #a78bfa;
+      --c-rms: #00d2ff;
+      --c-adm: #5865f2;
+      --alert: #ffb86c;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    /* Layout: Strict Flex Boundaries */
+    .sidebar {
+      width: 330px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      box-shadow: 2px 0 20px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 15px;
+      background: linear-gradient(180deg, rgba(26, 29, 53, 1) 0%, rgba(19, 21, 42, 1) 100%);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .scroll-area {
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-width: 0;
+    }
+
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      background: var(--bg);
+      min-height: 0;
+      /* CRITICAL for flex sizing */
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Typography & Forms */
+    h1 {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0;
+    }
+
+    .badge {
+      background: rgba(88, 101, 242, 0.2);
+      color: var(--c-adm);
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+    }
+
+    /* Sidebar Sections — Glassmorphism */
+    .sidebar-section {
+      background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 13px;
+      border-radius: 10px;
+      backdrop-filter: blur(4px);
+      transition: border-color 0.2s;
+    }
+    .sidebar-section:hover {
+      border-color: rgba(255,255,255,0.10);
+    }
+
+    /* Scenario Insight Box */
+    .scenario-insight {
+      background: rgba(88, 101, 242, 0.06);
+      border: 1px solid rgba(88, 101, 242, 0.18);
+      border-radius: 7px;
+      padding: 9px 11px;
+      font-size: 10.5px;
+      line-height: 1.55;
+      color: rgba(180,190,230,0.85);
+      margin-top: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    .scenario-insight::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--c-adm), var(--c-nag));
+      border-radius: 3px 0 0 3px;
+    }
+    .scenario-insight .si-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--c-adm);
+      margin-bottom: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .s-pip {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--pip-color, var(--muted));
+      box-shadow: 0 0 6px var(--pip-color, transparent);
+    }
+
+    select,
+    input[type="range"],
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: white;
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: 0.2s;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    input[type="text"] {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--c-mom);
+    }
+
+    /* Optimizer Toggles */
+    .opt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .opt-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .opt-toggle:hover {
+      border-color: #555878;
+      transform: translateY(-1px);
+    }
+
+    .opt-toggle.off {
+      opacity: 0.4;
+      background: transparent;
+      filter: grayscale(100%);
+      font-weight: 400;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 5px currentColor;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter';
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .b-run {
+      background: var(--c-adm);
+      color: white;
+    }
+
+    .b-run:hover {
+      background: #6875f5;
+      box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+    }
+
+    .b-reset {
+      background: transparent;
+      border: 1px solid var(--c-van);
+      color: var(--c-van);
+    }
+
+    .b-reset:hover {
+      background: rgba(240, 71, 71, 0.1);
+    }
+
+    /* ── Optimization Advisor Panel (Premium Tactical Command) ── */
+    #tacticalCommand {
+      min-height: 0;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .sys-alert {
+      background: linear-gradient(135deg, rgba(255,184,108,0.07) 0%, rgba(255,184,108,0.03) 100%);
+      border: 1px solid rgba(255, 184, 108, 0.25);
+      border-left: 3px solid var(--alert);
+      padding: 11px 12px;
+      border-radius: 8px;
+      animation: advisorIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 0 20px rgba(255,184,108,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .sys-alert::after {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle, rgba(255,184,108,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .alert-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+    }
+    .alert-title {
+      color: var(--alert);
+      font-weight: 700;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .alert-chip {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255,184,108,0.15);
+      color: var(--alert);
+      border: 1px solid rgba(255,184,108,0.3);
+    }
+    .alert-desc {
+      font-size: 11px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      color: rgba(255,209,163,0.88);
+      font-family: 'Inter', sans-serif;
+    }
+    .rescue-btn {
+      background: linear-gradient(135deg, rgba(255,184,108,0.9), rgba(255,160,70,0.9));
+      color: #0a0b14;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.18s ease;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 2px 10px rgba(255,184,108,0.2);
+    }
+    .rescue-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(255,184,108,0.4);
+      filter: brightness(1.08);
+    }
+
+    /* Live Log Text */
+    .analyzer-box {
+      background: rgba(19, 21, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-height: 120px;
+      max-height: 180px;
+      flex-shrink: 0;
+      margin-top: auto;
+    }
+
+    .analyzer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .analyzer-text {
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .log-entry {
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      border-left: 2px solid;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Compact Telemetry Panel */
+    .telemetry-bar {
+      height: auto;
+      min-height: 148px;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      padding: 12px 14px;
+      gap: 10px;
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 5;
+      align-items: stretch;
+      flex-shrink: 0;
+    }
+
+    .t-card {
+      min-width: 198px;
+      background: linear-gradient(160deg, rgba(26,29,53,0.95) 0%, rgba(19,21,42,0.98) 100%);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 11px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex-shrink: 0;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      cursor: default;
+    }
+    .t-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    /* Canvas HUD Overlay */
+    #canvasHud {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      display: flex;
+      gap: 8px;
+      z-index: 4;
+      pointer-events: none;
+    }
+    .hud-pill {
+      background: rgba(13,15,30,0.82);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      backdrop-filter: blur(6px);
+    }
+    .hud-pill span { color: var(--text); font-weight: 600; }
+
+    .t-head {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+
+    .t-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .t-lbl {
+      color: var(--muted);
+    }
+
+    .t-val {
+      font-weight: 600;
+      background: #07080f;
+      padding: 2px 6px;
+      border-radius: 4px;
+      min-width: 55px;
+      text-align: right;
+      border: 1px solid var(--border);
+    }
+
+    .spark-container {
+      margin-top: 2px;
+      height: 30px;
+      width: 100%;
+      border-top: 1px dashed rgba(255, 255, 255, 0.05);
+      padding-top: 4px;
+      position: relative;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .spark-canvas {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 4px);
+      display: block;
+    }
+
+    .spark-lbl {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      font-size: 7px;
+      color: var(--muted);
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    /* Preset Buttons */
+    /* Preset Rows — Compact Vertical List */
+    .preset-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .preset-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 7px;
+      background: rgba(255,255,255,0.02);
+      cursor: pointer;
+      transition: all 0.16s ease;
+      min-height: 40px;
+      text-align: left;
+      width: 100%;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+    }
+    .preset-row:hover {
+      background: rgba(88,101,242,0.10);
+      border-color: rgba(88,101,242,0.30);
+      box-shadow: 0 0 10px rgba(88,101,242,0.08);
+    }
+    .preset-row:active { transform: scale(0.99); }
+    .pr-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .pr-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
+      min-width: 0;
+    }
+    .pr-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .pr-sub {
+      font-size: 9.5px;
+      color: var(--muted);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+    .pr-play {
+      font-size: 9px;
+      color: rgba(255,255,255,0.25);
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    .preset-row:hover .pr-play { color: rgba(88,101,242,0.9); }
+
+    /* Pause-on-alert toggle row */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      padding: 2px 0;
+    }
+    .toggle-row input[type="checkbox"] {
+      width: 13px; height: 13px;
+      accent-color: var(--c-adm);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Export button */
+    .b-export {
+      background: transparent;
+      border: 1px solid rgba(35,209,139,0.4);
+      color: var(--c-nag);
+      font-size: 11px;
+    }
+    .b-export:hover {
+      background: rgba(35,209,139,0.08);
+      border-color: var(--c-nag);
+      box-shadow: 0 4px 12px rgba(35,209,139,0.15);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes advisorIn {
+      from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+    @keyframes hudPulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.6; }
+    }
+    .hud-live { animation: hudPulse 2s ease-in-out infinite; }
+
+    ::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>Physics Diagnostic <span class="badge">Master Edition</span></h1>
+    </div>
+
+    <div class="scroll-area">
+
+      <div class="sidebar-section">
+        <div class="section-title" style="--pip-color: var(--c-nag);">
+          <div class="s-pip"></div>Environment Controls
+        </div>
+        <select id="envSelect" onchange="handleEnvChange()" style="margin-bottom: 8px;">
+          <option value="pothole">Local Minimum (The Pothole)</option>
+          <option value="saddle">Saddle Point (The Plateau)</option>
+          <option value="ravine">Steep Ravine (The Bouncer)</option>
+          <option value="washboard">Rugged Basin (The Washboard)</option>
+          <option value="custom">⚠ Mentor Challenge (Custom Math)</option>
+        </select>
+
+        <!-- Scenario Insight Box -->
+        <div class="scenario-insight" id="scenarioInsight">
+          <div class="si-label">📐 Scenario Insight</div>
+          <span id="scenarioText">This landscape contains a local minimum trap. A false valley lures optimizers in before the true global minimum is revealed further along — only algorithms with directional memory can escape.</span>
+        </div>
+
+        <div id="customFnWrapper" style="display:none; margin-top:8px;">
+          <input type="text" id="customFnInput" value="cos(x) + x*x/8" onchange="resetSystem()"
+            placeholder="e.g. sin(x) * x">
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4px; margin-top:10px;">
+          <span style="font-size: 10px; color: var(--muted); font-weight: 600;">Global LR (η)</span>
+          <span id="lrDisplay" style="font-family:'JetBrains Mono'; font-size:10px; color:var(--c-adm); font-weight:bold;">0.050</span>
+        </div>
+        <input type="range" id="lrSlider" min="1" max="250" value="50" oninput="updateLR()">
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4px; margin-top:8px;">
+          <span style="font-size: 10px; color: var(--muted); font-weight: 600;">Stochastic Noise σ</span>
+          <span id="noiseDisplay" style="font-family:'JetBrains Mono'; font-size:10px; color:var(--c-nag); font-weight:bold;">0.00</span>
+        </div>
+        <input type="range" id="noiseSlider" min="0" max="200" value="0" oninput="updateNoise()">
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title" style="--pip-color: var(--c-mom);">
+          <div class="s-pip"></div>Telemetry Targets
+        </div>
+        <div class="opt-grid" id="toggleGrid"></div>
+      </div>
+
+      <!-- Presentation Presets -->
+      <div class="sidebar-section">
+        <div class="section-title" style="--pip-color: var(--c-ada);">
+          <div class="s-pip"></div>Presentation Presets
+        </div>
+        <div class="preset-list">
+          <button class="preset-row" onclick="applyPreset('bounce')">
+            <div class="pr-dot" style="background:#f04747; box-shadow:0 0 5px #f0474788;"></div>
+            <div class="pr-text">
+              <span class="pr-name">Classic Bounce</span>
+              <span class="pr-sub">Ravine Oscillation</span>
+            </div>
+            <span class="pr-play">▶</span>
+          </button>
+          <button class="preset-row" onclick="applyPreset('plateau')">
+            <div class="pr-dot" style="background:#f5a623; box-shadow:0 0 5px #f5a62388;"></div>
+            <div class="pr-text">
+              <span class="pr-name">Flat Plateau</span>
+              <span class="pr-sub">Saddle Slowdown</span>
+            </div>
+            <span class="pr-play">▶</span>
+          </button>
+          <button class="preset-row" onclick="applyPreset('trap')">
+            <div class="pr-dot" style="background:#5865f2; box-shadow:0 0 5px #5865f288;"></div>
+            <div class="pr-text">
+              <span class="pr-name">Local Trap</span>
+              <span class="pr-sub">Pothole Basin</span>
+            </div>
+            <span class="pr-play">▶</span>
+          </button>
+          <button class="preset-row" onclick="applyPreset('noise')">
+            <div class="pr-dot" style="background:#00d2ff; box-shadow:0 0 5px #00d2ff88;"></div>
+            <div class="pr-text">
+              <span class="pr-name">Noise Robust</span>
+              <span class="pr-sub">Stochastic Noise</span>
+            </div>
+            <span class="pr-play">▶</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn b-run" onclick="toggleRun()" id="runBtn">▶ Run Simulation</button>
+        <button class="btn b-reset" onclick="resetSystem()">↺ Reset</button>
+      </div>
+
+      <!-- Pause on Advisor Alert toggle -->
+      <label class="toggle-row">
+        <input type="checkbox" id="pauseOnAlertChk">
+        Pause on Advisor Alert
+      </label>
+
+      <!-- Export snapshot button -->
+      <button class="btn b-export" onclick="exportSnapshot()">📷 Export Canvas PNG</button>
+
+      <div id="tacticalCommand"></div>
+
+      <div class="analyzer-box">
+        <div class="analyzer-header">
+          <span>Live Concept Log</span>
+          <span id="frameCounter" style="color:var(--c-adm)"></span>
+        </div>
+        <div class="analyzer-text" id="analyzerText">
+          <span style="color:var(--muted)">System initialized. Waiting for execution.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="simCanvas"></canvas>
+      <!-- Canvas HUD Overlay: pointer-events:none so it never blocks mouse -->
+      <div id="canvasHud">
+        <div class="hud-pill">ENV <span id="hudEnv">Pothole</span></div>
+        <div class="hud-pill">OPTS <span id="hudOpts">1</span></div>
+        <div class="hud-pill">η <span id="hudLR">0.050</span></div>
+        <div class="hud-pill hud-live">σ <span id="hudNoise">0.00</span></div>
+      </div>
+    </div>
+    <div class="telemetry-bar" id="telemetryBar"></div>
+  </main>
+
+  <script>
+    // ==========================================
+    // 1. ENGINE, ENVIRONMENTS & NUMERICAL DERIVATIVE
+    // ==========================================
+
+    function parseCustomFunction(xStr) {
+      try {
+        let rawStr = document.getElementById("customFnInput").value;
+        let fn = new Function('x', 'with(Math){ return ' + rawStr + ';}');
+        return fn(xStr) || 0;
+      } catch (e) { return xStr * xStr; }
+    }
+
+    const envs = {
+      pothole: { f: x => 0.25 * Math.pow(x, 4) - 0.333 * Math.pow(x, 3) - Math.pow(x, 2) + 3, df: x => Math.pow(x, 3) - Math.pow(x, 2) - 2 * x, domain: [-2.2, 3.2], range: [-1.5, 6], start: -1.95, globalMin: 2, defaultLR: 75, label: "y = x⁴/4 - x³/3 - x² + 3" },
+      saddle: { f: x => 0.25 * Math.pow(x, 4) - 0.5 * Math.pow(x, 3) + 2, df: x => Math.pow(x, 3) - 1.5 * Math.pow(x, 2), domain: [-1.5, 2.5], range: [0, 4], start: -1.2, globalMin: 1.5, defaultLR: 120, label: "y = x⁴/4 - x³/2 + 2" },
+      ravine: { f: x => 3 * Math.pow(x, 2), df: x => 6 * x, domain: [-3, 3], range: [-1, 25], start: -2.8, globalMin: 0, defaultLR: 165, label: "y = 3x²" },
+      washboard: { f: x => 0.5 * Math.pow(x, 2) - 1.5 * Math.cos(3 * x) + 2, df: x => x + 4.5 * Math.sin(3 * x), domain: [-3, 3], range: [0, 8], start: -2.8, globalMin: 0, defaultLR: 35, label: "y = 0.5x² - 1.5cos(3x) + 2" },
+      custom: { f: x => parseCustomFunction(x), df: x => (parseCustomFunction(x + 0.001) - parseCustomFunction(x - 0.001)) / 0.002, domain: [-5, 5], range: [-2, 10], start: -4, globalMin: null, defaultLR: 50, label: "Custom Function" }
+    };
+
+    const OPT_DEFS = [
+      { id: 'van', name: 'Vanilla GD', hex: '#f04747', init: o => { }, step: (o, g, lr) => { o.stepSize = -lr * g; o.x += o.stepSize; } },
+      { id: 'mom', name: 'Momentum', hex: '#f5a623', init: o => { o.v = 0; }, step: (o, g, lr) => { o.v = 0.9 * o.v - lr * g; o.stepSize = o.v; o.x += o.v; } },
+      { id: 'nag', name: 'Nesterov', hex: '#23d18b', init: o => { o.v = 0; }, step: (o, g, lr, env) => { let lookahead = env.df(o.x + 0.9 * o.v); o.v = 0.9 * o.v - lr * lookahead; o.stepSize = o.v; o.x += o.v; } },
+      { id: 'ada', name: 'AdaGrad', hex: '#a78bfa', init: o => { o.G = 0; }, step: (o, g, lr) => { o.G += g * g; o.stepSize = -(lr / (Math.sqrt(o.G) + 1e-8)) * g; o.x += o.stepSize; } },
+      { id: 'rms', name: 'RMSProp', hex: '#00d2ff', init: o => { o.E = 0; }, step: (o, g, lr) => { o.E = 0.9 * o.E + 0.1 * (g * g); o.stepSize = -(lr / (Math.sqrt(o.E) + 1e-8)) * g; o.x += o.stepSize; } },
+      { id: 'adm', name: 'Adam', hex: '#5865f2', init: o => { o.m = 0; o.v = 0; o.t = 0; }, step: (o, g, lr) => { o.t++; o.m = 0.9 * o.m + 0.1 * g; o.v = 0.999 * o.v + 0.001 * (g * g); let mHat = o.m / (1 - Math.pow(0.9, o.t)); let vHat = o.v / (1 - Math.pow(0.999, o.t)); o.stepSize = -lr * mHat / (Math.sqrt(vHat) + 1e-8); o.x += o.stepSize; } }
+    ];
+
+    let curEnv = 'pothole', lr = 0.05, noiseLvl = 0, animId = null, running = false, frameCount = 0;
+    let optimizers = [];
+    let enabledOpts = new Set(['van', 'adm']);
+    let activeAlertID = null;
+
+    const cvs = document.getElementById('simCanvas');
+    const ctx = cvs.getContext('2d');
+    const wrap = document.getElementById('canvasWrap');
+
+    const PAD = { L: 50, R: 25, T: 35, B: 35 };
+
+    // ==========================================
+    // 2. UI CONTROLS & RESCUE SYSTEM
+    // ==========================================
+    const SCENARIO_INSIGHTS = {
+      pothole:   'This landscape hides a local minimum trap. A false valley lures optimizers in — only algorithms with directional momentum can escape and reach the true global minimum further along.',
+      saddle:    'A saddle point creates a near-zero gradient plateau. Gradient-only methods stall here indefinitely because the slope is essentially flat — momentum is required to coast through.',
+      ravine:    'A steep parabolic canyon. High curvature means large gradients, causing optimizers to overshoot the center repeatedly. Adaptive step-sizing is the key to damping these oscillations.',
+      washboard: 'Multiple local minima are embedded in the loss surface. An optimizer can fall into any valley. Escape requires enough kinetic energy — or a globally-aware strategy — to hop ridges.',
+      custom:    'A mentor-defined loss landscape. The derivative is computed automatically via the central-difference formula: df(x) ≈ (f(x+h) - f(x-h)) / 2h. Experiment freely.'
+    };
+
+    function handleEnvChange() {
+      curEnv = document.getElementById('envSelect').value;
+      document.getElementById('customFnWrapper').style.display = (curEnv === 'custom') ? 'block' : 'none';
+      // Update Scenario Insight box
+      const siEl = document.getElementById('scenarioText');
+      if (siEl) siEl.innerText = SCENARIO_INSIGHTS[curEnv] || '';
+      resetSystem();
+    }
+
+    function updateLR()    { lr = document.getElementById('lrSlider').value / 1000; document.getElementById('lrDisplay').innerText = lr.toFixed(3); updateHud(); }
+    function updateNoise() { noiseLvl = document.getElementById('noiseSlider').value / 100; document.getElementById('noiseDisplay').innerText = noiseLvl.toFixed(2); updateHud(); }
+
+    function buildToggles() {
+      const grid = document.getElementById('toggleGrid');
+      grid.innerHTML = '';
+      OPT_DEFS.forEach(def => {
+        const on = enabledOpts.has(def.id);
+        const div = document.createElement('div');
+        div.className = `opt-toggle ${on ? '' : 'off'}`;
+        div.style.color = on ? def.hex : 'var(--muted)';
+        if (on) div.style.borderColor = def.hex + '55';
+        div.innerHTML = `<div class="dot" style="background:${def.hex}"></div> ${def.name}`;
+        div.onclick = () => {
+          if (enabledOpts.has(def.id)) enabledOpts.delete(def.id); else enabledOpts.add(def.id);
+          // BUG FIX: activeAlertID is namespaced (e.g. 'stuck_van'), not just the optimizer id.
+          // Use .endsWith() so clearing works correctly for all namespaced trigger IDs.
+          if (activeAlertID && activeAlertID.endsWith(`_${def.id}`)) {
+            document.getElementById('tacticalCommand').innerHTML = '';
+            activeAlertID = null;
+          }
+          buildToggles(); buildTelemetry(); drawSystem(); updateHud();
+          if (!running) processConceptualDiagnostics(true);
+        };
+        grid.appendChild(div);
+      });
+    }
+
+    // Updates the 4 HUD pills on the canvas
+    function updateHud() {
+      const envNames = { pothole:'Pothole', saddle:'Saddle', ravine:'Ravine', washboard:'Washboard', custom:'Custom' };
+      const el = id => document.getElementById(id);
+      if (el('hudEnv'))   el('hudEnv').innerText   = envNames[curEnv] || curEnv;
+      if (el('hudOpts'))  el('hudOpts').innerText  = enabledOpts.size;
+      if (el('hudLR'))    el('hudLR').innerText    = lr.toFixed(3);
+      if (el('hudNoise')) el('hudNoise').innerText = noiseLvl.toFixed(2);
+    }
+
+    // ==========================================
+    // PRESENTATION PRESETS
+    // ==========================================
+    const PRESETS = {
+      bounce:  { env: 'ravine',     lrVal: 165, noiseVal: 0,  opts: ['van','adm'] },
+      plateau: { env: 'saddle',     lrVal: 120, noiseVal: 0,  opts: ['van','mom'] },
+      trap:    { env: 'pothole',    lrVal: 75,  noiseVal: 0,  opts: ['van','mom','adm'] },
+      noise:   { env: 'washboard',  lrVal: 35,  noiseVal: 80, opts: ['van','mom','rms','adm'] }
+    };
+
+    window.applyPreset = function(name) {
+      const p = PRESETS[name];
+      if (!p) return;
+
+      // 1. Update environment
+      curEnv = p.env;
+      document.getElementById('envSelect').value = p.env;
+      document.getElementById('customFnWrapper').style.display = 'none';
+      const siEl = document.getElementById('scenarioText');
+      if (siEl) siEl.innerText = SCENARIO_INSIGHTS[p.env] || '';
+
+      // 2. Update LR slider
+      document.getElementById('lrSlider').value = p.lrVal;
+      lr = p.lrVal / 1000;
+      document.getElementById('lrDisplay').innerText = lr.toFixed(3);
+
+      // 3. Update noise slider
+      document.getElementById('noiseSlider').value = p.noiseVal;
+      noiseLvl = p.noiseVal / 100;
+      document.getElementById('noiseDisplay').innerText = noiseLvl.toFixed(2);
+
+      // 4. Update active optimizers
+      enabledOpts = new Set(p.opts);
+
+      // 5. Update HUD + reset
+      updateHud();
+      resetSystem();
+    };
+
+    // ==========================================
+    // EXPORT CANVAS PNG
+    // ==========================================
+    window.exportSnapshot = function() {
+      // Export only simCanvas — does not interrupt simulation
+      const link = document.createElement('a');
+      link.download = 'idp_diagnostics_snapshot.png';
+      link.href = document.getElementById('simCanvas').toDataURL('image/png');
+      link.click();
+    };
+
+    window.deployRescue = function (id) {
+      enabledOpts.add(id);
+      document.getElementById('tacticalCommand').innerHTML = '';
+      activeAlertID = null;
+      let opt = optimizers.find(o => o.id === id);
+      if (opt) {
+        opt.x = envs[curEnv].start;
+        opt.history = [{ x: opt.x }];
+        opt.sparkHistory = [];
+        opt.prevG = 0;
+        OPT_DEFS.find(d => d.id === id).init(opt);
+      }
+      buildToggles(); buildTelemetry(); drawSystem(); updateHud();
+      if (!running) toggleRun();
+    };
+
+    function buildTelemetry() {
+      const bar = document.getElementById('telemetryBar');
+      bar.innerHTML = '';
+      OPT_DEFS.forEach(def => {
+        if (!enabledOpts.has(def.id)) return;
+        const card = document.createElement('div');
+        card.className = 't-card';
+        card.style.borderTop = `3px solid ${def.hex}`;
+        card.style.boxShadow = `0 0 16px ${def.hex}14, inset 0 0 0 1px ${def.hex}18`;
+
+        let isMom = (def.id === 'mom' || def.id === 'nag');
+        let sLabel = isMom ? 'VELOCITY' : 'STEP SIZE';
+
+        let extra = '';
+        if (isMom) extra = `<div class="t-row"><span class="t-lbl">Velocity (v)</span> <span class="t-val" id="t-${def.id}-v">0.000</span></div>`;
+        else if (def.id === 'ada') extra = `<div class="t-row"><span class="t-lbl">Sum Sq (G)</span> <span class="t-val" id="t-${def.id}-G">0.000</span></div>`;
+        else if (def.id === 'rms') extra = `<div class="t-row"><span class="t-lbl">Exp Avg (E)</span> <span class="t-val" id="t-${def.id}-E">0.000</span></div>`;
+        else if (def.id === 'adm') extra = `<div class="t-row"><span class="t-lbl">Momentum (m)</span> <span class="t-val" id="t-${def.id}-m">0.000</span></div><div class="t-row"><span class="t-lbl">Variance (v)</span> <span class="t-val" id="t-${def.id}-v">0.000</span></div>`;
+
+        card.innerHTML = `
+      <div class="t-head"><div class="dot" style="background:${def.hex}"></div> <span style="color:${def.hex}">${def.name}</span></div>
+      <div class="t-row"><span class="t-lbl">Pos (x)</span> <span class="t-val" id="t-${def.id}-x" style="color:#fff">0.000</span></div>
+      <div class="t-row"><span class="t-lbl">Grad (∇)</span> <span class="t-val" id="t-${def.id}-g">0.000</span></div>
+      ${extra}
+      <div class="spark-container">
+         <span class="spark-lbl">${sLabel}</span>
+         <canvas id="spark-${def.id}" class="spark-canvas"></canvas>
+      </div>
+    `;
+        bar.appendChild(card);
+      });
+    }
+
+    function updateTelemetryData() {
+      optimizers.forEach(o => {
+        if (!enabledOpts.has(o.id)) return;
+        document.getElementById(`t-${o.id}-x`).innerText = o.x.toFixed(4);
+        document.getElementById(`t-${o.id}-g`).innerText = o.g.toFixed(4);
+        if (o.id === 'mom' || o.id === 'nag') document.getElementById(`t-${o.id}-v`).innerText = o.v.toFixed(4);
+        if (o.id === 'ada') document.getElementById(`t-${o.id}-G`).innerText = o.G.toFixed(4);
+        if (o.id === 'rms') document.getElementById(`t-${o.id}-E`).innerText = o.E.toFixed(4);
+        if (o.id === 'adm') { document.getElementById(`t-${o.id}-m`).innerText = o.m.toFixed(4); document.getElementById(`t-${o.id}-v`).innerText = o.v.toFixed(4); }
+
+        let scvs = document.getElementById(`spark-${o.id}`);
+        if (scvs && o.sparkHistory.length > 0) {
+          // BUG 1 FIX: Only mutate canvas pixel size when it has actually changed.
+          // Writing .width every frame forces the flex container to relayout → resize loop.
+          const newW = scvs.offsetWidth;
+          const newH = scvs.offsetHeight;
+          if (scvs.width !== newW)  scvs.width  = newW;
+          if (scvs.height !== newH) scvs.height = newH;
+          let sctx = scvs.getContext('2d');
+          sctx.clearRect(0, 0, scvs.width, scvs.height);
+
+          let maxVal = Math.max(...o.sparkHistory.map(Math.abs)) || 0.01;
+          let mid = scvs.height / 2;
+
+          sctx.beginPath(); sctx.strokeStyle = o.hex; sctx.lineWidth = 1.5;
+
+          o.sparkHistory.forEach((val, i) => {
+            let px = (i / 50) * scvs.width;
+            let py = mid - (val / maxVal) * (mid - 2);
+            if (i === 0) sctx.moveTo(px, py); else sctx.lineTo(px, py);
+          });
+          sctx.stroke();
+
+          let lastVal = o.sparkHistory[o.sparkHistory.length - 1];
+          let endX = ((o.sparkHistory.length - 1) / 50) * scvs.width;
+          let endY = mid - (lastVal / maxVal) * (mid - 2);
+          sctx.beginPath(); sctx.arc(endX, endY, 2.5, 0, Math.PI * 2); sctx.fillStyle = o.hex; sctx.fill();
+        }
+      });
+    }
+
+    // ==========================================
+    // 3. MASTER DIAGNOSTICS
+    // ==========================================
+    function processConceptualDiagnostics(forceUpdate = false) {
+      if (!forceUpdate && frameCount % 15 !== 0) return;
+
+      const env = envs[curEnv];
+      const activeOpts = optimizers.filter(o => enabledOpts.has(o.id));
+      const logBox = document.getElementById('analyzerText');
+      const tacBox = document.getElementById('tacticalCommand');
+
+      if (activeOpts.length === 0) { logBox.innerHTML = "<span style='color:var(--muted)'>No optimizers active.</span>"; return; }
+
+      let reports = [];
+      let newAlertHTML = "";
+      let newAlertTrigger = null;
+
+      activeOpts.forEach(o => {
+        let distToMin = env.globalMin !== null ? Math.abs(o.x - env.globalMin) : 100;
+        let gMag = Math.abs(o.g);
+        let isStuck = gMag < 0.05 && distToMin > 0.5 && Math.abs(o.stepSize) < 0.001;
+        let isBouncing = o.prevG !== undefined && Math.sign(o.g) !== Math.sign(o.prevG) && Math.abs(o.stepSize) > 0.15;
+
+        let logText = `<div class="log-entry" style="border-color:${o.hex}">`;
+        logText += `<span style="color:${o.hex}; font-weight:700;">[${o.name}]</span> `;
+
+        if (noiseLvl > 0.3) {
+          if (o.id === 'van') logText += `Erratic movement. Vanilla reacts instantly to the raw mathematical noise, vibrating and wasting energy.`;
+          else if (o.id === 'mom' || o.id === 'nag') logText += `Low-Pass Filter active. Momentum smooths out the random noise to maintain trajectory.`;
+          else if (o.id === 'adm' || o.id === 'rms') logText += `Highly stable. Exponential moving averages mathematically filter out noisy spikes.`;
+          else logText += `Struggling slightly with the noisy data but continuing descent.`;
+        }
+        else if (distToMin < 0.05 && env.globalMin !== null) {
+          if (o.id === 'van') logText += `Target reached! It successfully followed the direct downward slope.`;
+          else if (o.id === 'mom') logText += `Target reached! Its built-up kinetic energy allowed it to coast into the true global minimum.`;
+          else if (o.id === 'nag') logText += `Target reached! By "looking ahead", it anticipated the bottom and applied the brakes perfectly.`;
+          else if (o.id === 'adm') logText += `Target reached! It flawlessly combined momentum and variance-tracking.`;
+          else logText += `Target safely acquired via mathematical scaling.`;
+        }
+        else if (isStuck) {
+          // BUG 2 FIX: Every optimizer gets a specific, unique alert. Trigger IDs are
+          // namespaced (e.g. 'stuck_van') so multiple simultaneous failures don't collide.
+          if (o.id === 'van') {
+            logText += `Trapped! Vanilla only reacts to the immediate slope — the flat gradient gave it nothing to push against. It has no memory of past motion and cannot self-rescue.`;
+            if (!enabledOpts.has('mom')) {
+              newAlertTrigger = 'stuck_van';
+              newAlertHTML = `<div class="sys-alert"><div class="alert-header"><div class="alert-title">⚙ Advisor</div><span class="alert-chip">Stall Detected</span></div><div class="alert-desc">Vanilla GD is stalled on a flat gradient. Deploy Momentum — its built-up kinetic energy can brute-force through the plateau without needing a slope to react to.</div><button class="rescue-btn" onclick="deployRescue('mom')">⚡ Deploy Momentum</button></div>`;
+            }
+          }
+          else if (o.id === 'adm') {
+            logText += `Trapped by over-adaptation! Adam's variance tracker shrunk its effective step size so aggressively that it stopped moving — a "learning rate decay collapse". The cure it applies is also its poison.`;
+            if (!enabledOpts.has('mom')) {
+              newAlertTrigger = 'stuck_adm';
+              newAlertHTML = `<div class="sys-alert"><div class="alert-header"><div class="alert-title">⚙ Advisor</div><span class="alert-chip">Adaptive Collapse</span></div><div class="alert-desc">Adam's adaptive scaling has collapsed its step to near-zero. Deploy pure Momentum — it ignores variance scaling entirely and brute-forces descent using raw accumulated velocity.</div><button class="rescue-btn" onclick="deployRescue('mom')">⚡ Deploy Momentum</button></div>`;
+            }
+          }
+          else if (o.id === 'rms') {
+            logText += `Trapped by over-adaptation! RMSProp's exponential moving average of squared gradients has grown so large that the effective learning rate is near-zero. It mistakes a shallow plateau for a dangerous cliff and refuses to step.`;
+            if (!enabledOpts.has('mom')) {
+              newAlertTrigger = 'stuck_rms';
+              newAlertHTML = `<div class="sys-alert"><div class="alert-header"><div class="alert-title">⚙ Advisor</div><span class="alert-chip">Adaptive Collapse</span></div><div class="alert-desc">RMSProp's adaptive scaler has over-corrected and frozen its steps. Deploy pure Momentum — it applies no scaling penalty and can push through flat regions using accumulated velocity alone.</div><button class="rescue-btn" onclick="deployRescue('mom')">⚡ Deploy Momentum</button></div>`;
+            }
+          }
+          else if (o.id === 'ada') {
+            logText += `Critically trapped! AdaGrad's fatal flaw is fully exposed: it sums squared gradients forever and never forgets them. The accumulated weight has grown so large that every new step is divided to near-zero — a permanent, self-imposed brake with no release mechanism.`;
+            if (!enabledOpts.has('mom')) {
+              newAlertTrigger = 'stuck_ada';
+              newAlertHTML = `<div class="sys-alert"><div class="alert-header"><div class="alert-title">⚙ Advisor</div><span class="alert-chip">LR Decay Collapse</span></div><div class="alert-desc">AdaGrad has hit its well-known fatal flaw: monotonically growing accumulated gradients have reduced its learning rate to effectively zero. Deploy Momentum — it carries no such historical baggage and can still move freely.</div><button class="rescue-btn" onclick="deployRescue('mom')">⚡ Deploy Momentum</button></div>`;
+            }
+          }
+          else {
+            logText += `Trapped in a local basin — kinetic energy exhausted before the optimizer could escape.`;
+          }
+        }
+        else if (isBouncing) {
+          // BUG 2 FIX: Bounce alerts are also per-optimizer with unique trigger IDs.
+          if (o.id === 'van') {
+            logText += `Ping-Pong Effect! The ravine walls are so steep that each step flies past the center. With no velocity memory, Vanilla cannot dampen its own overshoots — it will oscillate indefinitely.`;
+            if (!enabledOpts.has('adm')) {
+              newAlertTrigger = 'bounce_van';
+              newAlertHTML = `<div class="sys-alert"><div class="alert-header"><div class="alert-title">⚙ Advisor</div><span class="alert-chip">Oscillation Detected</span></div><div class="alert-desc">Vanilla GD is bouncing out of control. Deploy Adam — its variance tracker shrinks steps on steep walls, acting as a mathematical shock absorber that dampens oscillation automatically.</div><button class="rescue-btn" onclick="deployRescue('adm')">⚡ Deploy Adam</button></div>`;
+            }
+          }
+          else if (o.id === 'mom') {
+            logText += `Bouncing wildly! Momentum built up too much kinetic energy on the steep descent. It accelerates faster than the ravine can absorb — like a ball rolling into a bowl that is too narrow to slow it down.`;
+            if (!enabledOpts.has('nag') && !enabledOpts.has('adm')) {
+              newAlertTrigger = 'bounce_mom';
+              newAlertHTML = `<div class="sys-alert"><div class="alert-header"><div class="alert-title">⚙ Advisor</div><span class="alert-chip">Oscillation Detected</span></div><div class="alert-desc">Momentum is bouncing — it builds velocity without looking ahead. Deploy Nesterov (NAG), which evaluates the gradient at the predicted future position, allowing it to apply the brakes before hitting the wall instead of after.</div><button class="rescue-btn" onclick="deployRescue('nag')">⚡ Deploy Nesterov (NAG)</button></div>`;
+            }
+          }
+          else if (o.id === 'nag') {
+            logText += `Still oscillating despite look-ahead correction. Nesterov fixes the direction of the step but not its magnitude — at this learning rate, even the corrected velocity overshoots the target. A stronger variance-based brake is needed.`;
+            if (!enabledOpts.has('adm')) {
+              newAlertTrigger = 'bounce_nag';
+              newAlertHTML = `<div class="sys-alert"><div class="alert-header"><div class="alert-title">⚙ Advisor</div><span class="alert-chip">Oscillation Detected</span></div><div class="alert-desc">Nesterov is still oscillating — look-ahead corrects direction but not step magnitude. Deploy Adam, which combines adaptive scaling with momentum to dampen overshoots based on the history of gradient magnitudes.</div><button class="rescue-btn" onclick="deployRescue('adm')">⚡ Deploy Adam</button></div>`;
+            }
+          }
+          else if (o.id === 'ada' || o.id === 'rms' || o.id === 'adm') {
+            logText += `Oscillating despite adaptive scaling. The gradient magnitude is large enough that even after variance scaling, the step still overshoots. Try reducing the global learning rate (η) using the slider to the left.`;
+          }
+          else {
+            logText += `Experiencing heavy oscillation on the steep slopes.`;
+          }
+        }
+        else {
+          if (o.id === 'mom') logText += `Rolling smoothly using built-up kinetic energy.`;
+          else if (o.id === 'adm') logText += `Smart navigation active. Braking on steep drops, accelerating on flat runs.`;
+          else if (o.id === 'rms') logText += `Adapting to the terrain by shrinking steps on steep walls.`;
+          else if (o.id === 'ada') logText += `Cautious descent. Tracking historical steps to move slowly.`;
+          else if (o.id === 'nag') logText += `Looking ahead to map the upcoming gradient.`;
+          else logText += `Following the immediate slope directly downwards.`;
+        }
+        logText += `</div>`;
+        reports.push(logText);
+      });
+
+      logBox.innerHTML = reports.join('');
+      document.getElementById('frameCounter').innerText = `f: ${frameCount}`;
+
+      if (newAlertTrigger !== activeAlertID) {
+        tacBox.innerHTML = newAlertHTML;
+        activeAlertID = newAlertTrigger;
+        // FEATURE: Pause-on-alert — only fires once per NEW alert (dedup prevents repeat pauses)
+        const pauseChk = document.getElementById('pauseOnAlertChk');
+        if (newAlertTrigger && pauseChk && pauseChk.checked && running) {
+          running = false;
+          cancelAnimationFrame(animId);
+          const btn = document.getElementById('runBtn');
+          btn.innerHTML = '▶ Resume'; btn.style.background = 'var(--c-adm)';
+        }
+      }
+    }
+
+    // ==========================================
+    // 4. RENDERING ENGINE (AXES, LOSS GRAPH & VECTORS)
+    // ==========================================
+
+    function mapC(x, y, env) {
+      const W = cvs.width - PAD.L - PAD.R;
+      const H = cvs.height - PAD.T - PAD.B;
+      return [
+        PAD.L + ((x - env.domain[0]) / (env.domain[1] - env.domain[0])) * W,
+        PAD.T + H - ((y - env.range[0]) / (env.range[1] - env.range[0])) * H
+      ];
+    }
+
+    function drawAxes(env) {
+      const W = cvs.width - PAD.L - PAD.R;
+      const H = cvs.height - PAD.T - PAD.B;
+
+      ctx.strokeStyle = '#2e3260'; ctx.lineWidth = 1;
+      ctx.fillStyle = '#555878'; ctx.font = '10px JetBrains Mono';
+
+      for (let i = 0; i <= 5; i++) {
+        let px = PAD.L + (i / 5) * W;
+        ctx.beginPath(); ctx.moveTo(px, PAD.T); ctx.lineTo(px, PAD.T + H); ctx.stroke();
+        let valX = env.domain[0] + (i / 5) * (env.domain[1] - env.domain[0]);
+        ctx.textAlign = 'center'; ctx.fillText(valX.toFixed(1), px, PAD.T + H + 15);
+      }
+      for (let i = 0; i <= 5; i++) {
+        let py = PAD.T + (i / 5) * H;
+        ctx.beginPath(); ctx.moveTo(PAD.L, py); ctx.lineTo(PAD.L + W, py); ctx.stroke();
+        let valY = env.range[1] - (i / 5) * (env.range[1] - env.range[0]);
+        ctx.textAlign = 'right'; ctx.fillText(valY.toFixed(1), PAD.L - 8, py + 4);
+      }
+
+      if (env.domain[0] < 0 && env.domain[1] > 0) {
+        let [zx,] = mapC(0, 0, env);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(zx, PAD.T); ctx.lineTo(zx, PAD.T + H); ctx.stroke();
+      }
+      if (env.range[0] < 0 && env.range[1] > 0) {
+        let [, zy] = mapC(0, 0, env);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(PAD.L, zy); ctx.lineTo(PAD.L + W, zy); ctx.stroke();
+      }
+
+      ctx.fillStyle = 'var(--c-adm)'; ctx.font = 'bold 12px Inter';
+      ctx.textAlign = 'left'; ctx.fillText(env.label || "f(x)", PAD.L + 10, PAD.T + 20);
+    }
+
+    function drawSystem() {
+      const env = envs[curEnv];
+      cvs.width = wrap.clientWidth; cvs.height = wrap.clientHeight;
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+      drawAxes(env);
+
+      // Loss curve — subtle glow pass + crisp pass
+      const W = cvs.width - PAD.L - PAD.R;
+      for (let pass = 0; pass < 2; pass++) {
+        ctx.beginPath();
+        ctx.strokeStyle = pass === 0 ? 'rgba(85, 88, 120, 0.25)' : '#5a5e8a';
+        ctx.lineWidth   = pass === 0 ? 8 : 2.5;
+        for (let i = 0; i <= W; i += 2) {
+          let x = env.domain[0] + (i / W) * (env.domain[1] - env.domain[0]);
+          let [cx, cy] = mapC(x, env.f(x), env);
+          if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
+        }
+        ctx.stroke();
+      }
+
+      // Global minimum target ring
+      if (env.globalMin !== null) {
+        let [mx, my] = mapC(env.globalMin, env.f(env.globalMin), env);
+        ctx.fillStyle = 'rgba(35, 209, 139, 0.10)';
+        ctx.beginPath(); ctx.arc(mx, my, 28, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(35,209,139,0.35)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(mx, my, 28, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#23d18b';
+        ctx.beginPath(); ctx.arc(mx, my, 4.5, 0, Math.PI * 2); ctx.fill();
+        ctx.font = 'bold 9px "JetBrains Mono", monospace';
+        ctx.fillStyle = 'rgba(35,209,139,0.7)'; ctx.textAlign = 'center';
+        ctx.fillText('MIN', mx, my - 34);
+      }
+
+      let activeIndex = 0;
+      optimizers.forEach(o => {
+        if (!enabledOpts.has(o.id)) return;
+
+        // Comet trail
+        if (o.history && o.history.length > 1) {
+          ctx.beginPath(); ctx.lineWidth = 3;
+          for (let i = 0; i < o.history.length; i++) {
+            let pt = o.history[i]; let [px, py] = mapC(pt.x, env.f(pt.x), env); py -= (activeIndex * 14);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.strokeStyle = o.hex + '50';
+          ctx.stroke();
+        }
+
+        let y = env.f(o.x); let [cx, cy] = mapC(o.x, y, env); cy -= (activeIndex * 14);
+
+        // Gradient vector arrow
+        let gDir = -Math.sign(o.g);
+        let gLen = Math.min(Math.abs(o.g) * 15, 45);
+        if (gLen > 1) {
+          ctx.beginPath();
+          ctx.setLineDash([3, 3]);
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + gDir * gLen, cy);
+          ctx.strokeStyle = o.hex + 'aa'; ctx.lineWidth = 1.8; ctx.stroke();
+          ctx.setLineDash([]);
+          // Arrowhead
+          ctx.beginPath();
+          ctx.fillStyle = o.hex;
+          const aDir = gDir > 0 ? 0 : Math.PI;
+          const ax = cx + gDir * gLen, ay = cy;
+          ctx.moveTo(ax + Math.cos(aDir) * 6, ay);
+          ctx.lineTo(ax + Math.cos(aDir + 2.4) * 5, ay + Math.sin(aDir + 2.4) * 5);
+          ctx.lineTo(ax + Math.cos(aDir - 2.4) * 5, ay + Math.sin(aDir - 2.4) * 5);
+          ctx.closePath(); ctx.fill();
+        }
+
+        // Dot: outer glow → mid ring → core
+        ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+        ctx.fillStyle = o.hex + '18'; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+        ctx.fillStyle = o.hex + '35'; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+        ctx.fillStyle = o.hex; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.8; ctx.stroke();
+
+        // Name label above dot — with roundRect polyfill for cross-browser safety
+        ctx.save();
+        ctx.font = 'bold 9.5px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        const labelW = ctx.measureText(o.name).width + 10;
+        const lx = cx - labelW / 2, ly = cy - 36, lh = 14, lr = 4;
+        ctx.fillStyle = 'rgba(7,8,15,0.65)';
+        ctx.beginPath();
+        // Polyfill: use native roundRect if available, otherwise draw arcs manually
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(lx, ly, labelW, lh, lr);
+        } else {
+          ctx.moveTo(lx + lr, ly);
+          ctx.lineTo(lx + labelW - lr, ly);
+          ctx.arcTo(lx + labelW, ly, lx + labelW, ly + lr, lr);
+          ctx.lineTo(lx + labelW, ly + lh - lr);
+          ctx.arcTo(lx + labelW, ly + lh, lx + labelW - lr, ly + lh, lr);
+          ctx.lineTo(lx + lr, ly + lh);
+          ctx.arcTo(lx, ly + lh, lx, ly + lh - lr, lr);
+          ctx.lineTo(lx, ly + lr);
+          ctx.arcTo(lx, ly, lx + lr, ly, lr);
+          ctx.closePath();
+        }
+        ctx.fill();
+        ctx.fillStyle = o.hex;
+        ctx.fillText(o.name, cx, cy - 25);
+        ctx.restore();
+
+        activeIndex++;
+      });
+    }
+
+    function resetSystem() {
+      cancelAnimationFrame(animId);
+      running = false; frameCount = 0; activeAlertID = null;
+      const btn = document.getElementById('runBtn');
+      btn.innerHTML = "▶ Run Simulation"; btn.style.background = 'var(--c-adm)';
+      document.getElementById('tacticalCommand').innerHTML = '';
+      document.getElementById('frameCounter').innerText = '';
+
+      const env = envs[curEnv];
+      updateLR(); updateNoise();
+
+      optimizers = OPT_DEFS.map(def => {
+        let o = { id: def.id, name: def.name, hex: def.hex, x: env.start, g: 0, prevG: 0, stepSize: 0, stepFn: def.step, history: [], sparkHistory: [] };
+        o.history.push({ x: o.x }); def.init(o); return o;
+      });
+
+      buildToggles(); buildTelemetry(); drawSystem(); updateTelemetryData();
+      updateHud();
+      processConceptualDiagnostics(true);
+    }
+
+    function performStep() {
+      if (!running) return;
+      frameCount++;
+      const env = envs[curEnv];
+
+      optimizers.forEach(o => {
+        if (!enabledOpts.has(o.id)) return;
+
+        o.prevG = o.g;
+        let rawGradient = env.df(o.x);
+        let randomJitter = (Math.random() - 0.5) * noiseLvl * 5;
+        o.g = rawGradient + randomJitter;
+
+        o.stepFn(o, o.g, lr, env);
+
+        if (o.x < env.domain[0]) { o.x = env.domain[0]; if (o.v !== undefined) o.v = 0; }
+        if (o.x > env.domain[1]) { o.x = env.domain[1]; if (o.v !== undefined) o.v = 0; }
+
+        o.history.push({ x: o.x }); if (o.history.length > 25) o.history.shift();
+
+        let sparkVal = (o.id === 'mom' || o.id === 'nag') ? o.v : o.stepSize;
+        o.sparkHistory.push(sparkVal); if (o.sparkHistory.length > 50) o.sparkHistory.shift();
+      });
+
+      drawSystem(); updateTelemetryData(); processConceptualDiagnostics(false);
+      animId = requestAnimationFrame(() => { setTimeout(performStep, 35); });
+    }
+
+    function toggleRun() {
+      running = !running;
+      const btn = document.getElementById('runBtn');
+      if (running) { btn.innerHTML = "⏸ Pause"; btn.style.background = 'var(--muted)'; performStep(); }
+      else { btn.innerHTML = "▶ Resume"; btn.style.background = 'var(--c-adm)'; cancelAnimationFrame(animId); }
+    }
+
+    window.addEventListener('resize', drawSystem);
+    handleEnvChange(); 
+  </script>
+</body>
+
+</html>
