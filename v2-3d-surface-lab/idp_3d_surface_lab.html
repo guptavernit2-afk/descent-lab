@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDP 3D Loss Surface Explorer</title>
+  <meta name="description" content="Interactive Desmos-inspired 3D loss surface explorer for benchmark gradient-based optimization landscapes.">
+
+  <!-- Plotly.js — only 3D rendering library used -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ─────────────────────────────────────────
+       RESET & TOKENS
+    ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #09090f;
+      --panel:        rgba(10, 11, 18, 0.90);
+      --panel-hover:  rgba(14, 15, 24, 0.95);
+      --border:       rgba(255, 255, 255, 0.07);
+      --border-hi:    rgba(255, 255, 255, 0.14);
+      --text:         #e2e4ef;
+      --muted:        #606880;
+      --accent:       #6366f1;
+      --accent-soft:  rgba(99, 102, 241, 0.14);
+      --accent-text:  #a5b4fc;
+      --green:        #10b981;
+      --green-soft:   rgba(16, 185, 129, 0.15);
+      --mono:         'JetBrains Mono', monospace;
+      --sans:         'Inter', sans-serif;
+      --radius:       13px;
+      --blur:         blur(22px);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─────────────────────────────────────────
+       FULL-SCREEN GRAPH
+    ───────────────────────────────────────── */
+    #graph {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+
+    /* Remove Plotly's default white background on the SVG modebar */
+    .modebar { background: transparent !important; }
+    .modebar-btn path { fill: var(--muted) !important; }
+    .modebar-btn:hover path { fill: var(--text) !important; }
+
+    /* ─────────────────────────────────────────
+       FLOATING PANEL BASE
+    ───────────────────────────────────────── */
+    .fp {
+      position: fixed;
+      z-index: 20;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      transition: border-color 0.22s ease, background 0.22s ease;
+    }
+    .fp:hover {
+      border-color: var(--border-hi);
+      background: var(--panel-hover);
+    }
+
+    /* ─────────────────────────────────────────
+       TITLE + EQUATION PANEL  (top-left)
+    ───────────────────────────────────────── */
+    #titlePanel {
+      top: 16px;
+      left: 16px;
+      padding: 15px 17px 13px;
+      min-width: 290px;
+      max-width: 350px;
+    }
+
+    .tp-collapse {
+      position: absolute;
+      top: 11px; right: 13px;
+      background: none; border: none;
+      color: var(--muted); cursor: pointer;
+      font-size: 11px; line-height: 1;
+      padding: 3px 5px;
+      border-radius: 5px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .tp-collapse:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+    .tp-eyebrow {
+      font-family: var(--mono);
+      font-size: 8.5px; font-weight: 600;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+
+    .tp-title {
+      font-size: 15.5px; font-weight: 700;
+      color: var(--text); line-height: 1.2;
+      margin-bottom: 2px;
+    }
+
+    .tp-subtitle {
+      font-size: 10px; color: var(--muted);
+      font-weight: 400; line-height: 1.45;
+      margin-bottom: 0;
+    }
+
+    #titleBody {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.25s ease;
+      max-height: 300px;
+      opacity: 1;
+    }
+    #titleBody.collapsed { max-height: 0; opacity: 0; }
+
+    .tp-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 11px 0 10px;
+    }
+
+    .tp-surface-name {
+      font-size: 11.5px; font-weight: 600;
+      color: var(--text); margin-bottom: 5px;
+    }
+
+    .tp-equation {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent-text);
+      background: var(--accent-soft);
+      border: 1px solid rgba(99, 102, 241, 0.20);
+      border-radius: 7px;
+      padding: 7px 11px;
+      line-height: 1.55;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+
+    .tp-desc {
+      font-size: 9.5px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 7px;
+    }
+
+    .tp-minima {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: #6ee7b7;
+      background: var(--green-soft);
+      border-radius: 5px;
+      padding: 5px 8px;
+      line-height: 1.5;
+    }
+
+    /* ─────────────────────────────────────────
+       LIVE INFO BADGE  (top-right)
+    ───────────────────────────────────────── */
+    #infoBadge {
+      top: 16px; right: 16px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    .ib-live {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: livePulse 2.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+    #badgeSurfaceName { color: var(--text); font-weight: 600; }
+
+    /* ─────────────────────────────────────────
+       CONTROLS DOCK  (bottom-center)
+    ───────────────────────────────────────── */
+    #controlsDock {
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      white-space: nowrap;
+      flex-wrap: nowrap;
+    }
+
+    .ctrl-label {
+      font-size: 9.5px; font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      user-select: none;
+    }
+
+    /* Surface selector */
+    #surfaceSelect {
+      appearance: none;
+      background: rgba(255,255,255,0.04)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23606880'/%3E%3C/svg%3E")
+        no-repeat right 10px center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 12px; font-weight: 500;
+      padding: 7px 30px 7px 11px;
+      cursor: pointer; outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      min-width: 155px;
+    }
+    #surfaceSelect option { background: #13141f; }
+    #surfaceSelect:hover, #surfaceSelect:focus { border-color: var(--accent); }
+
+    /* Divider */
+    .ctrl-sep {
+      width: 1px; height: 22px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Toggle button */
+    .ctrl-toggle {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 11px; font-weight: 500;
+      cursor: pointer; user-select: none;
+      transition: all 0.18s ease;
+    }
+    .ctrl-toggle:hover { border-color: var(--border-hi); color: var(--text); }
+    .ctrl-toggle.on {
+      border-color: rgba(99,102,241,0.5);
+      background: var(--accent-soft);
+      color: var(--accent-text);
+    }
+
+    .tog-pip {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    .ctrl-toggle.on .tog-pip {
+      background: var(--accent);
+      box-shadow: 0 0 7px var(--accent);
+    }
+
+    /* Action button */
+    .ctrl-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 11px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .ctrl-btn:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+
+    /* ─────────────────────────────────────────
+       LOADING OVERLAY
+    ───────────────────────────────────────── */
+    #loader {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px;
+      transition: opacity 0.45s ease;
+    }
+    #loader.hidden { opacity: 0; pointer-events: none; }
+
+    .ld-ring {
+      width: 38px; height: 38px;
+      border: 3px solid rgba(99,102,241,0.18);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .ld-text {
+      font-family: var(--mono);
+      font-size: 11px; color: var(--muted);
+    }
+
+    /* ─────────────────────────────────────────
+       SCROLLBAR
+    ───────────────────────────────────────── */
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ─── Loading Overlay ─── -->
+  <div id="loader">
+    <div class="ld-ring"></div>
+    <div class="ld-text" id="loaderText">Computing surface grid…</div>
+  </div>
+
+  <!-- ─── Full-Screen Plotly Canvas ─── -->
+  <div id="graph"></div>
+
+  <!-- ─── Floating: Title + Equation Panel (top-left) ─── -->
+  <div class="fp" id="titlePanel">
+    <button class="tp-collapse" id="collapseBtn" title="Toggle panel" aria-label="Collapse info panel">▲</button>
+
+    <div class="tp-eyebrow">IDP Visual Lab · v2 · Phase 1A</div>
+    <div class="tp-title">3D Loss Surface Explorer</div>
+    <div class="tp-subtitle">Benchmark Landscapes for Gradient-Based Optimization</div>
+
+    <div id="titleBody">
+      <div class="tp-divider"></div>
+      <div class="tp-surface-name" id="infoName">Quadratic Bowl</div>
+      <div class="tp-equation"    id="infoEq">L(x,y) = x² + y²</div>
+      <div class="tp-desc"        id="infoDesc">
+        A smooth convex surface with one global minimum at the origin.
+        The ideal landscape for gradient descent — no traps, no plateaus.
+      </div>
+      <div class="tp-minima"      id="infoMinima">⬤  Global min: (0, 0) → L = 0</div>
+    </div>
+  </div>
+
+  <!-- ─── Floating: Live Status Badge (top-right) ─── -->
+  <div class="fp" id="infoBadge">
+    <div class="ib-live"></div>
+    <span>Surface &nbsp;</span>
+    <span id="badgeSurfaceName">Quadratic Bowl</span>
+  </div>
+
+  <!-- ─── Floating: Controls Dock (bottom-center) ─── -->
+  <div class="fp" id="controlsDock">
+
+    <span class="ctrl-label">Surface</span>
+    <select id="surfaceSelect" aria-label="Select loss surface">
+      <option value="bowl">Quadratic Bowl</option>
+      <option value="rosenbrock">Rosenbrock Valley</option>
+      <option value="himmelblau">Himmelblau Function</option>
+      <option value="rastrigin">Rastrigin Function</option>
+    </select>
+
+    <div class="ctrl-sep"></div>
+
+    <button class="ctrl-toggle" id="btnMinima" aria-pressed="false" onclick="handleToggleMinima()">
+      <div class="tog-pip"></div>
+      Show Minima
+    </button>
+
+    <button class="ctrl-toggle" id="btnContour" aria-pressed="false" onclick="handleToggleContour()">
+      <div class="tog-pip"></div>
+      Contour Projection
+    </button>
+
+    <div class="ctrl-sep"></div>
+
+    <button class="ctrl-btn" onclick="handleResetCamera()" title="Reset 3D camera to default position">
+      ↺&nbsp; Reset Camera
+    </button>
+
+    <button class="ctrl-btn" id="fsBtn" onclick="handleFullscreen()" title="Toggle fullscreen">
+      ⛶&nbsp; Fullscreen
+    </button>
+
+  </div>
+
+  <script>
+    'use strict';
+
+    // ════════════════════════════════════════════════════════════
+    // 1.  SURFACE DEFINITIONS
+    // ════════════════════════════════════════════════════════════
+
+    const SURFACES = {
+
+      bowl: {
+        id: 'bowl',
+        name: 'Quadratic Bowl',
+        equation: 'L(x,y) = x² + y²',
+        description: 'A smooth strictly-convex surface with a single global minimum at the origin. Gradient descent converges reliably here from any starting point — no saddle points, no local traps. The ideal baseline benchmark.',
+        f: (x, y) => x * x + y * y,
+        domain: { xmin: -4, xmax: 4, ymin: -4, ymax: 4 },
+        gridResolution: 70,
+        displayZMax: null,
+        minima: [
+          { x: 0, y: 0, z: 0, label: '(0, 0)' }
+        ],
+        minimaText: '⬤  Global minimum: (0, 0)  →  L = 0',
+        colorscale: 'Viridis',
+        defaultCamera: { eye: { x: 1.55, y: -1.75, z: 1.25 }, up: { x: 0, y: 0, z: 1 } }
+      },
+
+      rosenbrock: {
+        id: 'rosenbrock',
+        name: 'Rosenbrock Valley',
+        equation: 'L(x,y) = (1−x)² + 100(y−x²)²',
+        description: 'A narrow, curved banana-shaped valley. The global minimum is easy to locate analytically but extremely difficult to reach numerically — the valley floor curves sharply and most gradient-only methods oscillate or stall without adaptive momentum.',
+        f: (x, y) => Math.pow(1 - x, 2) + 100 * Math.pow(y - x * x, 2),
+        domain: { xmin: -2, xmax: 2, ymin: -1, ymax: 3 },
+        gridResolution: 70,
+        displayZMax: 1800,          // clip visual height; hover shows true values
+        minima: [
+          { x: 1, y: 1, z: 0, label: '(1, 1)' }
+        ],
+        minimaText: '⬤  Global minimum: (1, 1)  →  L = 0',
+        colorscale: 'Plasma',
+        defaultCamera: { eye: { x: 1.8, y: -1.8, z: 1.4 }, up: { x: 0, y: 0, z: 1 } }
+      },
+
+      himmelblau: {
+        id: 'himmelblau',
+        name: 'Himmelblau Function',
+        equation: 'L(x,y) = (x²+y−11)² + (x+y²−7)²',
+        description: 'A multimodal surface with four equivalent global minima. Gradient descent will converge to whichever basin the starting point is nearest to — a vivid illustration of how initialisation determines the outcome on non-convex landscapes.',
+        f: (x, y) => Math.pow(x * x + y - 11, 2) + Math.pow(x + y * y - 7, 2),
+        domain: { xmin: -5, xmax: 5, ymin: -5, ymax: 5 },
+        gridResolution: 72,
+        displayZMax: 600,
+        minima: [
+          { x:  3.000000, y:  2.000000, z: 0, label: '(3.00, 2.00)' },
+          { x: -2.805118, y:  3.131312, z: 0, label: '(−2.81, 3.13)' },
+          { x: -3.779310, y: -3.283186, z: 0, label: '(−3.78, −3.28)' },
+          { x:  3.584428, y: -1.848126, z: 0, label: '(3.58, −1.85)' }
+        ],
+        minimaText: '⬤  4 equivalent global minima  →  L = 0 at each',
+        colorscale: 'Hot',
+        defaultCamera: { eye: { x: 1.65, y: -1.9, z: 1.35 }, up: { x: 0, y: 0, z: 1 } }
+      },
+
+      rastrigin: {
+        id: 'rastrigin',
+        name: 'Rastrigin Function',
+        equation: 'L(x,y) = 20 + x²−10cos(2πx) + y²−10cos(2πy)',
+        description: 'A highly rugged landscape with hundreds of local minima embedded inside a global parabolic bowl. One of the hardest standard benchmarks — optimisers almost always get trapped in a nearby local basin far from the true global minimum at the origin.',
+        f: (x, y) => 20 + x * x - 10 * Math.cos(2 * Math.PI * x)
+                        + y * y - 10 * Math.cos(2 * Math.PI * y),
+        domain: { xmin: -5.12, xmax: 5.12, ymin: -5.12, ymax: 5.12 },
+        gridResolution: 80,
+        displayZMax: null,
+        minima: [
+          { x: 0, y: 0, z: 0, label: '(0, 0)' }
+        ],
+        minimaText: '⬤  Global minimum: (0, 0)  →  L = 0  (surrounded by many local minima)',
+        colorscale: 'Turbo',
+        defaultCamera: { eye: { x: 1.7, y: -1.7, z: 1.6 }, up: { x: 0, y: 0, z: 1 } }
+      }
+    };
+
+    // ════════════════════════════════════════════════════════════
+    // 2.  APPLICATION STATE
+    // ════════════════════════════════════════════════════════════
+
+    let activeSurface = 'bowl';
+    let showMinima    = false;
+    let showContour   = false;
+    let gridCache     = {};          // cached { xs, ys, zDisp, hoverText } per surface key
+    let plotInitialized = false;
+
+    // ════════════════════════════════════════════════════════════
+    // 3.  GRID GENERATION
+    // ════════════════════════════════════════════════════════════
+
+    function linspace(a, b, n) {
+      const arr = new Array(n);
+      for (let i = 0; i < n; i++) arr[i] = a + (b - a) * (i / (n - 1));
+      return arr;
+    }
+
+    function buildGrid(key) {
+      const s   = SURFACES[key];
+      const N   = s.gridResolution;
+      const xs  = linspace(s.domain.xmin, s.domain.xmax, N);
+      const ys  = linspace(s.domain.ymin, s.domain.ymax, N);
+
+      const zDisp     = [];
+      const hoverText = [];
+
+      for (let j = 0; j < N; j++) {
+        const zRow  = new Array(N);
+        const htRow = new Array(N);
+
+        for (let i = 0; i < N; i++) {
+          const trueVal    = s.f(xs[i], ys[j]);
+          const dispVal    = (s.displayZMax !== null && trueVal > s.displayZMax)
+                              ? s.displayZMax : trueVal;
+
+          zRow[i]  = dispVal;
+
+          // Hover always shows TRUE value — even when display is clipped
+          htRow[i] = `<b>x</b>: ${xs[i].toFixed(4)}<br>`
+                   + `<b>y</b>: ${ys[j].toFixed(4)}<br>`
+                   + `<b>L(x,y)</b>: ${trueVal.toFixed(6)}`
+                   + (s.displayZMax !== null && trueVal > s.displayZMax
+                       ? `<br><i>(display clipped to ${s.displayZMax})</i>` : '');
+        }
+
+        zDisp.push(zRow);
+        hoverText.push(htRow);
+      }
+
+      return { xs, ys, zDisp, hoverText };
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 4.  TRACE BUILDERS
+    // ════════════════════════════════════════════════════════════
+
+    function makeSurfaceTrace(key, grid) {
+      const s = SURFACES[key];
+
+      const trace = {
+        type:        'surface',
+        x:           grid.xs,
+        y:           grid.ys,
+        z:           grid.zDisp,
+        colorscale:  s.colorscale,
+        opacity:     0.93,
+        hoverinfo:   'text',
+        text:        grid.hoverText,
+        showscale:   true,
+        colorbar: {
+          thickness: 11,
+          len:       0.58,
+          x:         1.01,
+          tickfont:  { color: '#555e78', size: 8.5, family: 'JetBrains Mono' },
+          title: {
+            text:  'L(x,y)',
+            side:  'right',
+            font:  { color: '#7a85a0', size: 9.5 }
+          },
+          bgcolor:     'rgba(0,0,0,0)',
+          bordercolor: 'rgba(255,255,255,0.05)',
+          borderwidth: 1,
+        },
+        lighting: {
+          ambient:   0.72,
+          diffuse:   0.88,
+          roughness: 0.55,
+          specular:  0.25,
+          fresnel:   0.18,
+        },
+        lightposition: { x: 100, y: 200, z: 500 },
+      };
+
+      // Contour projection onto the z-floor
+      if (showContour) {
+        trace.contours = {
+          z: {
+            show:         true,
+            usecolormap:  true,
+            project:      { z: true },
+            highlightcolor: 'rgba(255,255,255,0.6)',
+            width: 1.5,
+          },
+          x: { show: false },
+          y: { show: false },
+        };
+      }
+
+      return trace;
+    }
+
+    function makeMinimaTrace(key) {
+      const s = SURFACES[key];
+      if (!s.minima || s.minima.length === 0) return null;
+
+      // Lift markers slightly above the surface so they are always visible
+      const lift = (s.domain.xmax - s.domain.xmin) * 0.015;
+
+      return {
+        type:  'scatter3d',
+        x:     s.minima.map(m => m.x),
+        y:     s.minima.map(m => m.y),
+        z:     s.minima.map(m => m.z + lift),
+        mode:  'markers+text',
+        marker: {
+          size:    10,
+          color:   '#10b981',
+          symbol:  'circle',
+          line:    { color: '#ffffff', width: 2 },
+          opacity: 1,
+        },
+        text:         s.minima.map(m => m.label),
+        textposition: 'top center',
+        textfont:     { color: '#6ee7b7', size: 9, family: 'JetBrains Mono' },
+        hoverinfo:    'text',
+        hovertext:    s.minima.map(m => `<b>Minimum</b><br>${m.label}<br>L = 0`),
+        showlegend:   false,
+      };
+    }
+
+    function buildTraces(key, grid) {
+      const traces = [ makeSurfaceTrace(key, grid) ];
+      if (showMinima) {
+        const mt = makeMinimaTrace(key);
+        if (mt) traces.push(mt);
+      }
+      return traces;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 5.  PLOTLY LAYOUT
+    // ════════════════════════════════════════════════════════════
+
+    function buildLayout(key) {
+      const s   = SURFACES[key];
+      const axisCommon = {
+        gridcolor:        '#1c1f30',
+        zerolinecolor:    '#2e3250',
+        zeroline:         true,
+        tickfont:         { color: '#4a5278', size: 8.5, family: 'JetBrains Mono' },
+        showbackground:   true,
+        backgroundcolor:  '#0b0c17',
+      };
+
+      return {
+        paper_bgcolor: '#09090f',
+        plot_bgcolor:  '#09090f',
+        margin:        { l: 0, r: 0, t: 0, b: 0 },
+
+        // uirevision = surface id:
+        //   → same surface (toggle): Plotly preserves camera & zoom
+        //   → new surface: uirevision changes, Plotly resets camera
+        uirevision: key,
+
+        scene: {
+          bgcolor: '#09090f',
+          camera:  s.defaultCamera,
+          aspectmode: 'cube',
+
+          xaxis: {
+            ...axisCommon,
+            title: { text: 'x  (Parameter x)', font: { color: '#6b7592', size: 10 } },
+          },
+          yaxis: {
+            ...axisCommon,
+            title: { text: 'y  (Parameter y)', font: { color: '#6b7592', size: 10 } },
+          },
+          zaxis: {
+            ...axisCommon,
+            title: { text: 'L(x, y)  — Loss', font: { color: '#6b7592', size: 10 } },
+          },
+        },
+
+        hoverlabel: {
+          bgcolor:     '#0f1121',
+          bordercolor: '#2e3260',
+          font:        { color: '#c8cde8', size: 11, family: 'JetBrains Mono' },
+          align:       'left',
+        },
+
+        showlegend: false,
+      };
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 6.  PLOTLY CONFIG
+    // ════════════════════════════════════════════════════════════
+
+    const PLOTLY_CONFIG = {
+      responsive:    true,
+      displaylogo:   false,
+      displayModeBar: true,
+      modeBarButtonsToRemove: ['sendDataToCloud', 'toImage'],
+      scrollZoom:    true,
+      toImageButtonOptions: { format: 'png', filename: 'idp_surface' },
+    };
+
+    // ════════════════════════════════════════════════════════════
+    // 7.  RENDER ENGINE
+    // ════════════════════════════════════════════════════════════
+
+    const graphEl = document.getElementById('graph');
+
+    async function renderSurface(key) {
+      setLoading(true, `Computing ${SURFACES[key].name}…`);
+
+      // Build grid asynchronously so the loader paint has time to appear
+      await nextFrame();
+
+      if (!gridCache[key]) {
+        gridCache[key] = buildGrid(key);
+      }
+
+      const grid   = gridCache[key];
+      const traces = buildTraces(key, grid);
+      const layout = buildLayout(key);
+
+      if (!plotInitialized) {
+        await Plotly.newPlot(graphEl, traces, layout, PLOTLY_CONFIG);
+        plotInitialized = true;
+      } else {
+        await Plotly.react(graphEl, traces, layout, PLOTLY_CONFIG);
+      }
+
+      updateInfoPanel(key);
+      setLoading(false);
+    }
+
+    // Redraw only traces — preserves camera because uirevision unchanged
+    async function redrawTraces() {
+      if (!plotInitialized || !gridCache[activeSurface]) return;
+      const traces = buildTraces(activeSurface, gridCache[activeSurface]);
+      // Pass graphEl.layout so Plotly keeps current camera / scene state
+      await Plotly.react(graphEl, traces, graphEl.layout, PLOTLY_CONFIG);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 8.  UI HELPERS
+    // ════════════════════════════════════════════════════════════
+
+    function updateInfoPanel(key) {
+      const s = SURFACES[key];
+      document.getElementById('infoName').textContent    = s.name;
+      document.getElementById('infoEq').textContent      = s.equation;
+      document.getElementById('infoDesc').textContent    = s.description;
+      document.getElementById('infoMinima').textContent  = s.minimaText;
+      document.getElementById('badgeSurfaceName').textContent = s.name;
+    }
+
+    function setLoading(visible, msg) {
+      const el  = document.getElementById('loader');
+      const txt = document.getElementById('loaderText');
+      if (msg) txt.textContent = msg;
+      el.classList.toggle('hidden', !visible);
+    }
+
+    function nextFrame() {
+      return new Promise(r => requestAnimationFrame(() => setTimeout(r, 20)));
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 9.  CONTROL HANDLERS
+    // ════════════════════════════════════════════════════════════
+
+    // Surface dropdown
+    document.getElementById('surfaceSelect').addEventListener('change', function () {
+      activeSurface = this.value;
+      renderSurface(activeSurface);
+    });
+
+    // Show Minima toggle
+    function handleToggleMinima() {
+      showMinima = !showMinima;
+      const btn = document.getElementById('btnMinima');
+      btn.classList.toggle('on', showMinima);
+      btn.setAttribute('aria-pressed', showMinima);
+      redrawTraces();
+    }
+
+    // Contour Projection toggle
+    function handleToggleContour() {
+      showContour = !showContour;
+      const btn = document.getElementById('btnContour');
+      btn.classList.toggle('on', showContour);
+      btn.setAttribute('aria-pressed', showContour);
+      redrawTraces();
+    }
+
+    // Reset Camera — relayout only the scene.camera key
+    function handleResetCamera() {
+      if (!plotInitialized) return;
+      const cam = SURFACES[activeSurface].defaultCamera;
+      Plotly.relayout(graphEl, { 'scene.camera': cam });
+    }
+
+    // Fullscreen
+    function handleFullscreen() {
+      const btn = document.getElementById('fsBtn');
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+        btn.textContent = '✕  Exit Fullscreen';
+      } else {
+        document.exitFullscreen && document.exitFullscreen();
+        btn.textContent = '⛶  Fullscreen';
+      }
+    }
+
+    // Title panel collapse
+    let panelOpen = true;
+    document.getElementById('collapseBtn').addEventListener('click', () => {
+      panelOpen = !panelOpen;
+      document.getElementById('titleBody').classList.toggle('collapsed', !panelOpen);
+      document.getElementById('collapseBtn').textContent = panelOpen ? '▲' : '▼';
+    });
+
+    // ════════════════════════════════════════════════════════════
+    // 10.  RESPONSIVE RESIZE
+    // ════════════════════════════════════════════════════════════
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (plotInitialized) {
+          Plotly.relayout(graphEl, {
+            width:  window.innerWidth,
+            height: window.innerHeight,
+          });
+        }
+      }, 120);
+    });
+
+    // ════════════════════════════════════════════════════════════
+    // 11.  INIT
+    // ════════════════════════════════════════════════════════════
+
+    renderSurface('bowl');
+
+  </script>
+</body>
+</html>
