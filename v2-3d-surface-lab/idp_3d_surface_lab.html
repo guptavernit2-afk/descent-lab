@@ -1,862 +1,857 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IDP 3D Loss Surface Explorer</title>
-  <meta name="description" content="Interactive Desmos-inspired 3D loss surface explorer for benchmark gradient-based optimization landscapes.">
-
-  <!-- Plotly.js — only 3D rendering library used -->
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
-
-  <!-- Google Fonts -->
+  <title>IDP Visual Lab - 3D Loss Surface Explorer</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ─────────────────────────────────────────
-       RESET & TOKENS
-    ───────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:           #09090f;
-      --panel:        rgba(10, 11, 18, 0.90);
-      --panel-hover:  rgba(14, 15, 24, 0.95);
-      --border:       rgba(255, 255, 255, 0.07);
-      --border-hi:    rgba(255, 255, 255, 0.14);
-      --text:         #e2e4ef;
-      --muted:        #606880;
-      --accent:       #6366f1;
-      --accent-soft:  rgba(99, 102, 241, 0.14);
-      --accent-text:  #a5b4fc;
-      --green:        #10b981;
-      --green-soft:   rgba(16, 185, 129, 0.15);
-      --mono:         'JetBrains Mono', monospace;
-      --sans:         'Inter', sans-serif;
-      --radius:       13px;
-      --blur:         blur(22px);
+      --bg: #09090f;
+      --rail-bg: rgba(10, 11, 18, 0.95);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #e2e4ef;
+      --muted: #8b95a5;
+      --accent: #6366f1;
+      --accent-soft: rgba(99, 102, 241, 0.15);
+      --green: #10b981;
+      --red: #f04747;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+      --rail-width: 360px;
     }
-
+    
     html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      -webkit-font-smoothing: antialiased;
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg); color: var(--text);
+      font-family: var(--sans); font-size: 13px;
     }
 
-    /* ─────────────────────────────────────────
-       FULL-SCREEN GRAPH
-    ───────────────────────────────────────── */
-    #graph {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 1;
-    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
-    /* Remove Plotly's default white background on the SVG modebar */
-    .modebar { background: transparent !important; }
-    .modebar-btn path { fill: var(--muted) !important; }
-    .modebar-btn:hover path { fill: var(--text) !important; }
-
-    /* ─────────────────────────────────────────
-       FLOATING PANEL BASE
-    ───────────────────────────────────────── */
-    .fp {
-      position: fixed;
-      z-index: 20;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      backdrop-filter: var(--blur);
-      -webkit-backdrop-filter: var(--blur);
-      transition: border-color 0.22s ease, background 0.22s ease;
-    }
-    .fp:hover {
-      border-color: var(--border-hi);
-      background: var(--panel-hover);
-    }
-
-    /* ─────────────────────────────────────────
-       TITLE + EQUATION PANEL  (top-left)
-    ───────────────────────────────────────── */
-    #titlePanel {
-      top: 16px;
-      left: 16px;
-      padding: 15px 17px 13px;
-      min-width: 290px;
-      max-width: 350px;
-    }
-
-    .tp-collapse {
-      position: absolute;
-      top: 11px; right: 13px;
-      background: none; border: none;
-      color: var(--muted); cursor: pointer;
-      font-size: 11px; line-height: 1;
-      padding: 3px 5px;
-      border-radius: 5px;
-      transition: color 0.15s, background 0.15s;
-    }
-    .tp-collapse:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-
-    .tp-eyebrow {
-      font-family: var(--mono);
-      font-size: 8.5px; font-weight: 600;
-      letter-spacing: 2.2px;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 5px;
-    }
-
-    .tp-title {
-      font-size: 15.5px; font-weight: 700;
-      color: var(--text); line-height: 1.2;
-      margin-bottom: 2px;
-    }
-
-    .tp-subtitle {
-      font-size: 10px; color: var(--muted);
-      font-weight: 400; line-height: 1.45;
-      margin-bottom: 0;
-    }
-
-    #titleBody {
-      overflow: hidden;
-      transition: max-height 0.3s ease, opacity 0.25s ease;
-      max-height: 300px;
-      opacity: 1;
-    }
-    #titleBody.collapsed { max-height: 0; opacity: 0; }
-
-    .tp-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 11px 0 10px;
-    }
-
-    .tp-surface-name {
-      font-size: 11.5px; font-weight: 600;
-      color: var(--text); margin-bottom: 5px;
-    }
-
-    .tp-equation {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--accent-text);
-      background: var(--accent-soft);
-      border: 1px solid rgba(99, 102, 241, 0.20);
-      border-radius: 7px;
-      padding: 7px 11px;
-      line-height: 1.55;
-      margin-bottom: 8px;
-      word-break: break-word;
-    }
-
-    .tp-desc {
-      font-size: 9.5px;
-      color: var(--muted);
-      line-height: 1.55;
-      margin-bottom: 7px;
-    }
-
-    .tp-minima {
-      font-family: var(--mono);
-      font-size: 9px;
-      color: #6ee7b7;
-      background: var(--green-soft);
-      border-radius: 5px;
-      padding: 5px 8px;
-      line-height: 1.5;
-    }
-
-    /* ─────────────────────────────────────────
-       LIVE INFO BADGE  (top-right)
-    ───────────────────────────────────────── */
-    #infoBadge {
-      top: 16px; right: 16px;
-      padding: 8px 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 10.5px;
-      color: var(--muted);
-    }
-
-    .ib-live {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 8px var(--green);
-      animation: livePulse 2.2s ease-in-out infinite;
-      flex-shrink: 0;
-    }
-    @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-
-    #badgeSurfaceName { color: var(--text); font-weight: 600; }
-
-    /* ─────────────────────────────────────────
-       CONTROLS DOCK  (bottom-center)
-    ───────────────────────────────────────── */
-    #controlsDock {
-      bottom: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 9px 14px;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      white-space: nowrap;
-      flex-wrap: nowrap;
-    }
-
-    .ctrl-label {
-      font-size: 9.5px; font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      user-select: none;
-    }
-
-    /* Surface selector */
-    #surfaceSelect {
-      appearance: none;
-      background: rgba(255,255,255,0.04)
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23606880'/%3E%3C/svg%3E")
-        no-repeat right 10px center;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 12px; font-weight: 500;
-      padding: 7px 30px 7px 11px;
-      cursor: pointer; outline: none;
-      transition: border-color 0.2s, background 0.2s;
-      min-width: 155px;
-    }
-    #surfaceSelect option { background: #13141f; }
-    #surfaceSelect:hover, #surfaceSelect:focus { border-color: var(--accent); }
-
-    /* Divider */
-    .ctrl-sep {
-      width: 1px; height: 22px;
-      background: var(--border);
-      flex-shrink: 0;
-    }
-
-    /* Toggle button */
-    .ctrl-toggle {
-      display: flex; align-items: center; gap: 6px;
-      padding: 7px 11px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.03);
-      color: var(--muted);
-      font-family: var(--sans);
-      font-size: 11px; font-weight: 500;
-      cursor: pointer; user-select: none;
-      transition: all 0.18s ease;
-    }
-    .ctrl-toggle:hover { border-color: var(--border-hi); color: var(--text); }
-    .ctrl-toggle.on {
-      border-color: rgba(99,102,241,0.5);
-      background: var(--accent-soft);
-      color: var(--accent-text);
-    }
-
-    .tog-pip {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--muted);
-      flex-shrink: 0;
-      transition: background 0.18s, box-shadow 0.18s;
-    }
-    .ctrl-toggle.on .tog-pip {
-      background: var(--accent);
-      box-shadow: 0 0 7px var(--accent);
-    }
-
-    /* Action button */
-    .ctrl-btn {
-      display: flex; align-items: center; gap: 5px;
-      padding: 7px 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.03);
-      color: var(--muted);
-      font-family: var(--sans);
-      font-size: 11px; font-weight: 500;
-      cursor: pointer;
-      transition: all 0.18s ease;
-    }
-    .ctrl-btn:hover {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      color: var(--text);
-    }
-
-    /* ─────────────────────────────────────────
-       LOADING OVERLAY
-    ───────────────────────────────────────── */
-    #loader {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      z-index: 100;
+    /* Layout */
+    .app { display: flex; width: 100%; height: 100%; position: relative; }
+    
+    .experiment-rail {
+      width: var(--rail-width); height: 100%; flex-shrink: 0;
+      background: var(--rail-bg); border-right: 1px solid var(--border);
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 14px;
-      transition: opacity 0.45s ease;
-    }
-    #loader.hidden { opacity: 0; pointer-events: none; }
-
-    .ld-ring {
-      width: 38px; height: 38px;
-      border: 3px solid rgba(99,102,241,0.18);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.75s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .ld-text {
-      font-family: var(--mono);
-      font-size: 11px; color: var(--muted);
+      z-index: 100; transition: transform 0.3s ease;
+      overflow-y: auto;
     }
 
-    /* ─────────────────────────────────────────
-       SCROLLBAR
-    ───────────────────────────────────────── */
-    ::-webkit-scrollbar { display: none; }
+    .rail-collapsed { transform: translateX(calc(-1 * var(--rail-width))); position: absolute; }
+
+    .graph-stage {
+      flex: 1; height: 100%; position: relative;
+      background: #000; overflow: hidden; display: flex;
+    }
+
+    #threeCanvasHost { width: 100%; height: 100%; display: block; position: absolute; top:0; left:0; }
+
+    /* Rail Internals */
+    .rail-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--border); position: relative; }
+    .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
+    .title { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+    .badge { display: inline-block; background: var(--accent-soft); color: #a5b4fc; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    
+    .collapse-btn {
+      position: absolute; right: 16px; top: 24px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text); width: 28px; height: 28px; border-radius: 4px; cursor: pointer;
+    }
+    
+    .restore-btn {
+      position: absolute; left: 16px; top: 16px;
+      background: var(--rail-bg); border: 1px solid var(--border);
+      color: var(--text); padding: 8px 12px; border-radius: 6px; cursor: pointer;
+      z-index: 90; display: none; font-family: var(--sans); font-size: 12px; font-weight: 500;
+    }
+
+    .rail-section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .section-title { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 12px; }
+    
+    select {
+      width: 100%; background: rgba(0,0,0,0.5); color: #fff;
+      border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px;
+      font-family: var(--sans); font-size: 14px; margin-bottom: 12px; outline: none;
+    }
+
+    .info-eq { background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; font-family: var(--mono); font-size: 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; color: #a5b4fc; }
+    .info-insight { font-size: 13px; color: #cbd5e1; margin-bottom: 4px; }
+    .info-challenge { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .info-minima { display: inline-block; padding: 4px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: #34d399; font-size: 11px; border: 1px solid rgba(16, 185, 129, 0.2); }
+
+    .btn-pick {
+      width: 100%; background: transparent; border: 1px solid var(--accent); color: #a5b4fc;
+      padding: 10px; border-radius: 6px; font-family: var(--sans); font-weight: 500; cursor: pointer;
+      margin-bottom: 8px; transition: all 0.2s; font-size: 13px;
+    }
+    .btn-pick:hover, .btn-pick.active { background: var(--accent-soft); }
+    
+    .coord-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .coord-input {
+      flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: #fff;
+      padding: 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; text-align: center;
+      width: 100%; outline: none;
+    }
+    .btn-action {
+      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text);
+      padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: background 0.2s;
+    }
+    .btn-action:hover { background: rgba(255,255,255,0.1); }
+    
+    .start-status { margin-top: 8px; font-family: var(--mono); font-size: 11px; color: #94a3b8; }
+
+    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #cbd5e1; }
+    .legend-color { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+    /* Mode Indicator */
+    .mode-indicator {
+      position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--accent); color: #fff; padding: 8px 16px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      z-index: 60; display: none; pointer-events: none;
+    }
+
+    /* Telemetry */
+    .telemetry-overlay {
+      position: absolute; top: 16px; right: 16px; width: 220px;
+      background: rgba(10, 11, 18, 0.85); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: 8px; padding: 16px; pointer-events: none; z-index: 50;
+    }
+    .tel-header { font-size: 11px; font-weight: 600; color: #fff; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .tel-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-family: var(--mono); font-size: 11px; }
+    .tel-row span:first-child { color: var(--muted); }
+
+    /* Dock */
+    .runtime-dock {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: rgba(10, 11, 18, 0.85); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: 12px; padding: 12px 24px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; z-index: 50;
+    }
+    .btn-run { background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 90px; }
+    .btn-run:hover { background: #e2e4ef; }
+    .btn-dock { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+    .btn-dock:hover { background: rgba(255,255,255,0.2); }
+    .slider-group { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
+    input[type=range] { width: 100px; cursor: pointer; }
+
+    @media (max-width: 1100px) {
+      .experiment-rail { position: absolute; left: 0; top: 0; box-shadow: 5px 0 25px rgba(0,0,0,0.5); }
+      .restore-btn { display: block; }
+      .runtime-dock { bottom: 16px; padding: 8px 16px; gap: 8px; width: 90%; max-width: 400px; }
+    }
   </style>
+  
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
+<body class="app">
 
-<body>
+  <button class="restore-btn" id="btnRestoreRail">☰ Setup</button>
 
-  <!-- ─── Loading Overlay ─── -->
-  <div id="loader">
-    <div class="ld-ring"></div>
-    <div class="ld-text" id="loaderText">Computing surface grid…</div>
-  </div>
-
-  <!-- ─── Full-Screen Plotly Canvas ─── -->
-  <div id="graph"></div>
-
-  <!-- ─── Floating: Title + Equation Panel (top-left) ─── -->
-  <div class="fp" id="titlePanel">
-    <button class="tp-collapse" id="collapseBtn" title="Toggle panel" aria-label="Collapse info panel">▲</button>
-
-    <div class="tp-eyebrow">IDP Visual Lab · v2 · Phase 1A</div>
-    <div class="tp-title">3D Loss Surface Explorer</div>
-    <div class="tp-subtitle">Benchmark Landscapes for Gradient-Based Optimization</div>
-
-    <div id="titleBody">
-      <div class="tp-divider"></div>
-      <div class="tp-surface-name" id="infoName">Quadratic Bowl</div>
-      <div class="tp-equation"    id="infoEq">L(x,y) = x² + y²</div>
-      <div class="tp-desc"        id="infoDesc">
-        A smooth convex surface with one global minimum at the origin.
-        The ideal landscape for gradient descent — no traps, no plateaus.
-      </div>
-      <div class="tp-minima"      id="infoMinima">⬤  Global min: (0, 0) → L = 0</div>
+  <aside class="experiment-rail" id="experimentRail">
+    <div class="rail-header">
+      <div class="eyebrow">IDP VISUAL LAB · V2</div>
+      <div class="title">3D Loss Surface Explorer</div>
+      <div class="badge">PHASE 1B · VANILLA GD</div>
+      <button class="collapse-btn" id="btnCollapseRail">◀</button>
     </div>
-  </div>
 
-  <!-- ─── Floating: Live Status Badge (top-right) ─── -->
-  <div class="fp" id="infoBadge">
-    <div class="ib-live"></div>
-    <span>Surface &nbsp;</span>
-    <span id="badgeSurfaceName">Quadratic Bowl</span>
-  </div>
+    <div class="rail-section">
+      <select id="surfaceSelect">
+        <option value="bowl">Quadratic Bowl</option>
+        <option value="rosenbrock">Rosenbrock Valley</option>
+        <option value="himmelblau">Himmelblau Function</option>
+        <option value="rastrigin">Rastrigin Function</option>
+      </select>
+      <div class="info-eq" id="infoEq">L(x,y) = x² + y²</div>
+      <div class="info-insight" id="infoInsight">A perfect convex landscape.</div>
+      <div class="info-challenge" id="infoChallenge">Demonstrates baseline convergence.</div>
+      <div class="info-minima" id="infoMinima">Global Minimum: (0.0, 0.0) → L=0</div>
+    </div>
 
-  <!-- ─── Floating: Controls Dock (bottom-center) ─── -->
-  <div class="fp" id="controlsDock">
+    <div class="rail-section">
+      <div class="section-title">INITIALIZATION POINT</div>
+      <button id="btnPickStart" class="btn-pick">🎯 Pick Point on Surface</button>
+      <div class="coord-row">
+        <input type="number" id="startXInput" class="coord-input" step="0.1" placeholder="X">
+        <input type="number" id="startYInput" class="coord-input" step="0.1" placeholder="Y">
+      </div>
+      <div class="coord-row">
+        <button id="btnApplyStart" class="btn-action">Apply Coordinates</button>
+        <button id="btnDefaultStart" class="btn-action">Default Start</button>
+      </div>
+      <div class="start-status">Start: (<span id="txtStartX">0.0</span>, <span id="txtStartY">0.0</span>)<br>L = <span id="txtStartZ">0.0</span></div>
+    </div>
 
-    <span class="ctrl-label">Surface</span>
-    <select id="surfaceSelect" aria-label="Select loss surface">
-      <option value="bowl">Quadratic Bowl</option>
-      <option value="rosenbrock">Rosenbrock Valley</option>
-      <option value="himmelblau">Himmelblau Function</option>
-      <option value="rastrigin">Rastrigin Function</option>
-    </select>
+    <div class="rail-section" style="border-bottom: none;">
+      <div class="section-title">LEGEND</div>
+      <div class="legend-item"><span class="legend-color" style="background:var(--red)"></span> Vanilla GD</div>
+      <div class="legend-item"><span class="legend-color" style="background:var(--green)"></span> Known Minimum</div>
+      <div class="legend-item"><span class="legend-color" style="border: 2px solid white; background: transparent"></span> Selected Start</div>
+    </div>
+  </aside>
 
-    <div class="ctrl-sep"></div>
+  <main class="graph-stage" id="graphStage">
+    <div id="threeCanvasHost"></div>
+    
+    <div id="modeIndicator" class="mode-indicator">PICK MODE ACTIVE — Click a surface point</div>
 
-    <button class="ctrl-toggle" id="btnMinima" aria-pressed="false" onclick="handleToggleMinima()">
-      <div class="tog-pip"></div>
-      Show Minima
-    </button>
+    <div class="telemetry-overlay">
+      <div class="tel-header">Vanilla GD</div>
+      <div class="tel-row"><span>Status</span><span id="telStatus" style="color:var(--accent-text)">Ready</span></div>
+      <div class="tel-row"><span>Iteration</span><span id="telIter">0</span></div>
+      <div class="tel-row"><span>x</span><span id="telX">0.0000</span></div>
+      <div class="tel-row"><span>y</span><span id="telY">0.0000</span></div>
+      <div class="tel-row"><span>L(x,y)</span><span id="telLoss">0.0000</span></div>
+      <div class="tel-row"><span>|∇L|</span><span id="telGrad">0.0000</span></div>
+      <div class="tel-row"><span>η</span><span id="telLR">0.01</span></div>
+    </div>
 
-    <button class="ctrl-toggle" id="btnContour" aria-pressed="false" onclick="handleToggleContour()">
-      <div class="tog-pip"></div>
-      Contour Projection
-    </button>
+    <div class="runtime-dock">
+      <button id="btnRun" class="btn-run">▶ Run</button>
+      <button id="btnReset" class="btn-dock">↺ Reset</button>
+      <div class="slider-group">
+        <label>η (LR): <span id="lrVal">0.01</span></label>
+        <input type="range" id="lrSlider" min="-4" max="0" step="0.1" value="-2">
+      </div>
+      <div class="slider-group">
+        <label>Speed: <span id="speedVal">10</span></label>
+        <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
+      </div>
+      <button id="btnResetCam" class="btn-dock" title="Reset Camera">📷 Camera</button>
+    </div>
+  </main>
 
-    <div class="ctrl-sep"></div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    <button class="ctrl-btn" onclick="handleResetCamera()" title="Reset 3D camera to default position">
-      ↺&nbsp; Reset Camera
-    </button>
-
-    <button class="ctrl-btn" id="fsBtn" onclick="handleFullscreen()" title="Toggle fullscreen">
-      ⛶&nbsp; Fullscreen
-    </button>
-
-  </div>
-
-  <script>
-    'use strict';
-
-    // ════════════════════════════════════════════════════════════
-    // 1.  SURFACE DEFINITIONS
-    // ════════════════════════════════════════════════════════════
-
+    // ==========================================
+    // 1. MATHEMATICAL SURFACES & WORLD MAPPING
+    // ==========================================
     const SURFACES = {
-
       bowl: {
-        id: 'bowl',
-        name: 'Quadratic Bowl',
+        id: 'bowl', name: 'Quadratic Bowl',
         equation: 'L(x,y) = x² + y²',
-        description: 'A smooth strictly-convex surface with a single global minimum at the origin. Gradient descent converges reliably here from any starting point — no saddle points, no local traps. The ideal baseline benchmark.',
-        f: (x, y) => x * x + y * y,
+        insight: 'A perfect convex landscape.',
+        challenge: 'Demonstrates baseline convergence.',
+        minimaText: 'Global Minimum: (0.0, 0.0) → L=0',
         domain: { xmin: -4, xmax: 4, ymin: -4, ymax: 4 },
-        gridResolution: 70,
-        displayZMax: null,
-        minima: [
-          { x: 0, y: 0, z: 0, label: '(0, 0)' }
-        ],
-        minimaText: '⬤  Global minimum: (0, 0)  →  L = 0',
-        colorscale: 'Viridis',
-        defaultCamera: { eye: { x: 1.15, y: -1.35, z: 0.8 }, up: { x: 0, y: 0, z: 1 } },
-        aspectratio: { x: 1, y: 1, z: 0.65 }
+        maxDisplayHeight: 5, lossClip: 32, // At 4^2 + 4^2 = 32
+        defaultLR: 0.1, startPoint: { x: -3.2, y: 3.0 },
+        minima: [{x: 0, y: 0, z: 0}],
+        f: (x, y) => x*x + y*y,
+        grad: (x, y) => ({ gx: 2*x, gy: 2*y }),
+        camPos: new THREE.Vector3(8, 6, 8),
+        camTarget: new THREE.Vector3(0, 1.5, 0)
       },
-
       rosenbrock: {
-        id: 'rosenbrock',
-        name: 'Rosenbrock Valley',
-        equation: 'L(x,y) = (1−x)² + 100(y−x²)²',
-        description: 'A narrow, curved banana-shaped valley. The global minimum is easy to locate analytically but extremely difficult to reach numerically — the valley floor curves sharply and most gradient-only methods oscillate or stall without adaptive momentum.',
-        f: (x, y) => Math.pow(1 - x, 2) + 100 * Math.pow(y - x * x, 2),
+        id: 'rosenbrock', name: 'Rosenbrock Valley',
+        equation: 'L(x,y) = (1-x)² + 100(y-x²)²',
+        insight: 'A narrow, curved, shallow valley.',
+        challenge: 'Hard to navigate the flat valley floor.',
+        minimaText: 'Global Minimum: (1.0, 1.0) → L=0',
         domain: { xmin: -2, xmax: 2, ymin: -1, ymax: 3 },
-        gridResolution: 70,
-        displayZMax: 600,          // Clipped lower to strongly reveal the curved valley floor
-        minima: [
-          { x: 1, y: 1, z: 0, label: '(1, 1)' }
-        ],
-        minimaText: '⬤  Global minimum: (1, 1)  →  L = 0',
-        colorscale: 'Plasma',
-        defaultCamera: { eye: { x: 1.25, y: -1.45, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
-        aspectratio: { x: 1, y: 1, z: 0.65 }
+        maxDisplayHeight: 5, lossClip: 200, 
+        defaultLR: 0.001, startPoint: { x: -1.5, y: 2.0 },
+        minima: [{x: 1, y: 1, z: 0}],
+        f: (x, y) => Math.pow(1 - x, 2) + 100 * Math.pow(y - x*x, 2),
+        grad: (x, y) => ({
+          gx: -2*(1 - x) - 400*x*(y - x*x),
+          gy: 200*(y - x*x)
+        }),
+        camPos: new THREE.Vector3(6, 4, 6),
+        camTarget: new THREE.Vector3(0, 1, 0)
       },
-
       himmelblau: {
-        id: 'himmelblau',
-        name: 'Himmelblau Function',
-        equation: 'L(x,y) = (x²+y−11)² + (x+y²−7)²',
-        description: 'A multimodal surface with four equivalent global minima. Gradient descent will converge to whichever basin the starting point is nearest to — a vivid illustration of how initialisation determines the outcome on non-convex landscapes.',
-        f: (x, y) => Math.pow(x * x + y - 11, 2) + Math.pow(x + y * y - 7, 2),
+        id: 'himmelblau', name: 'Himmelblau Function',
+        equation: 'L(x,y) = (x²+y-11)² + (x+y²-7)²',
+        insight: 'Multi-modal with four identical global minima.',
+        challenge: 'Initialization determines final minimum.',
+        minimaText: '4 Global Minima → L=0',
         domain: { xmin: -5, xmax: 5, ymin: -5, ymax: 5 },
-        gridResolution: 72,
-        displayZMax: 400,          // Clipped lower to expose the four basins clearly
+        maxDisplayHeight: 5, lossClip: 200,
+        defaultLR: 0.01, startPoint: { x: 0, y: 0 },
         minima: [
-          { x:  3.000000, y:  2.000000, z: 0, label: '(3.00, 2.00)' },
-          { x: -2.805118, y:  3.131312, z: 0, label: '(−2.81, 3.13)' },
-          { x: -3.779310, y: -3.283186, z: 0, label: '(−3.78, −3.28)' },
-          { x:  3.584428, y: -1.848126, z: 0, label: '(3.58, −1.85)' }
+          {x: 3.0, y: 2.0, z: 0},
+          {x: -2.805118, y: 3.131312, z: 0},
+          {x: -3.779310, y: -3.283186, z: 0},
+          {x: 3.584428, y: -1.848126, z: 0}
         ],
-        minimaText: '⬤  4 equivalent global minima  →  L = 0 at each',
-        colorscale: 'Hot',
-        defaultCamera: { eye: { x: 1.1, y: -1.4, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
-        aspectratio: { x: 1, y: 1, z: 0.65 }
+        f: (x, y) => Math.pow(x*x + y - 11, 2) + Math.pow(x + y*y - 7, 2),
+        grad: (x, y) => ({
+          gx: 4*x*(x*x + y - 11) + 2*(x + y*y - 7),
+          gy: 2*(x*x + y - 11) + 4*y*(x + y*y - 7)
+        }),
+        camPos: new THREE.Vector3(8, 6, 8),
+        camTarget: new THREE.Vector3(0, 1.5, 0)
       },
-
       rastrigin: {
-        id: 'rastrigin',
-        name: 'Rastrigin Function',
-        equation: 'L(x,y) = 20 + x²−10cos(2πx) + y²−10cos(2πy)',
-        description: 'A highly rugged landscape with hundreds of local minima embedded inside a global parabolic bowl. One of the hardest standard benchmarks — optimisers almost always get trapped in a nearby local basin far from the true global minimum at the origin.',
-        f: (x, y) => 20 + x * x - 10 * Math.cos(2 * Math.PI * x)
-                        + y * y - 10 * Math.cos(2 * Math.PI * y),
+        id: 'rastrigin', name: 'Rastrigin Function',
+        equation: 'L(x,y) = 20 + x² - 10cos(2πx) + y² - 10cos(2πy)',
+        insight: 'Highly multimodal with deep local traps.',
+        challenge: 'Vanilla GD gets stuck easily.',
+        minimaText: 'Global Minimum: (0.0, 0.0) → L=0',
         domain: { xmin: -5.12, xmax: 5.12, ymin: -5.12, ymax: 5.12 },
-        gridResolution: 80,
-        displayZMax: null,
-        minima: [
-          { x: 0, y: 0, z: 0, label: '(0, 0)' }
-        ],
-        minimaText: '⬤  Global minimum: (0, 0)  →  L = 0  (surrounded by many local minima)',
-        colorscale: 'Turbo',
-        defaultCamera: { eye: { x: 1.15, y: -1.35, z: 0.9 }, up: { x: 0, y: 0, z: 1 } },
-        aspectratio: { x: 1, y: 1, z: 0.55 }
+        maxDisplayHeight: 5, lossClip: 80,
+        defaultLR: 0.005, startPoint: { x: -4.5, y: -4.5 },
+        minima: [{x: 0, y: 0, z: 0}],
+        f: (x, y) => 20 + x*x - 10*Math.cos(2*Math.PI*x) + y*y - 10*Math.cos(2*Math.PI*y),
+        grad: (x, y) => ({
+          gx: 2*x + 20*Math.PI*Math.sin(2*Math.PI*x),
+          gy: 2*y + 20*Math.PI*Math.sin(2*Math.PI*y)
+        }),
+        camPos: new THREE.Vector3(9, 6, 9),
+        camTarget: new THREE.Vector3(0, 1.5, 0)
       }
     };
-
-    // ════════════════════════════════════════════════════════════
-    // 2.  APPLICATION STATE
-    // ════════════════════════════════════════════════════════════
 
     let activeSurface = 'bowl';
-    let showMinima    = false;
-    let showContour   = false;
-    let gridCache     = {};          // cached { xs, ys, zDisp, hoverText } per surface key
-    let plotInitialized = false;
+    let currentStart = { ...SURFACES.bowl.startPoint };
+    
+    // Core Coordinate Mapping Functions
+    // ---------------------------------
+    // World X corresponds to mathematical x.
+    // World Z corresponds to mathematical y.
+    // World Y corresponds to readable display height.
 
-    // ════════════════════════════════════════════════════════════
-    // 3.  GRID GENERATION
-    // ════════════════════════════════════════════════════════════
-
-    function linspace(a, b, n) {
-      const arr = new Array(n);
-      for (let i = 0; i < n; i++) arr[i] = a + (b - a) * (i / (n - 1));
-      return arr;
+    function trueLoss(s, x, y) {
+      return s.f(x, y);
     }
 
-    function buildGrid(key) {
-      const s   = SURFACES[key];
-      const N   = s.gridResolution;
-      const xs  = linspace(s.domain.xmin, s.domain.xmax, N);
-      const ys  = linspace(s.domain.ymin, s.domain.ymax, N);
-
-      const zDisp     = [];
-      const hoverText = [];
-
-      for (let j = 0; j < N; j++) {
-        const zRow  = new Array(N);
-        const htRow = new Array(N);
-
-        for (let i = 0; i < N; i++) {
-          const trueVal    = s.f(xs[i], ys[j]);
-          const dispVal    = (s.displayZMax !== null && trueVal > s.displayZMax)
-                              ? s.displayZMax : trueVal;
-
-          zRow[i]  = dispVal;
-
-          // Hover always shows TRUE value — even when display is clipped
-          htRow[i] = `<b>x</b>: ${xs[i].toFixed(4)}<br>`
-                   + `<b>y</b>: ${ys[j].toFixed(4)}<br>`
-                   + `<b>L(x,y)</b>: ${trueVal.toFixed(6)}`
-                   + (s.displayZMax !== null && trueVal > s.displayZMax
-                       ? `<br><i>(display clipped to ${s.displayZMax})</i>` : '');
-        }
-
-        zDisp.push(zRow);
-        hoverText.push(htRow);
-      }
-
-      return { xs, ys, zDisp, hoverText };
+    function getDisplayHeight(s, tl) {
+      // Normalize raw loss into an aesthetically pleasing height (maxDisplayHeight)
+      const clampedLoss = Math.min(Math.max(tl, 0), s.lossClip);
+      return (clampedLoss / s.lossClip) * s.maxDisplayHeight;
     }
 
-    // ════════════════════════════════════════════════════════════
-    // 4.  TRACE BUILDERS
-    // ════════════════════════════════════════════════════════════
-
-    function makeSurfaceTrace(key, grid) {
-      const s = SURFACES[key];
-
-      const trace = {
-        type:        'surface',
-        x:           grid.xs,
-        y:           grid.ys,
-        z:           grid.zDisp,
-        colorscale:  s.colorscale,
-        opacity:     0.93,
-        hoverinfo:   'text',
-        text:        grid.hoverText,
-        showscale:   true,
-        colorbar: {
-          thickness: 11,
-          len:       0.58,
-          x:         1.01,
-          tickfont:  { color: '#555e78', size: 8.5, family: 'JetBrains Mono' },
-          title: {
-            text:  'L(x,y)',
-            side:  'right',
-            font:  { color: '#7a85a0', size: 9.5 }
-          },
-          bgcolor:     'rgba(0,0,0,0)',
-          bordercolor: 'rgba(255,255,255,0.05)',
-          borderwidth: 1,
-        },
-        lighting: {
-          ambient:   0.72,
-          diffuse:   0.88,
-          roughness: 0.55,
-          specular:  0.25,
-          fresnel:   0.18,
-        },
-        lightposition: { x: 100, y: 200, z: 500 },
-      };
-
-      // Contour projection onto the z-floor
-      if (showContour) {
-        trace.contours = {
-          z: {
-            show:         true,
-            usecolormap:  true,
-            project:      { z: true },
-            highlightcolor: 'rgba(255,255,255,0.6)',
-            width: 1.5,
-          },
-          x: { show: false },
-          y: { show: false },
-        };
-      }
-
-      return trace;
+    function mathToWorld(s, x, y) {
+      const tl = trueLoss(s, x, y);
+      const h = getDisplayHeight(s, tl);
+      return new THREE.Vector3(x, h, y); // x -> X, h -> Y, y -> Z
     }
 
-    function makeMinimaTrace(key) {
-      const s = SURFACES[key];
-      if (!s.minima || s.minima.length === 0) return null;
-
-      // Lift markers slightly above the surface so they are always visible
-      const lift = (s.domain.xmax - s.domain.xmin) * 0.015;
-
-      return {
-        type:  'scatter3d',
-        x:     s.minima.map(m => m.x),
-        y:     s.minima.map(m => m.y),
-        z:     s.minima.map(m => m.z + lift),
-        mode:  'markers+text',
-        marker: {
-          size:    11,
-          color:   '#00ff9d',
-          symbol:  'circle',
-          line:    { color: '#ffffff', width: 2.5 },
-          opacity: 1,
-        },
-        text:         s.minima.map(m => m.label),
-        textposition: 'top center',
-        textfont:     { color: '#6ee7b7', size: 9, family: 'JetBrains Mono' },
-        hoverinfo:    'text',
-        hovertext:    s.minima.map(m => `<b>Minimum</b><br>${m.label}<br>L = 0`),
-        showlegend:   false,
-      };
+    function worldToMath(s, worldPoint) {
+      return { x: worldPoint.x, y: worldPoint.z };
     }
 
-    function buildTraces(key, grid) {
-      const traces = [ makeSurfaceTrace(key, grid) ];
-      if (showMinima) {
-        const mt = makeMinimaTrace(key);
-        if (mt) traces.push(mt);
-      }
-      return traces;
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // 5.  PLOTLY LAYOUT
-    // ════════════════════════════════════════════════════════════
-
-    function buildLayout(key) {
-      const s   = SURFACES[key];
-      const axisCommon = {
-        gridcolor:        '#1c1f30',
-        zerolinecolor:    '#2e3250',
-        zeroline:         true,
-        tickfont:         { color: '#4a5278', size: 8.5, family: 'JetBrains Mono' },
-        showbackground:   true,
-        backgroundcolor:  '#0b0c17',
-      };
-
-      return {
-        paper_bgcolor: '#09090f',
-        plot_bgcolor:  '#09090f',
-        margin:        { l: 0, r: 0, t: 0, b: 0 },
-
-        // uirevision = surface id:
-        //   → same surface (toggle): Plotly preserves camera & zoom
-        //   → new surface: uirevision changes, Plotly resets camera
-        uirevision: key,
-
-        scene: {
-          bgcolor: '#09090f',
-          camera:  s.defaultCamera,
-          aspectmode: 'manual',
-          aspectratio: s.aspectratio || { x: 1, y: 1, z: 0.7 },
-
-          xaxis: {
-            ...axisCommon,
-            title: { text: 'x  (Parameter x)', font: { color: '#6b7592', size: 10 } },
-          },
-          yaxis: {
-            ...axisCommon,
-            title: { text: 'y  (Parameter y)', font: { color: '#6b7592', size: 10 } },
-          },
-          zaxis: {
-            ...axisCommon,
-            title: { text: 'L(x, y)  — Loss', font: { color: '#6b7592', size: 10 } },
-          },
-        },
-
-        hoverlabel: {
-          bgcolor:     '#0f1121',
-          bordercolor: '#2e3260',
-          font:        { color: '#c8cde8', size: 11, family: 'JetBrains Mono' },
-          align:       'left',
-        },
-
-        showlegend: false,
-      };
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // 6.  PLOTLY CONFIG
-    // ════════════════════════════════════════════════════════════
-
-    const PLOTLY_CONFIG = {
-      responsive:    true,
-      displaylogo:   false,
-      displayModeBar: true,
-      modeBarButtonsToRemove: ['sendDataToCloud', 'toImage'],
-      scrollZoom:    true,
-      toImageButtonOptions: { format: 'png', filename: 'idp_surface' },
+    // ==========================================
+    // 2. OPTIMIZER STATE
+    // ==========================================
+    const opt = {
+      running: false, status: 'Ready',
+      x: 0, y: 0, z: 0, gradMag: 0, iter: 0,
+      lr: 0.01, speed: 10,
+      path: [], maxPath: 2500
     };
 
-    // ════════════════════════════════════════════════════════════
-    // 7.  RENDER ENGINE
-    // ════════════════════════════════════════════════════════════
+    // ==========================================
+    // 3. THREE.JS SETUP
+    // ==========================================
+    const container = document.getElementById('threeCanvasHost');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#000000');
+    
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
 
-    const graphEl = document.getElementById('graph');
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
 
-    async function renderSurface(key) {
-      setLoading(true, `Computing ${SURFACES[key].name}…`);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
+    scene.add(dirLight);
 
-      // Build grid asynchronously so the loader paint has time to appear
-      await nextFrame();
+    let surfaceMesh = null;
+    let pathLine = null;
+    let pathLineUnderlay = null;
+    let markerMesh = null;
+    let startMarkerMesh = null;
+    const minimaMeshes = [];
 
-      if (!gridCache[key]) {
-        gridCache[key] = buildGrid(key);
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let isPickingStart = false;
+    let pointerDownCoord = { x: 0, y: 0 };
+
+    // Cool colormap (YlGnBu-ish)
+    function getColorMap(t) {
+      const c = new THREE.Color();
+      c.setHSL(0.6 - t * 0.45, 0.8, 0.3 + t * 0.4);
+      return c;
+    }
+
+    function buildSurfaceMesh(sKey) {
+      if (surfaceMesh) scene.remove(surfaceMesh);
+      const s = SURFACES[sKey];
+      
+      const res = 100;
+      const geometry = new THREE.PlaneGeometry(s.domain.xmax - s.domain.xmin, s.domain.ymax - s.domain.ymin, res, res);
+      geometry.rotateX(-Math.PI / 2); // default face up towards Y
+
+      const pos = geometry.attributes.position;
+      const colors = [];
+      
+      let minH = Infinity, maxH = -Infinity;
+      const heights = [];
+      
+      for (let i = 0; i < pos.count; i++) {
+        // Plane geometry is generated centered at (0,0) in XZ.
+        // We shift it to match domain center.
+        const mathX = pos.getX(i) + (s.domain.xmax + s.domain.xmin)/2;
+        const mathY = pos.getZ(i) + (s.domain.ymax + s.domain.ymin)/2;
+        
+        const wPos = mathToWorld(s, mathX, mathY);
+        pos.setX(i, wPos.x);
+        pos.setY(i, wPos.y);
+        pos.setZ(i, wPos.z);
+        
+        heights.push(wPos.y);
+        if (wPos.y < minH) minH = wPos.y;
+        if (wPos.y > maxH) maxH = wPos.y;
       }
+      
+      geometry.computeVertexNormals();
 
-      const grid   = gridCache[key];
-      const traces = buildTraces(key, grid);
-      const layout = buildLayout(key);
-
-      if (!plotInitialized) {
-        await Plotly.newPlot(graphEl, traces, layout, PLOTLY_CONFIG);
-        plotInitialized = true;
-      } else {
-        await Plotly.react(graphEl, traces, layout, PLOTLY_CONFIG);
+      for (let i = 0; i < pos.count; i++) {
+        const t = (heights[i] - minH) / (maxH - minH + 1e-6);
+        const col = getColorMap(t);
+        colors.push(col.r, col.g, col.b);
       }
+      
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      
+      const material = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        roughness: 0.7,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.95
+      });
+      
+      surfaceMesh = new THREE.Mesh(geometry, material);
+      scene.add(surfaceMesh);
 
-      updateInfoPanel(key);
-      setLoading(false);
+      const wireMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 });
+      const wireGeom = new THREE.WireframeGeometry(geometry);
+      const wireMesh = new THREE.LineSegments(wireGeom, wireMat);
+      surfaceMesh.add(wireMesh);
     }
 
-    // Redraw only traces — preserves camera because uirevision unchanged
-    async function redrawTraces() {
-      if (!plotInitialized || !gridCache[activeSurface]) return;
-      const traces = buildTraces(activeSurface, gridCache[activeSurface]);
-      // Pass graphEl.layout so Plotly keeps current camera / scene state
-      await Plotly.react(graphEl, traces, graphEl.layout, PLOTLY_CONFIG);
-    }
+    function initMarkers(sKey) {
+      const s = SURFACES[sKey];
+      
+      if (markerMesh) scene.remove(markerMesh);
+      if (startMarkerMesh) scene.remove(startMarkerMesh);
+      minimaMeshes.forEach(m => scene.remove(m));
+      minimaMeshes.length = 0;
 
-    // ════════════════════════════════════════════════════════════
-    // 8.  UI HELPERS
-    // ════════════════════════════════════════════════════════════
+      // Current marker
+      const geomMarker = new THREE.SphereGeometry(0.15, 16, 16);
+      const matMarker = new THREE.MeshBasicMaterial({ color: 0xf04747 });
+      markerMesh = new THREE.Mesh(geomMarker, matMarker);
+      scene.add(markerMesh);
 
-    function updateInfoPanel(key) {
-      const s = SURFACES[key];
-      document.getElementById('infoName').textContent    = s.name;
-      document.getElementById('infoEq').textContent      = s.equation;
-      document.getElementById('infoDesc').textContent    = s.description;
-      document.getElementById('infoMinima').textContent  = s.minimaText;
-      document.getElementById('badgeSurfaceName').textContent = s.name;
-    }
+      // Start marker
+      const geomStart = new THREE.OctahedronGeometry(0.18);
+      const matStart = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+      startMarkerMesh = new THREE.Mesh(geomStart, matStart);
+      scene.add(startMarkerMesh);
 
-    function setLoading(visible, msg) {
-      const el  = document.getElementById('loader');
-      const txt = document.getElementById('loaderText');
-      if (msg) txt.textContent = msg;
-      el.classList.toggle('hidden', !visible);
-    }
-
-    function nextFrame() {
-      return new Promise(r => requestAnimationFrame(() => setTimeout(r, 20)));
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // 9.  CONTROL HANDLERS
-    // ════════════════════════════════════════════════════════════
-
-    // Surface dropdown
-    document.getElementById('surfaceSelect').addEventListener('change', function () {
-      activeSurface = this.value;
-      renderSurface(activeSurface);
-    });
-
-    // Show Minima toggle
-    function handleToggleMinima() {
-      showMinima = !showMinima;
-      const btn = document.getElementById('btnMinima');
-      btn.classList.toggle('on', showMinima);
-      btn.setAttribute('aria-pressed', showMinima);
-      redrawTraces();
-    }
-
-    // Contour Projection toggle
-    function handleToggleContour() {
-      showContour = !showContour;
-      const btn = document.getElementById('btnContour');
-      btn.classList.toggle('on', showContour);
-      btn.setAttribute('aria-pressed', showContour);
-      redrawTraces();
-    }
-
-    // Reset Camera — relayout only the scene.camera key
-    function handleResetCamera() {
-      if (!plotInitialized) return;
-      const cam = SURFACES[activeSurface].defaultCamera;
-      Plotly.relayout(graphEl, { 'scene.camera': cam });
-    }
-
-    // Fullscreen
-    function handleFullscreen() {
-      const btn = document.getElementById('fsBtn');
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
-        btn.textContent = '✕  Exit Fullscreen';
-      } else {
-        document.exitFullscreen && document.exitFullscreen();
-        btn.textContent = '⛶  Fullscreen';
+      // Minima
+      const geomMin = new THREE.SphereGeometry(0.12, 16, 16);
+      const matMin = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+      for (const m of s.minima) {
+        const mesh = new THREE.Mesh(geomMin, matMin);
+        const wPos = mathToWorld(s, m.x, m.y);
+        mesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
+        scene.add(mesh);
+        minimaMeshes.push(mesh);
       }
     }
 
-    // Title panel collapse
-    let panelOpen = true;
-    document.getElementById('collapseBtn').addEventListener('click', () => {
-      panelOpen = !panelOpen;
-      document.getElementById('titleBody').classList.toggle('collapsed', !panelOpen);
-      document.getElementById('collapseBtn').textContent = panelOpen ? '▲' : '▼';
-    });
+    function initPathTrace() {
+      if (pathLine) scene.remove(pathLine);
+      if (pathLineUnderlay) scene.remove(pathLineUnderlay);
 
-    // ════════════════════════════════════════════════════════════
-    // 10.  RESPONSIVE RESIZE
-    // ════════════════════════════════════════════════════════════
+      const maxPoints = opt.maxPath;
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(maxPoints * 3);
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setDrawRange(0, 0);
 
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        if (plotInitialized) {
-          Plotly.relayout(graphEl, {
-            width:  window.innerWidth,
-            height: window.innerHeight,
-          });
+      const matUnder = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, linewidth: 3 });
+      pathLineUnderlay = new THREE.Line(geometry, matUnder);
+      scene.add(pathLineUnderlay);
+
+      const geometry2 = geometry.clone();
+      const matCore = new THREE.LineBasicMaterial({ color: 0xf04747, linewidth: 2 });
+      pathLine = new THREE.Line(geometry2, matCore);
+      scene.add(pathLine);
+    }
+
+    function resetCamera(sKey) {
+      const s = SURFACES[sKey];
+      camera.position.copy(s.camPos);
+      controls.target.copy(s.camTarget);
+      controls.update();
+    }
+
+    function loadSurface(sKey) {
+      const s = SURFACES[sKey];
+      activeSurface = sKey;
+      currentStart = { ...s.startPoint };
+      
+      document.getElementById('infoEq').textContent = s.equation;
+      document.getElementById('infoInsight').textContent = s.insight;
+      document.getElementById('infoChallenge').textContent = s.challenge;
+      document.getElementById('infoMinima').textContent = s.minimaText;
+
+      buildSurfaceMesh(sKey);
+      initMarkers(sKey);
+      initPathTrace();
+      resetCamera(sKey);
+      resetOptimizer();
+    }
+
+    // ==========================================
+    // 4. OPTIMIZER LOGIC
+    // ==========================================
+    function checkConvergence(s) {
+      if (s.id === 'bowl' || s.id === 'rosenbrock') {
+        const m = s.minima[0];
+        const dist = Math.sqrt(Math.pow(opt.x - m.x, 2) + Math.pow(opt.y - m.y, 2));
+        if (dist < 0.015 || (opt.gradMag < 0.001 && dist < 0.1)) return 'Global Minimum Reached';
+      } else if (s.id === 'himmelblau') {
+        for (let m of s.minima) {
+          const dist = Math.sqrt(Math.pow(opt.x - m.x, 2) + Math.pow(opt.y - m.y, 2));
+          if (dist < 0.02) return 'Valid Minimum Reached';
         }
-      }, 120);
+      } else if (s.id === 'rastrigin') {
+        const m = s.minima[0]; // (0,0)
+        const dist = Math.sqrt(Math.pow(opt.x - m.x, 2) + Math.pow(opt.y - m.y, 2));
+        if (dist < 0.02) return 'Global Minimum Reached';
+        if (opt.gradMag < 0.01 && dist >= 0.02) return 'Local Minimum Trap Detected';
+      }
+      return null;
+    }
+
+    function resetOptimizer() {
+      const s = SURFACES[activeSurface];
+      opt.running = false;
+      opt.status = 'Ready';
+      opt.iter = 0;
+      opt.x = currentStart.x;
+      opt.y = currentStart.y;
+      opt.z = trueLoss(s, opt.x, opt.y);
+      
+      const { gx, gy } = s.grad(opt.x, opt.y);
+      opt.gradMag = Math.sqrt(gx*gx + gy*gy);
+      
+      opt.path = [{ x: opt.x, y: opt.y, z: opt.z }];
+      
+      opt.lr = s.defaultLR;
+      document.getElementById('lrSlider').value = Math.log10(opt.lr);
+      document.getElementById('lrVal').textContent = opt.lr.toPrecision(2);
+      
+      document.getElementById('btnRun').innerHTML = '▶ Run';
+      
+      // UI
+      document.getElementById('startXInput').value = opt.x.toFixed(2);
+      document.getElementById('startYInput').value = opt.y.toFixed(2);
+      document.getElementById('txtStartX').textContent = opt.x.toFixed(2);
+      document.getElementById('txtStartY').textContent = opt.y.toFixed(2);
+      document.getElementById('txtStartZ').textContent = opt.z.toFixed(2);
+      
+      // Markers
+      const wPos = mathToWorld(s, opt.x, opt.y);
+      markerMesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
+      markerMesh.material.color.setHex(0xf04747);
+      
+      startMarkerMesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
+      
+      // Path
+      const positions = pathLine.geometry.attributes.position.array;
+      positions[0] = wPos.x; positions[1] = wPos.y + 0.1; positions[2] = wPos.z;
+      pathLine.geometry.setDrawRange(0, 1);
+      pathLine.geometry.attributes.position.needsUpdate = true;
+      
+      const positions2 = pathLineUnderlay.geometry.attributes.position.array;
+      positions2[0] = wPos.x; positions2[1] = wPos.y + 0.1; positions2[2] = wPos.z;
+      pathLineUnderlay.geometry.setDrawRange(0, 1);
+      pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
+
+      updateTelemetry();
+    }
+
+    function stepOptimizer() {
+      const s = SURFACES[activeSurface];
+      for (let step = 0; step < opt.speed; step++) {
+        if (!opt.running) break;
+        
+        const { gx, gy } = s.grad(opt.x, opt.y);
+        opt.gradMag = Math.sqrt(gx*gx + gy*gy);
+        
+        const nextX = opt.x - opt.lr * gx;
+        const nextY = opt.y - opt.lr * gy;
+        
+        if (!isFinite(nextX) || !isFinite(nextY)) {
+          opt.status = 'Numerical Instability';
+          opt.running = false; break;
+        }
+        if (nextX < s.domain.xmin || nextX > s.domain.xmax || nextY < s.domain.ymin || nextY > s.domain.ymax) {
+          opt.status = 'Boundary Reached';
+          opt.running = false; break;
+        }
+        const nextZ = trueLoss(s, nextX, nextY);
+        if (!isFinite(nextZ)) {
+          opt.status = 'Numerical Instability';
+          opt.running = false; break;
+        }
+        
+        opt.x = nextX; opt.y = nextY; opt.z = nextZ;
+        opt.iter++;
+        
+        opt.path.push({ x: opt.x, y: opt.y, z: opt.z });
+        if (opt.path.length > opt.maxPath) opt.path.shift();
+        
+        let reached = checkConvergence(s);
+        if (reached) {
+          opt.status = reached;
+          opt.running = false; break;
+        }
+      }
+    }
+
+    function updateVisuals() {
+      const s = SURFACES[activeSurface];
+      const wPos = mathToWorld(s, opt.x, opt.y);
+      markerMesh.position.set(wPos.x, wPos.y + 0.15, wPos.z);
+      
+      if (opt.status.includes('Reached')) markerMesh.material.color.setHex(0x10b981);
+      else if (opt.status.includes('Instability') || opt.status.includes('Trap') || opt.status.includes('Boundary')) markerMesh.material.color.setHex(0xeab308);
+      else markerMesh.material.color.setHex(0xf04747);
+
+      const positions = pathLine.geometry.attributes.position.array;
+      const positions2 = pathLineUnderlay.geometry.attributes.position.array;
+      const count = opt.path.length;
+      for (let i=0; i<count; i++) {
+        const pt = opt.path[i];
+        const pw = mathToWorld(s, pt.x, pt.y);
+        positions[i*3] = pw.x; positions[i*3+1] = pw.y + 0.05; positions[i*3+2] = pw.z;
+        positions2[i*3] = pw.x; positions2[i*3+1] = pw.y + 0.05; positions2[i*3+2] = pw.z;
+      }
+      pathLine.geometry.setDrawRange(0, count);
+      pathLine.geometry.attributes.position.needsUpdate = true;
+      pathLineUnderlay.geometry.setDrawRange(0, count);
+      pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
+      
+      updateTelemetry();
+    }
+
+    function updateTelemetry() {
+      document.getElementById('telStatus').textContent = opt.status;
+      document.getElementById('telIter').textContent = opt.iter;
+      document.getElementById('telX').textContent = opt.x.toFixed(4);
+      document.getElementById('telY').textContent = opt.y.toFixed(4);
+      document.getElementById('telLoss').textContent = opt.z.toFixed(4);
+      document.getElementById('telGrad').textContent = opt.gradMag.toFixed(4);
+      
+      const stEl = document.getElementById('telStatus');
+      if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || opt.status.includes('Trap')) {
+        stEl.style.color = '#ef4444';
+      } else if (opt.status.includes('Reached')) {
+        stEl.style.color = '#10b981';
+      } else {
+        stEl.style.color = 'var(--accent-text)';
+      }
+    }
+
+    // ==========================================
+    // 5. ANIMATION LOOP
+    // ==========================================
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      if (opt.running) {
+        stepOptimizer();
+        updateVisuals();
+      }
+      
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // ==========================================
+    // 6. UI EVENT LISTENERS
+    // ==========================================
+    
+    window.addEventListener('resize', () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
     });
 
-    // ════════════════════════════════════════════════════════════
-    // 11.  INIT
-    // ════════════════════════════════════════════════════════════
+    document.getElementById('surfaceSelect').addEventListener('change', (e) => {
+      loadSurface(e.target.value);
+    });
 
-    renderSurface('bowl');
+    document.getElementById('btnRun').addEventListener('click', () => {
+      opt.running = !opt.running;
+      document.getElementById('btnRun').innerHTML = opt.running ? '⏸ Pause' : '▶ Run';
+      if (opt.running && opt.status !== 'Ready' && opt.status !== 'Running' && opt.status !== 'Paused') {
+        resetOptimizer();
+        opt.running = true;
+        document.getElementById('btnRun').innerHTML = '⏸ Pause';
+      }
+      if(opt.running) opt.status = 'Running';
+      else opt.status = 'Paused';
+      updateTelemetry();
+    });
 
+    document.getElementById('btnReset').addEventListener('click', resetOptimizer);
+    document.getElementById('btnResetCam').addEventListener('click', () => {
+      resetCamera(activeSurface);
+    });
+
+    document.getElementById('lrSlider').addEventListener('input', (e) => {
+      opt.lr = Math.pow(10, parseFloat(e.target.value));
+      document.getElementById('lrVal').textContent = opt.lr.toPrecision(2);
+      document.getElementById('telLR').textContent = opt.lr.toPrecision(2);
+    });
+    
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+      opt.speed = parseInt(e.target.value);
+      document.getElementById('speedVal').textContent = opt.speed;
+    });
+
+    const rail = document.getElementById('experimentRail');
+    document.getElementById('btnCollapseRail').addEventListener('click', () => {
+      rail.classList.add('rail-collapsed');
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+    });
+    document.getElementById('btnRestoreRail').addEventListener('click', () => {
+      rail.classList.remove('rail-collapsed');
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+    });
+
+    const btnPick = document.getElementById('btnPickStart');
+    const modeIndicator = document.getElementById('modeIndicator');
+    btnPick.addEventListener('click', () => {
+      isPickingStart = !isPickingStart;
+      btnPick.classList.toggle('active', isPickingStart);
+      btnPick.textContent = isPickingStart ? 'Cancel Pick Mode' : '🎯 Pick Point on Surface';
+      modeIndicator.style.display = isPickingStart ? 'block' : 'none';
+      container.style.cursor = isPickingStart ? 'crosshair' : 'default';
+    });
+
+    document.getElementById('btnApplyStart').addEventListener('click', () => {
+      const s = SURFACES[activeSurface];
+      let nx = parseFloat(document.getElementById('startXInput').value);
+      let ny = parseFloat(document.getElementById('startYInput').value);
+      if (isNaN(nx) || isNaN(ny)) return;
+      nx = Math.max(s.domain.xmin, Math.min(s.domain.xmax, nx));
+      ny = Math.max(s.domain.ymin, Math.min(s.domain.ymax, ny));
+      currentStart = { x: nx, y: ny };
+      resetOptimizer();
+    });
+
+    document.getElementById('btnDefaultStart').addEventListener('click', () => {
+      const s = SURFACES[activeSurface];
+      currentStart = { ...s.startPoint };
+      resetOptimizer();
+    });
+
+    // Accurate Raycaster Logic (click vs drag)
+    container.addEventListener('pointerdown', (e) => {
+      pointerDownCoord.x = e.clientX;
+      pointerDownCoord.y = e.clientY;
+    });
+
+    container.addEventListener('pointerup', (e) => {
+      if (!isPickingStart || !surfaceMesh) return;
+      
+      const dx = e.clientX - pointerDownCoord.x;
+      const dy = e.clientY - pointerDownCoord.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) return; // Ignore drag/rotation
+      
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      // Raycast ONLY against primary mathematical mesh, not the wireframe overlay
+      const intersects = raycaster.intersectObject(surfaceMesh, false);
+      
+      if (intersects.length > 0) {
+        const pt = intersects[0].point;
+        
+        const s = SURFACES[activeSurface];
+        const mathPt = worldToMath(s, pt);
+        const nx = mathPt.x;
+        const ny = mathPt.y;
+        
+        if (nx >= s.domain.xmin && nx <= s.domain.xmax && ny >= s.domain.ymin && ny <= s.domain.ymax) {
+          currentStart = { x: nx, y: ny };
+          resetOptimizer();
+          
+          isPickingStart = false;
+          btnPick.classList.remove('active');
+          btnPick.textContent = '🎯 Pick Point on Surface';
+          modeIndicator.style.display = 'none';
+          container.style.cursor = 'default';
+          
+          const toast = document.createElement('div');
+          toast.textContent = 'Initialization point set.';
+          toast.style.position = 'absolute';
+          toast.style.top = '20px';
+          toast.style.left = '50%';
+          toast.style.transform = 'translateX(-50%)';
+          toast.style.background = 'rgba(16, 185, 129, 0.9)';
+          toast.style.color = '#fff';
+          toast.style.padding = '8px 16px';
+          toast.style.borderRadius = '20px';
+          toast.style.fontFamily = 'var(--sans)';
+          toast.style.fontSize = '12px';
+          toast.style.pointerEvents = 'none';
+          toast.style.zIndex = '100';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 2000);
+        }
+      }
+    });
+
+    // INIT
+    loadSurface('bowl');
+    animate();
   </script>
 </body>
 </html>
