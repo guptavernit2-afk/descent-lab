@@ -12,30 +12,37 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #09090f;
-      --rail-bg: rgba(10, 11, 18, 0.95);
-      --border: rgba(255, 255, 255, 0.1);
+      --bg: #030305;
+      --rail-bg: rgba(8, 9, 14, 0.55);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-light: rgba(255, 255, 255, 0.12);
       --text: #e2e4ef;
+      --text-glow: rgba(226, 228, 239, 0.8);
       --muted: #8b95a5;
       --accent: #6366f1;
       --accent-soft: rgba(99, 102, 241, 0.15);
       --green: #10b981;
-      --red: #f04747;
+      --red: #f43f5e;
       --mono: 'JetBrains Mono', monospace;
       --sans: 'Inter', sans-serif;
-      --rail-width: 360px;
+      --rail-width: 340px;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+      --glass: blur(12px);
     }
     
     html, body {
       width: 100%; height: 100%; overflow: hidden;
       background: var(--bg); color: var(--text);
       font-family: var(--sans); font-size: 13px;
+      /* Subtle radial gradient background */
+      background: radial-gradient(circle at 50% 0%, #0a0c12 0%, #030305 100%);
     }
 
     /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
     /* Layout */
@@ -43,114 +50,147 @@
     
     .experiment-rail {
       width: var(--rail-width); height: 100%; flex-shrink: 0;
-      background: var(--rail-bg); border-right: 1px solid var(--border);
+      background: var(--rail-bg); backdrop-filter: var(--glass);
+      border-right: 1px solid var(--border);
       display: flex; flex-direction: column;
-      z-index: 100; transition: transform 0.3s ease;
-      overflow-y: auto;
+      z-index: 100; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto; box-shadow: var(--shadow-lg);
     }
 
     .rail-collapsed { transform: translateX(calc(-1 * var(--rail-width))); position: absolute; }
 
     .graph-stage {
       flex: 1; height: 100%; position: relative;
-      background: #000; overflow: hidden; display: flex;
+      background: transparent; overflow: hidden; display: flex;
     }
 
-    #threeCanvasHost { width: 100%; height: 100%; display: block; position: absolute; top:0; left:0; }
+    #threeCanvasHost { width: 100%; height: 100%; display: block; position: absolute; top:0; left:0; outline: none; }
 
     /* Rail Internals */
     .rail-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--border); position: relative; }
-    .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
-    .title { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 8px; }
-    .badge { display: inline-block; background: var(--accent-soft); color: #a5b4fc; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+    .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    .title { font-size: 18px; font-weight: 300; color: #fff; margin-bottom: 12px; letter-spacing: -0.5px; text-shadow: 0 0 12px rgba(255,255,255,0.08); }
+    .badge { display: inline-flex; align-items: center; background: var(--accent-soft); color: #c7d2fe; padding: 4px 8px; border-radius: 6px; font-size: 9px; font-weight: 600; letter-spacing: 1px; border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 0 12px rgba(99,102,241,0.05); }
     
     .collapse-btn {
-      position: absolute; right: 16px; top: 24px;
-      background: transparent; border: 1px solid var(--border);
-      color: var(--text); width: 28px; height: 28px; border-radius: 4px; cursor: pointer;
+      position: absolute; right: 20px; top: 24px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      color: var(--text); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; font-size: 10px;
     }
+    .collapse-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--border-light); transform: scale(1.05); }
     
     .restore-btn {
-      position: absolute; left: 16px; top: 16px;
-      background: var(--rail-bg); border: 1px solid var(--border);
-      color: var(--text); padding: 8px 12px; border-radius: 6px; cursor: pointer;
-      z-index: 90; display: none; font-family: var(--sans); font-size: 12px; font-weight: 500;
+      position: absolute; left: 20px; top: 20px;
+      background: var(--rail-bg); backdrop-filter: var(--glass);
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+      color: #fff; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+      z-index: 90; display: none; font-family: var(--sans); font-size: 12px; font-weight: 500; transition: all 0.2s;
     }
+    .restore-btn:hover { background: rgba(255,255,255,0.08); }
 
     .rail-section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
-    .section-title { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 12px; }
+    .section-title { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
     
     select {
-      width: 100%; background: rgba(0,0,0,0.5); color: #fff;
-      border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px;
-      font-family: var(--sans); font-size: 14px; margin-bottom: 12px; outline: none;
+      width: 100%; background: rgba(0,0,0,0.25); color: #fff;
+      border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 14px;
+      font-family: var(--sans); font-size: 13px; font-weight: 500; margin-bottom: 12px; outline: none;
+      appearance: none; cursor: pointer; transition: border 0.2s;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
     }
+    select:hover { border-color: rgba(255,255,255,0.2); }
 
-    .info-eq { background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; font-family: var(--mono); font-size: 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; color: #a5b4fc; }
-    .info-insight { font-size: 13px; color: #cbd5e1; margin-bottom: 4px; }
-    .info-challenge { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-    .info-minima { display: inline-block; padding: 4px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: #34d399; font-size: 11px; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .info-eq { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-family: var(--mono); font-size: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.04); text-align: center; color: #c7d2fe; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3); }
+    .info-insight { font-size: 12px; color: #f8fafc; margin-bottom: 4px; line-height: 1.4; font-weight: 400; }
+    .info-challenge { font-size: 11px; color: #94a3b8; margin-bottom: 12px; line-height: 1.4; }
+    .info-minima { display: inline-flex; padding: 5px 10px; border-radius: 4px; background: rgba(16, 185, 129, 0.05); color: #34d399; font-size: 10px; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.15); letter-spacing: 0.5px; }
 
     .btn-pick {
-      width: 100%; background: transparent; border: 1px solid var(--accent); color: #a5b4fc;
+      width: 100%; background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, rgba(99,102,241,0.03) 100%);
+      border: 1px solid var(--accent); color: #c7d2fe;
       padding: 10px; border-radius: 6px; font-family: var(--sans); font-weight: 500; cursor: pointer;
-      margin-bottom: 8px; transition: all 0.2s; font-size: 13px;
+      margin-bottom: 10px; transition: all 0.2s; font-size: 12px;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.08);
     }
-    .btn-pick:hover, .btn-pick.active { background: var(--accent-soft); }
+    .btn-pick:hover, .btn-pick.active { background: var(--accent-soft); box-shadow: 0 4px 12px rgba(99,102,241,0.2); border-color: #818cf8; color: #fff; }
     
     .coord-row { display: flex; gap: 8px; margin-bottom: 8px; }
     .coord-input {
-      flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: #fff;
-      padding: 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; text-align: center;
-      width: 100%; outline: none;
+      flex: 1; background: rgba(0,0,0,0.25); border: 1px solid var(--border); color: #fff;
+      padding: 6px; border-radius: 4px; font-family: var(--mono); font-size: 11px; text-align: center;
+      width: 100%; outline: none; transition: border 0.2s;
     }
-    .btn-action {
-      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text);
-      padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: background 0.2s;
-    }
-    .btn-action:hover { background: rgba(255,255,255,0.1); }
+    .coord-input:focus { border-color: var(--accent); }
     
-    .start-status { margin-top: 8px; font-family: var(--mono); font-size: 11px; color: #94a3b8; }
+    .btn-action {
+      flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border-light); color: var(--text);
+      padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;
+    }
+    .btn-action:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
+    
+    .start-status { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 4px; font-family: var(--mono); font-size: 10px; color: #cbd5e1; line-height: 1.5; border: 1px solid var(--border); }
 
-    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #cbd5e1; }
-    .legend-color { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; color: #f1f5f9; }
+    .legend-color { width: 8px; height: 8px; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px currentColor; }
 
     /* Mode Indicator */
     .mode-indicator {
       position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
-      background: var(--accent); color: #fff; padding: 8px 16px; border-radius: 20px;
-      font-size: 12px; font-weight: 600; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      background: rgba(99, 102, 241, 0.85); backdrop-filter: var(--glass); border: 1px solid #818cf8;
+      color: #fff; padding: 8px 20px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
       z-index: 60; display: none; pointer-events: none;
     }
 
     /* Telemetry */
     .telemetry-overlay {
-      position: absolute; top: 16px; right: 16px; width: 220px;
-      background: rgba(10, 11, 18, 0.85); backdrop-filter: blur(10px);
-      border: 1px solid var(--border); border-radius: 8px; padding: 16px; pointer-events: none; z-index: 50;
+      position: absolute; top: 20px; right: 20px; width: 220px;
+      background: var(--rail-bg); backdrop-filter: var(--glass);
+      border: 1px solid var(--border-light); border-radius: 8px; padding: 16px; pointer-events: none; z-index: 50;
+      box-shadow: var(--shadow-lg);
     }
-    .tel-header { font-size: 11px; font-weight: 600; color: #fff; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .tel-header { font-size: 11px; font-weight: 600; color: #fff; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
     .tel-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-family: var(--mono); font-size: 11px; }
     .tel-row span:first-child { color: var(--muted); }
+    .tel-row span:last-child { color: #f8fafc; font-weight: 500; text-shadow: 0 0 6px rgba(255,255,255,0.1); }
 
     /* Dock */
     .runtime-dock {
       position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: rgba(10, 11, 18, 0.85); backdrop-filter: blur(10px);
-      border: 1px solid var(--border); border-radius: 12px; padding: 12px 24px;
+      background: var(--rail-bg); backdrop-filter: var(--glass);
+      border: 1px solid var(--border-light); border-radius: 12px; padding: 10px 20px;
       display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; z-index: 50;
+      box-shadow: var(--shadow-lg);
     }
-    .btn-run { background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 90px; }
-    .btn-run:hover { background: #e2e4ef; }
-    .btn-dock { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-    .btn-dock:hover { background: rgba(255,255,255,0.2); }
-    .slider-group { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
-    input[type=range] { width: 100px; cursor: pointer; }
+    .btn-run { 
+      background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 6px; 
+      font-weight: 600; font-size: 13px; cursor: pointer; width: 90px; transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(255,255,255,0.15);
+    }
+    .btn-run:hover { background: #e2e4ef; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,255,255,0.25); }
+    .btn-run:active { transform: translateY(1px); }
+    
+    .btn-dock { 
+      background: rgba(255,255,255,0.04); color: #fff; border: 1px solid rgba(255,255,255,0.08); 
+      padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 12px; font-weight: 500;
+    }
+    .btn-dock:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+
+    .slider-group { display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .slider-group span { font-family: var(--mono); color: #fff; font-weight: 600; text-transform: none; }
+    input[type=range] { 
+      width: 100px; cursor: pointer; height: 3px; background: rgba(255,255,255,0.1); border-radius: 1.5px; appearance: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 12px; height: 12px; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.4); transition: transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
     @media (max-width: 1100px) {
-      .experiment-rail { position: absolute; left: 0; top: 0; box-shadow: 5px 0 25px rgba(0,0,0,0.5); }
+      .experiment-rail { position: absolute; left: 0; top: 0; box-shadow: 10px 0 40px rgba(0,0,0,0.6); }
       .restore-btn { display: block; }
-      .runtime-dock { bottom: 16px; padding: 8px 16px; gap: 8px; width: 90%; max-width: 400px; }
+      .runtime-dock { bottom: 20px; padding: 10px 14px; gap: 10px; width: 90%; max-width: 400px; }
     }
   </style>
   
@@ -256,13 +296,13 @@
         challenge: 'Demonstrates baseline convergence.',
         minimaText: 'Global Minimum: (0.0, 0.0) → L=0',
         domain: { xmin: -4, xmax: 4, ymin: -4, ymax: 4 },
-        maxDisplayHeight: 5, lossClip: 32, // At 4^2 + 4^2 = 32
+        maxDisplayHeight: 3.5, lossClip: 32, // At 4^2 + 4^2 = 32
         defaultLR: 0.1, startPoint: { x: -3.2, y: 3.0 },
         minima: [{x: 0, y: 0, z: 0}],
         f: (x, y) => x*x + y*y,
         grad: (x, y) => ({ gx: 2*x, gy: 2*y }),
-        camPos: new THREE.Vector3(8, 6, 8),
-        camTarget: new THREE.Vector3(0, 1.5, 0)
+        camPos: new THREE.Vector3(10, 8, 10),
+        camTarget: new THREE.Vector3(0, 1.0, 0)
       },
       rosenbrock: {
         id: 'rosenbrock', name: 'Rosenbrock Valley',
@@ -271,7 +311,7 @@
         challenge: 'Hard to navigate the flat valley floor.',
         minimaText: 'Global Minimum: (1.0, 1.0) → L=0',
         domain: { xmin: -2, xmax: 2, ymin: -1, ymax: 3 },
-        maxDisplayHeight: 5, lossClip: 200, 
+        maxDisplayHeight: 3.5, lossClip: 200, 
         defaultLR: 0.001, startPoint: { x: -1.5, y: 2.0 },
         minima: [{x: 1, y: 1, z: 0}],
         f: (x, y) => Math.pow(1 - x, 2) + 100 * Math.pow(y - x*x, 2),
@@ -279,8 +319,8 @@
           gx: -2*(1 - x) - 400*x*(y - x*x),
           gy: 200*(y - x*x)
         }),
-        camPos: new THREE.Vector3(6, 4, 6),
-        camTarget: new THREE.Vector3(0, 1, 0)
+        camPos: new THREE.Vector3(-6, 5, 8),
+        camTarget: new THREE.Vector3(1, 0, 1)
       },
       himmelblau: {
         id: 'himmelblau', name: 'Himmelblau Function',
@@ -289,7 +329,7 @@
         challenge: 'Initialization determines final minimum.',
         minimaText: '4 Global Minima → L=0',
         domain: { xmin: -5, xmax: 5, ymin: -5, ymax: 5 },
-        maxDisplayHeight: 5, lossClip: 200,
+        maxDisplayHeight: 3.5, lossClip: 200,
         defaultLR: 0.01, startPoint: { x: 0, y: 0 },
         minima: [
           {x: 3.0, y: 2.0, z: 0},
@@ -302,8 +342,8 @@
           gx: 4*x*(x*x + y - 11) + 2*(x + y*y - 7),
           gy: 2*(x*x + y - 11) + 4*y*(x + y*y - 7)
         }),
-        camPos: new THREE.Vector3(8, 6, 8),
-        camTarget: new THREE.Vector3(0, 1.5, 0)
+        camPos: new THREE.Vector3(0, 10, 14),
+        camTarget: new THREE.Vector3(0, 0, 0)
       },
       rastrigin: {
         id: 'rastrigin', name: 'Rastrigin Function',
@@ -312,7 +352,7 @@
         challenge: 'Vanilla GD gets stuck easily.',
         minimaText: 'Global Minimum: (0.0, 0.0) → L=0',
         domain: { xmin: -5.12, xmax: 5.12, ymin: -5.12, ymax: 5.12 },
-        maxDisplayHeight: 5, lossClip: 80,
+        maxDisplayHeight: 3.5, lossClip: 80,
         defaultLR: 0.005, startPoint: { x: -4.5, y: -4.5 },
         minima: [{x: 0, y: 0, z: 0}],
         f: (x, y) => 20 + x*x - 10*Math.cos(2*Math.PI*x) + y*y - 10*Math.cos(2*Math.PI*y),
@@ -320,8 +360,8 @@
           gx: 2*x + 20*Math.PI*Math.sin(2*Math.PI*x),
           gy: 2*y + 20*Math.PI*Math.sin(2*Math.PI*y)
         }),
-        camPos: new THREE.Vector3(9, 6, 9),
-        camTarget: new THREE.Vector3(0, 1.5, 0)
+        camPos: new THREE.Vector3(8, 6, 11),
+        camTarget: new THREE.Vector3(0, 0, 0)
       }
     };
 
@@ -369,28 +409,57 @@
     // ==========================================
     const container = document.getElementById('threeCanvasHost');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#000000');
+    scene.background = new THREE.Color('#030305');
+    scene.fog = new THREE.FogExp2('#030305', 0.04);
     
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // Advanced Lighting Rig
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6);
+    hemiLight.position.set(0, 10, 0);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
     scene.add(dirLight);
+
+    const rimLight = new THREE.DirectionalLight(0xa5b4fc, 0.8);
+    rimLight.position.set(-15, 5, -15);
+    scene.add(rimLight);
+
+    // Mathematical Stage Polish
+    const gridHelper = new THREE.GridHelper(12, 24, 0x444455, 0x222233);
+    gridHelper.position.y = -0.05;
+    gridHelper.material.transparent = true;
+    gridHelper.material.opacity = 0.15;
+    scene.add(gridHelper);
+
+    const axesHelper = new THREE.AxesHelper(4);
+    axesHelper.material.transparent = true;
+    axesHelper.material.opacity = 0.4;
+    scene.add(axesHelper);
 
     let surfaceMesh = null;
     let pathLine = null;
     let pathLineUnderlay = null;
     let markerMesh = null;
+    let markerGlow = null;
     let startMarkerMesh = null;
     const minimaMeshes = [];
 
@@ -446,19 +515,24 @@
       
       geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
       
-      const material = new THREE.MeshStandardMaterial({
+      // Premium Material
+      const material = new THREE.MeshPhysicalMaterial({
         vertexColors: true,
         side: THREE.DoubleSide,
-        roughness: 0.7,
+        roughness: 0.6,
         metalness: 0.1,
+        clearcoat: 0.3,
+        clearcoatRoughness: 0.4,
         transparent: true,
         opacity: 0.95
       });
       
       surfaceMesh = new THREE.Mesh(geometry, material);
+      surfaceMesh.receiveShadow = true;
+      surfaceMesh.castShadow = true;
       scene.add(surfaceMesh);
 
-      const wireMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 });
+      const wireMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05 });
       const wireGeom = new THREE.WireframeGeometry(geometry);
       const wireMesh = new THREE.LineSegments(wireGeom, wireMat);
       surfaceMesh.add(wireMesh);
@@ -468,30 +542,50 @@
       const s = SURFACES[sKey];
       
       if (markerMesh) scene.remove(markerMesh);
+      if (markerGlow) scene.remove(markerGlow);
       if (startMarkerMesh) scene.remove(startMarkerMesh);
       minimaMeshes.forEach(m => scene.remove(m));
       minimaMeshes.length = 0;
 
-      // Current marker
-      const geomMarker = new THREE.SphereGeometry(0.15, 16, 16);
-      const matMarker = new THREE.MeshBasicMaterial({ color: 0xf04747 });
+      // Current marker - Premium emissive
+      const geomMarker = new THREE.SphereGeometry(0.12, 32, 32);
+      const matMarker = new THREE.MeshPhysicalMaterial({
+        color: 0xff3366, emissive: 0xff0033, emissiveIntensity: 0.8,
+        roughness: 0.2, metalness: 0.1, clearcoat: 1.0
+      });
       markerMesh = new THREE.Mesh(geomMarker, matMarker);
       scene.add(markerMesh);
+      
+      // Marker Glow
+      const geomGlow = new THREE.SphereGeometry(0.25, 32, 32);
+      const matGlow = new THREE.MeshBasicMaterial({ color: 0xff0033, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+      markerGlow = new THREE.Mesh(geomGlow, matGlow);
+      scene.add(markerGlow);
 
-      // Start marker
-      const geomStart = new THREE.OctahedronGeometry(0.18);
-      const matStart = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+      // Start marker - Elegant
+      const geomStart = new THREE.OctahedronGeometry(0.15);
+      const matStart = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.8 });
       startMarkerMesh = new THREE.Mesh(geomStart, matStart);
       scene.add(startMarkerMesh);
 
-      // Minima
-      const geomMin = new THREE.SphereGeometry(0.12, 16, 16);
-      const matMin = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+      // Minima - Premium mint
+      const geomMin = new THREE.SphereGeometry(0.12, 32, 32);
+      const matMin = new THREE.MeshPhysicalMaterial({
+        color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.5,
+        roughness: 0.3, metalness: 0.2, clearcoat: 0.8
+      });
       for (const m of s.minima) {
         const mesh = new THREE.Mesh(geomMin, matMin);
         const wPos = mathToWorld(s, m.x, m.y);
         mesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
         scene.add(mesh);
+        
+        // Minima glow
+        const mGlow = new THREE.Mesh(
+          new THREE.SphereGeometry(0.2, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending })
+        );
+        mesh.add(mGlow);
         minimaMeshes.push(mesh);
       }
     }
@@ -503,15 +597,21 @@
       const maxPoints = opt.maxPath;
       const geometry = new THREE.BufferGeometry();
       const positions = new Float32Array(maxPoints * 3);
+      const colors = new Float32Array(maxPoints * 3);
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
       geometry.setDrawRange(0, 0);
 
-      const matUnder = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, linewidth: 3 });
+      const matUnder = new THREE.LineBasicMaterial({ 
+        vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: 2 
+      });
       pathLineUnderlay = new THREE.Line(geometry, matUnder);
       scene.add(pathLineUnderlay);
 
       const geometry2 = geometry.clone();
-      const matCore = new THREE.LineBasicMaterial({ color: 0xf04747, linewidth: 2 });
+      const matCore = new THREE.LineBasicMaterial({ 
+        vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: 2 
+      });
       pathLine = new THREE.Line(geometry2, matCore);
       scene.add(pathLine);
     }
@@ -592,20 +692,29 @@
       // Markers
       const wPos = mathToWorld(s, opt.x, opt.y);
       markerMesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
-      markerMesh.material.color.setHex(0xf04747);
+      markerMesh.material.color.setHex(0xff3366);
+      markerMesh.material.emissive.setHex(0xff0033);
+      markerGlow.position.set(wPos.x, wPos.y + 0.1, wPos.z);
+      markerGlow.material.color.setHex(0xff0033);
       
       startMarkerMesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
       
       // Path
       const positions = pathLine.geometry.attributes.position.array;
-      positions[0] = wPos.x; positions[1] = wPos.y + 0.1; positions[2] = wPos.z;
+      const colorsCore = pathLine.geometry.attributes.color.array;
+      positions[0] = wPos.x; positions[1] = wPos.y + 0.05; positions[2] = wPos.z;
+      colorsCore[0] = 1; colorsCore[1] = 0.2; colorsCore[2] = 0.4;
       pathLine.geometry.setDrawRange(0, 1);
       pathLine.geometry.attributes.position.needsUpdate = true;
+      pathLine.geometry.attributes.color.needsUpdate = true;
       
       const positions2 = pathLineUnderlay.geometry.attributes.position.array;
-      positions2[0] = wPos.x; positions2[1] = wPos.y + 0.1; positions2[2] = wPos.z;
+      const colorsUnder = pathLineUnderlay.geometry.attributes.color.array;
+      positions2[0] = wPos.x; positions2[1] = wPos.y + 0.05; positions2[2] = wPos.z;
+      colorsUnder[0] = 0.5; colorsUnder[1] = 0.5; colorsUnder[2] = 0.5;
       pathLineUnderlay.geometry.setDrawRange(0, 1);
       pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
+      pathLineUnderlay.geometry.attributes.color.needsUpdate = true;
 
       updateTelemetry();
     }
@@ -652,25 +761,56 @@
     function updateVisuals() {
       const s = SURFACES[activeSurface];
       const wPos = mathToWorld(s, opt.x, opt.y);
-      markerMesh.position.set(wPos.x, wPos.y + 0.15, wPos.z);
+      markerMesh.position.set(wPos.x, wPos.y + 0.12, wPos.z);
+      markerGlow.position.set(wPos.x, wPos.y + 0.12, wPos.z);
       
-      if (opt.status.includes('Reached')) markerMesh.material.color.setHex(0x10b981);
-      else if (opt.status.includes('Instability') || opt.status.includes('Trap') || opt.status.includes('Boundary')) markerMesh.material.color.setHex(0xeab308);
-      else markerMesh.material.color.setHex(0xf04747);
+      if (opt.status.includes('Reached')) {
+        markerMesh.material.color.setHex(0x10b981);
+        markerMesh.material.emissive.setHex(0x059669);
+        markerGlow.material.color.setHex(0x10b981);
+      } else if (opt.status.includes('Instability') || opt.status.includes('Trap') || opt.status.includes('Boundary')) {
+        markerMesh.material.color.setHex(0xeab308);
+        markerMesh.material.emissive.setHex(0xca8a04);
+        markerGlow.material.color.setHex(0xeab308);
+      } else {
+        markerMesh.material.color.setHex(0xff3366);
+        markerMesh.material.emissive.setHex(0xff0033);
+        markerGlow.material.color.setHex(0xff0033);
+      }
 
       const positions = pathLine.geometry.attributes.position.array;
+      const colorsCore = pathLine.geometry.attributes.color.array;
       const positions2 = pathLineUnderlay.geometry.attributes.position.array;
+      const colorsUnder = pathLineUnderlay.geometry.attributes.color.array;
+      
       const count = opt.path.length;
       for (let i=0; i<count; i++) {
         const pt = opt.path[i];
         const pw = mathToWorld(s, pt.x, pt.y);
         positions[i*3] = pw.x; positions[i*3+1] = pw.y + 0.05; positions[i*3+2] = pw.z;
         positions2[i*3] = pw.x; positions2[i*3+1] = pw.y + 0.05; positions2[i*3+2] = pw.z;
+        
+        // Opacity fade for older points
+        const t = Math.pow(i / Math.max(1, count - 1), 2);
+        
+        // Primary path color
+        colorsCore[i*3] = 1.0 * t;
+        colorsCore[i*3+1] = 0.2 * t;
+        colorsCore[i*3+2] = 0.4 * t;
+        
+        // Underlay glow color
+        colorsUnder[i*3] = 0.5 * t;
+        colorsUnder[i*3+1] = 0.5 * t;
+        colorsUnder[i*3+2] = 0.5 * t;
       }
+      
       pathLine.geometry.setDrawRange(0, count);
       pathLine.geometry.attributes.position.needsUpdate = true;
+      pathLine.geometry.attributes.color.needsUpdate = true;
+      
       pathLineUnderlay.geometry.setDrawRange(0, count);
       pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
+      pathLineUnderlay.geometry.attributes.color.needsUpdate = true;
       
       updateTelemetry();
     }
@@ -702,6 +842,14 @@
       if (opt.running) {
         stepOptimizer();
         updateVisuals();
+      }
+      
+      // Marker pulse effect
+      if (markerMesh && markerGlow) {
+        const time = Date.now() * 0.005;
+        const pulse = 1 + 0.05 * Math.sin(time);
+        markerMesh.scale.setScalar(pulse);
+        markerGlow.scale.setScalar(pulse + 0.1 * Math.sin(time * 1.5));
       }
       
       controls.update();
