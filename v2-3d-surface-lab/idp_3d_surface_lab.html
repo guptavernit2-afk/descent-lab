@@ -143,17 +143,39 @@
       z-index: 60; display: none; pointer-events: none;
     }
 
+    /* Opt Pills */
+    .opt-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .opt-pill {
+      flex: 1; min-width: 45px; text-align: center;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);
+      color: var(--muted); padding: 8px 4px; border-radius: 8px;
+      font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .opt-pill.active {
+      color: #fff;
+      box-shadow: 0 0 12px var(--pill-color, rgba(255,255,255,0.2));
+      border-color: var(--pill-color, #fff);
+      background: var(--pill-bg, rgba(255,255,255,0.1));
+    }
+    .opt-pill:hover { border-color: rgba(255,255,255,0.3); }
+
     /* Telemetry */
     .telemetry-overlay {
-      position: absolute; top: 20px; right: 20px; width: 220px;
-      background: var(--rail-bg); backdrop-filter: var(--glass);
-      border: 1px solid var(--border-light); border-radius: 8px; padding: 16px; pointer-events: none; z-index: 50;
-      box-shadow: var(--shadow-lg);
+      position: absolute; top: 20px; right: 20px; width: 240px;
+      display: flex; flex-direction: column; gap: 10px;
+      pointer-events: none; z-index: 50; max-height: calc(100% - 100px); overflow-y: auto;
     }
-    .tel-header { font-size: 11px; font-weight: 600; color: #fff; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    .tel-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-family: var(--mono); font-size: 11px; }
+    .telemetry-card {
+      background: var(--rail-bg); backdrop-filter: var(--glass);
+      border: 1px solid var(--border-light); border-left: 3px solid var(--card-color, var(--accent));
+      border-radius: 8px; padding: 12px; box-shadow: var(--shadow-lg);
+    }
+    .tel-header { font-size: 11px; font-weight: 700; color: #fff; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+    .tel-badge { font-size: 9px; padding: 3px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); }
+    .tel-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-family: var(--mono); font-size: 10px; }
     .tel-row span:first-child { color: var(--muted); }
     .tel-row span:last-child { color: #f8fafc; font-weight: 500; text-shadow: 0 0 6px rgba(255,255,255,0.1); }
+
 
     /* Dock */
     .runtime-dock {
@@ -211,7 +233,7 @@
     <div class="rail-header">
       <div class="eyebrow">IDP VISUAL LAB · V2</div>
       <div class="title">3D Loss Surface Explorer</div>
-      <div class="badge">PHASE 1B · VANILLA GD</div>
+      <div class="badge">PHASE 1E · MULTI-AGENT ENGINE</div>
       <button class="collapse-btn" id="btnCollapseRail">◀</button>
     </div>
 
@@ -254,10 +276,13 @@
     </div>
 
     <div class="rail-section" style="border-bottom: none; padding-top: 0;">
-      <div class="section-title">LEGEND</div>
-      <div class="legend-item"><span class="legend-color" style="background:var(--red)"></span> Vanilla GD</div>
-      <div class="legend-item"><span class="legend-color" style="background:var(--green)"></span> Known Minimum</div>
-      <div class="legend-item"><span class="legend-color" style="border: 2px solid white; background: transparent"></span> Selected Start</div>
+      <div class="section-title">OPTIMIZERS</div>
+      <div class="opt-pills" id="optPills">
+        <div class="opt-pill active" data-opt="gd" style="--pill-color: #ff3366; --pill-bg: rgba(255,51,102,0.15)">GD</div>
+        <div class="opt-pill active" data-opt="momentum" style="--pill-color: #0ea5e9; --pill-bg: rgba(14,165,233,0.15)">MOM</div>
+        <div class="opt-pill active" data-opt="rmsprop" style="--pill-color: #a855f7; --pill-bg: rgba(168,85,247,0.15)">RMS</div>
+        <div class="opt-pill active" data-opt="adam" style="--pill-color: #10b981; --pill-bg: rgba(16,185,129,0.15)">ADAM</div>
+      </div>
     </div>
   </aside>
 
@@ -266,18 +291,8 @@
     
     <div id="modeIndicator" class="mode-indicator">PICK MODE ACTIVE — Click a surface point</div>
 
-    <div class="telemetry-overlay">
-      <div class="tel-header">Vanilla GD</div>
-      <div class="tel-row"><span>Status</span><span id="telStatus" style="color:var(--accent-text)">Ready</span></div>
-      <div class="tel-row"><span>Iteration</span><span id="telIter">0</span></div>
-      <div class="tel-row"><span>x</span><span id="telX">0.0000</span></div>
-      <div class="tel-row"><span>y</span><span id="telY">0.0000</span></div>
-      <div class="tel-row"><span>L(x,y)</span><span id="telLoss">0.0000</span></div>
-      <div class="tel-row"><span>|∇L|</span><span id="telGrad">0.0000</span></div>
-      <div class="tel-row"><span>η</span><span id="telLR">0.01</span></div>
-      <div id="telContext" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); font-size:10px; color:#94a3b8; line-height:1.4; font-style:italic;">
-        Optimizer is waiting to start.
-      </div>
+    <div class="telemetry-overlay" id="telemetryContainer">
+      <!-- Telemetry cards generated dynamically -->
     </div>
 
     <div class="runtime-dock">
@@ -411,13 +426,35 @@
     // ==========================================
     // 2. OPTIMIZER STATE & INTELLIGENCE
     // ==========================================
-    const opt = {
-      running: false, status: 'Ready',
-      intelligenceState: 'Ready', intelligenceContext: 'Optimizer is waiting to start.',
-      x: 0, y: 0, z: 0, gradMag: 0, iter: 0,
-      lr: 0.01, speed: 10,
-      path: [], maxPath: 2500,
-      lossHistory: [], dirHistory: []
+    let globalRunning = false;
+    let globalSpeed = 10;
+    let globalLr = 0.01;
+    const MAX_PATH = 2500;
+
+    const optimizers = {
+      gd: {
+        id: 'gd', name: 'Vanilla GD', colorHex: 0xff3366, glowHex: 0xff0033, uiColor: '#ff3366', enabled: true,
+        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
+        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [], meshes: {}
+      },
+      momentum: {
+        id: 'momentum', name: 'Momentum', colorHex: 0x0ea5e9, glowHex: 0x0284c7, uiColor: '#0ea5e9', enabled: true,
+        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
+        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
+        v_x: 0, v_y: 0, meshes: {}
+      },
+      rmsprop: {
+        id: 'rmsprop', name: 'RMSProp', colorHex: 0xa855f7, glowHex: 0x9333ea, uiColor: '#a855f7', enabled: true,
+        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
+        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
+        s_x: 0, s_y: 0, meshes: {}
+      },
+      adam: {
+        id: 'adam', name: 'Adam', colorHex: 0x10b981, glowHex: 0x059669, uiColor: '#10b981', enabled: true,
+        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
+        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
+        m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, meshes: {}
+      }
     };
 
     let isVectorFieldVisible = true;
@@ -476,10 +513,6 @@
     scene.add(axesHelper);
 
     let surfaceMesh = null;
-    let pathLine = null;
-    let pathLineUnderlay = null;
-    let markerMesh = null;
-    let markerGlow = null;
     let startMarkerMesh = null;
     const minimaMeshes = [];
 
@@ -561,26 +594,33 @@
     function initMarkers(sKey) {
       const s = SURFACES[sKey];
       
-      if (markerMesh) scene.remove(markerMesh);
-      if (markerGlow) scene.remove(markerGlow);
+      Object.values(optimizers).forEach(opt => {
+        if (opt.meshes.markerMesh) scene.remove(opt.meshes.markerMesh);
+        if (opt.meshes.markerGlow) scene.remove(opt.meshes.markerGlow);
+      });
       if (startMarkerMesh) scene.remove(startMarkerMesh);
       minimaMeshes.forEach(m => scene.remove(m));
       minimaMeshes.length = 0;
 
-      // Current marker - Premium emissive
-      const geomMarker = new THREE.SphereGeometry(0.12, 32, 32);
-      const matMarker = new THREE.MeshPhysicalMaterial({
-        color: 0xff3366, emissive: 0xff0033, emissiveIntensity: 0.8,
-        roughness: 0.2, metalness: 0.1, clearcoat: 1.0
+      // Current markers - Premium emissive
+      Object.values(optimizers).forEach(opt => {
+        const geomMarker = new THREE.SphereGeometry(opt.id === 'gd' ? 0.1 : 0.12, 32, 32);
+        const matMarker = new THREE.MeshPhysicalMaterial({
+          color: opt.colorHex, emissive: opt.glowHex, emissiveIntensity: 0.8,
+          roughness: 0.2, metalness: 0.1, clearcoat: 1.0
+        });
+        opt.meshes.markerMesh = new THREE.Mesh(geomMarker, matMarker);
+        scene.add(opt.meshes.markerMesh);
+        
+        // Marker Glow
+        const geomGlow = new THREE.SphereGeometry(0.25, 32, 32);
+        const matGlow = new THREE.MeshBasicMaterial({ color: opt.glowHex, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+        opt.meshes.markerGlow = new THREE.Mesh(geomGlow, matGlow);
+        scene.add(opt.meshes.markerGlow);
+
+        opt.meshes.markerMesh.visible = opt.enabled;
+        opt.meshes.markerGlow.visible = opt.enabled;
       });
-      markerMesh = new THREE.Mesh(geomMarker, matMarker);
-      scene.add(markerMesh);
-      
-      // Marker Glow
-      const geomGlow = new THREE.SphereGeometry(0.25, 32, 32);
-      const matGlow = new THREE.MeshBasicMaterial({ color: 0xff0033, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
-      markerGlow = new THREE.Mesh(geomGlow, matGlow);
-      scene.add(markerGlow);
 
       // Start marker - Elegant
       const geomStart = new THREE.OctahedronGeometry(0.15);
@@ -611,29 +651,40 @@
     }
 
     function initPathTrace() {
-      if (pathLine) scene.remove(pathLine);
-      if (pathLineUnderlay) scene.remove(pathLineUnderlay);
+      Object.values(optimizers).forEach(opt => {
+        if (opt.meshes.pathLine) scene.remove(opt.meshes.pathLine);
+        if (opt.meshes.pathLineUnderlay) scene.remove(opt.meshes.pathLineUnderlay);
 
-      const maxPoints = opt.maxPath;
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(maxPoints * 3);
-      const colors = new Float32Array(maxPoints * 3);
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      geometry.setDrawRange(0, 0);
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(MAX_PATH * 3);
+        const colors = new Float32Array(MAX_PATH * 3);
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setDrawRange(0, 0);
 
-      const matUnder = new THREE.LineBasicMaterial({ 
-        vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: 2 
+        // Path personality styling
+        let coreWidth = 2, underWidth = 2, opacity = 1.0;
+        if (opt.id === 'gd') { coreWidth = 1.5; underWidth = 1.5; opacity = 0.8; }
+        if (opt.id === 'momentum') { coreWidth = 2; underWidth = 3; opacity = 0.9; }
+        if (opt.id === 'rmsprop') { coreWidth = 1.5; underWidth = 2.5; opacity = 0.7; } // Dashed feel is tricky in BasicLine, so we use opacity
+        if (opt.id === 'adam') { coreWidth = 2.5; underWidth = 4; opacity = 1.0; }
+
+        const matUnder = new THREE.LineBasicMaterial({ 
+          vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: underWidth, opacity: opacity * 0.5 
+        });
+        opt.meshes.pathLineUnderlay = new THREE.Line(geometry, matUnder);
+        scene.add(opt.meshes.pathLineUnderlay);
+
+        const geometry2 = geometry.clone();
+        const matCore = new THREE.LineBasicMaterial({ 
+          vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: coreWidth, opacity: opacity 
+        });
+        opt.meshes.pathLine = new THREE.Line(geometry2, matCore);
+        scene.add(opt.meshes.pathLine);
+
+        opt.meshes.pathLine.visible = opt.enabled;
+        opt.meshes.pathLineUnderlay.visible = opt.enabled;
       });
-      pathLineUnderlay = new THREE.Line(geometry, matUnder);
-      scene.add(pathLineUnderlay);
-
-      const geometry2 = geometry.clone();
-      const matCore = new THREE.LineBasicMaterial({ 
-        vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: 2 
-      });
-      pathLine = new THREE.Line(geometry2, matCore);
-      scene.add(pathLine);
     }
 
     function resetCamera(sKey) {
@@ -733,7 +784,7 @@
     // ==========================================
     // 4. OPTIMIZER LOGIC
     // ==========================================
-    function checkConvergence(s) {
+    function checkConvergence(s, opt) {
       if (s.id === 'bowl' || s.id === 'rosenbrock') {
         const m = s.minima[0];
         const dist = Math.sqrt(Math.pow(opt.x - m.x, 2) + Math.pow(opt.y - m.y, 2));
@@ -754,231 +805,290 @@
 
     function resetOptimizer() {
       const s = SURFACES[activeSurface];
-      opt.running = false;
-      opt.status = 'Ready';
-      opt.intelligenceState = 'Ready';
-      opt.intelligenceContext = 'Optimizer is waiting to start.';
-      opt.iter = 0;
-      opt.lossHistory = [];
-      opt.dirHistory = [];
-      opt.x = currentStart.x;
-      opt.y = currentStart.y;
-      opt.z = trueLoss(s, opt.x, opt.y);
-      
-      const { gx, gy } = s.grad(opt.x, opt.y);
-      opt.gradMag = Math.sqrt(gx*gx + gy*gy);
-      
-      opt.path = [{ x: opt.x, y: opt.y, z: opt.z }];
-      
-      opt.lr = s.defaultLR;
-      document.getElementById('lrSlider').value = Math.log10(opt.lr);
-      document.getElementById('lrVal').textContent = opt.lr.toPrecision(2);
-      
+      globalRunning = false;
       document.getElementById('btnRun').innerHTML = '▶ Run';
       
-      // UI
-      document.getElementById('startXInput').value = opt.x.toFixed(2);
-      document.getElementById('startYInput').value = opt.y.toFixed(2);
-      document.getElementById('txtStartX').textContent = opt.x.toFixed(2);
-      document.getElementById('txtStartY').textContent = opt.y.toFixed(2);
-      document.getElementById('txtStartZ').textContent = opt.z.toFixed(2);
+      globalLr = s.defaultLR;
+      document.getElementById('lrSlider').value = Math.log10(globalLr);
+      document.getElementById('lrVal').textContent = globalLr.toPrecision(2);
       
-      // Markers
-      const wPos = mathToWorld(s, opt.x, opt.y);
-      markerMesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
-      markerMesh.material.color.setHex(0xff3366);
-      markerMesh.material.emissive.setHex(0xff0033);
-      markerGlow.position.set(wPos.x, wPos.y + 0.1, wPos.z);
-      markerGlow.material.color.setHex(0xff0033);
+      // Update Shared UI Coordinates
+      document.getElementById('startXInput').value = currentStart.x.toFixed(2);
+      document.getElementById('startYInput').value = currentStart.y.toFixed(2);
+      document.getElementById('txtStartX').textContent = currentStart.x.toFixed(2);
+      document.getElementById('txtStartY').textContent = currentStart.y.toFixed(2);
+      const startZ = trueLoss(s, currentStart.x, currentStart.y);
+      document.getElementById('txtStartZ').textContent = startZ.toFixed(2);
       
-      startMarkerMesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
-      
-      // Path
-      const positions = pathLine.geometry.attributes.position.array;
-      const colorsCore = pathLine.geometry.attributes.color.array;
-      positions[0] = wPos.x; positions[1] = wPos.y + 0.05; positions[2] = wPos.z;
-      colorsCore[0] = 1; colorsCore[1] = 0.2; colorsCore[2] = 0.4;
-      pathLine.geometry.setDrawRange(0, 1);
-      pathLine.geometry.attributes.position.needsUpdate = true;
-      pathLine.geometry.attributes.color.needsUpdate = true;
-      
-      const positions2 = pathLineUnderlay.geometry.attributes.position.array;
-      const colorsUnder = pathLineUnderlay.geometry.attributes.color.array;
-      positions2[0] = wPos.x; positions2[1] = wPos.y + 0.05; positions2[2] = wPos.z;
-      colorsUnder[0] = 0.5; colorsUnder[1] = 0.5; colorsUnder[2] = 0.5;
-      pathLineUnderlay.geometry.setDrawRange(0, 1);
-      pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
-      pathLineUnderlay.geometry.attributes.color.needsUpdate = true;
+      const wPosStart = mathToWorld(s, currentStart.x, currentStart.y);
+      if (startMarkerMesh) startMarkerMesh.position.set(wPosStart.x, wPosStart.y + 0.1, wPosStart.z);
 
+      Object.values(optimizers).forEach(opt => {
+        opt.status = 'Ready';
+        opt.intelligenceState = 'Ready';
+        opt.intelligenceContext = 'Waiting to start.';
+        opt.iter = 0;
+        opt.lossHistory = [];
+        opt.dirHistory = [];
+        opt.x = currentStart.x;
+        opt.y = currentStart.y;
+        opt.z = startZ;
+        
+        const { gx, gy } = s.grad(opt.x, opt.y);
+        opt.gradMag = Math.sqrt(gx*gx + gy*gy);
+        
+        opt.path = [{ x: opt.x, y: opt.y, z: opt.z }];
+        
+        opt.v_x = 0; opt.v_y = 0;
+        opt.s_x = 0; opt.s_y = 0;
+        opt.m_x = 0; opt.m_y = 0; opt.t = 0;
+        
+        if (opt.meshes.markerMesh) {
+          opt.meshes.markerMesh.position.set(wPosStart.x, wPosStart.y + 0.12, wPosStart.z);
+          opt.meshes.markerMesh.material.color.setHex(opt.colorHex);
+          opt.meshes.markerMesh.material.emissive.setHex(opt.glowHex);
+        }
+        if (opt.meshes.markerGlow) {
+          opt.meshes.markerGlow.position.set(wPosStart.x, wPosStart.y + 0.12, wPosStart.z);
+          opt.meshes.markerGlow.material.color.setHex(opt.glowHex);
+        }
+        
+        if (opt.meshes.pathLine) {
+          const positions = opt.meshes.pathLine.geometry.attributes.position.array;
+          positions[0] = wPosStart.x; positions[1] = wPosStart.y + 0.05; positions[2] = wPosStart.z;
+          opt.meshes.pathLine.geometry.setDrawRange(0, 1);
+          opt.meshes.pathLine.geometry.attributes.position.needsUpdate = true;
+        }
+        
+        if (opt.meshes.pathLineUnderlay) {
+          const positions2 = opt.meshes.pathLineUnderlay.geometry.attributes.position.array;
+          positions2[0] = wPosStart.x; positions2[1] = wPosStart.y + 0.05; positions2[2] = wPosStart.z;
+          opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, 1);
+          opt.meshes.pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
+        }
+      });
+      
       updateTelemetry();
     }
 
     function stepOptimizer() {
       const s = SURFACES[activeSurface];
-      for (let step = 0; step < opt.speed; step++) {
-        if (!opt.running) break;
-        
-        const { gx, gy } = s.grad(opt.x, opt.y);
-        opt.gradMag = Math.sqrt(gx*gx + gy*gy);
-        
-        const nextX = opt.x - opt.lr * gx;
-        const nextY = opt.y - opt.lr * gy;
-        
-        if (!isFinite(nextX) || !isFinite(nextY)) {
-          opt.status = 'Numerical Instability';
-          opt.running = false; break;
-        }
-        if (nextX < s.domain.xmin || nextX > s.domain.xmax || nextY < s.domain.ymin || nextY > s.domain.ymax) {
-          opt.status = 'Boundary Reached';
-          opt.running = false; break;
-        }
-        const nextZ = trueLoss(s, nextX, nextY);
-        if (!isFinite(nextZ)) {
-          opt.status = 'Numerical Instability';
-          opt.running = false; break;
-        }
-        
-        opt.x = nextX; opt.y = nextY; opt.z = nextZ;
-        opt.iter++;
-        
-        opt.lossHistory.push(nextZ);
-        if(opt.lossHistory.length > 6) opt.lossHistory.shift();
-        opt.dirHistory.push({dx: -gx, dy: -gy});
-        if(opt.dirHistory.length > 6) opt.dirHistory.shift();
+      for (let step = 0; step < globalSpeed; step++) {
+        Object.values(optimizers).forEach(opt => {
+          if (!opt.enabled || opt.status !== 'Running') return;
+          
+          const { gx, gy } = s.grad(opt.x, opt.y);
+          opt.gradMag = Math.sqrt(gx*gx + gy*gy);
+          
+          let nextX = opt.x, nextY = opt.y;
+          
+          if (opt.id === 'gd') {
+            nextX -= globalLr * gx;
+            nextY -= globalLr * gy;
+          } else if (opt.id === 'momentum') {
+            const beta = 0.9;
+            opt.v_x = beta * opt.v_x + globalLr * gx;
+            opt.v_y = beta * opt.v_y + globalLr * gy;
+            nextX -= opt.v_x;
+            nextY -= opt.v_y;
+          } else if (opt.id === 'rmsprop') {
+            const beta = 0.99;
+            const eps = 1e-8;
+            opt.s_x = beta * opt.s_x + (1 - beta) * gx * gx;
+            opt.s_y = beta * opt.s_y + (1 - beta) * gy * gy;
+            nextX -= (globalLr / (Math.sqrt(opt.s_x) + eps)) * gx;
+            nextY -= (globalLr / (Math.sqrt(opt.s_y) + eps)) * gy;
+          } else if (opt.id === 'adam') {
+            const beta1 = 0.9, beta2 = 0.999, eps = 1e-8;
+            opt.t += 1;
+            opt.m_x = beta1 * opt.m_x + (1 - beta1) * gx;
+            opt.m_y = beta1 * opt.m_y + (1 - beta1) * gy;
+            opt.v_x = beta2 * opt.v_x + (1 - beta2) * gx * gx;
+            opt.v_y = beta2 * opt.v_y + (1 - beta2) * gy * gy;
+            const m_hat_x = opt.m_x / (1 - Math.pow(beta1, opt.t));
+            const m_hat_y = opt.m_y / (1 - Math.pow(beta1, opt.t));
+            const v_hat_x = opt.v_x / (1 - Math.pow(beta2, opt.t));
+            const v_hat_y = opt.v_y / (1 - Math.pow(beta2, opt.t));
+            nextX -= (globalLr / (Math.sqrt(v_hat_x) + eps)) * m_hat_x;
+            nextY -= (globalLr / (Math.sqrt(v_hat_y) + eps)) * m_hat_y;
+          }
+          
+          if (!isFinite(nextX) || !isFinite(nextY)) {
+            opt.status = 'Numerical Instability';
+            return;
+          }
+          if (nextX < s.domain.xmin || nextX > s.domain.xmax || nextY < s.domain.ymin || nextY > s.domain.ymax) {
+            opt.status = 'Boundary Reached';
+            return;
+          }
+          const nextZ = trueLoss(s, nextX, nextY);
+          if (!isFinite(nextZ)) {
+            opt.status = 'Numerical Instability';
+            return;
+          }
+          
+          opt.x = nextX; opt.y = nextY; opt.z = nextZ;
+          opt.iter++;
+          
+          opt.lossHistory.push(nextZ);
+          if(opt.lossHistory.length > 6) opt.lossHistory.shift();
+          opt.dirHistory.push({dx: -gx, dy: -gy});
+          if(opt.dirHistory.length > 6) opt.dirHistory.shift();
 
-        // Intelligence Detection
-        let state = 'Stable Descent';
-        let context = 'Gradient direction is stable and loss is decreasing consistently.';
-        
-        if (opt.gradMag > 500) {
-           state = 'Exploding Gradient';
-           context = 'Extremely steep slopes detected. Risk of diverging.';
-        } else if (opt.lossHistory.length === 6) {
-           const lossDiff = opt.lossHistory[0] - opt.lossHistory[5];
-           if (lossDiff < 1e-5 && lossDiff >= 0 && opt.gradMag > 0.1) {
-              state = 'Valley Navigation';
-              context = 'Optimizer is moving along a flat valley floor, struggling to find steep descent.';
-           } else if (lossDiff < 1e-6 && opt.gradMag < 0.05) {
-              state = 'Plateau Region';
-              context = 'Extremely flat region. Progress has stalled.';
-           } else if (lossDiff > 5.0) {
-              state = 'Fast Convergence';
-              context = 'Rapidly descending toward a minimum.';
-           }
-           
-           let dotSum = 0;
-           for(let i=1; i<opt.dirHistory.length; i++) {
-              const d1 = opt.dirHistory[i-1];
-              const d2 = opt.dirHistory[i];
-              const m1 = Math.sqrt(d1.dx*d1.dx + d1.dy*d1.dy);
-              const m2 = Math.sqrt(d2.dx*d2.dx + d2.dy*d2.dy);
-              if (m1>0 && m2>0) dotSum += (d1.dx*d2.dx + d1.dy*d2.dy) / (m1*m2);
-           }
-           if (dotSum < -1.0) { 
-              state = 'Oscillation Detected';
-              context = 'Repeated directional sign changes detected. Learning rate may be too high.';
-           }
-        }
-        
-        opt.intelligenceState = state;
-        opt.intelligenceContext = context;
-        
-        opt.path.push({ x: opt.x, y: opt.y, z: opt.z });
-        if (opt.path.length > opt.maxPath) opt.path.shift();
-        
-        let reached = checkConvergence(s);
-        if (reached) {
-          opt.status = reached;
-          opt.running = false; break;
-        }
+          // Intelligence Detection
+          let state = 'Stable Descent';
+          let context = 'Loss is decreasing consistently.';
+          
+          if (opt.gradMag > 500) {
+             state = 'Exploding Gradient';
+             context = 'Extremely steep slopes detected. Risk of diverging.';
+          } else if (opt.lossHistory.length === 6) {
+             const lossDiff = opt.lossHistory[0] - opt.lossHistory[5];
+             if (lossDiff < 1e-5 && lossDiff >= 0 && opt.gradMag > 0.1) {
+                state = 'Valley Navigation';
+                context = 'Struggling to find steep descent.';
+             } else if (lossDiff < 1e-6 && opt.gradMag < 0.05) {
+                state = 'Plateau Region';
+                context = 'Progress has stalled.';
+             } else if (lossDiff > 5.0) {
+                state = 'Fast Convergence';
+                context = 'Rapidly descending.';
+             }
+             
+             let dotSum = 0;
+             for(let i=1; i<opt.dirHistory.length; i++) {
+                const d1 = opt.dirHistory[i-1];
+                const d2 = opt.dirHistory[i];
+                const m1 = Math.sqrt(d1.dx*d1.dx + d1.dy*d1.dy);
+                const m2 = Math.sqrt(d2.dx*d2.dx + d2.dy*d2.dy);
+                if (m1>0 && m2>0) dotSum += (d1.dx*d2.dx + d1.dy*d2.dy) / (m1*m2);
+             }
+             if (dotSum < -1.0) { 
+                state = 'Oscillation Detected';
+                context = 'Repeated directional sign changes.';
+             }
+          }
+          
+          opt.intelligenceState = state;
+          opt.intelligenceContext = context;
+          
+          opt.path.push({ x: opt.x, y: opt.y, z: opt.z });
+          if (opt.path.length > MAX_PATH) opt.path.shift();
+          
+          let reached = checkConvergence(s, opt);
+          if (reached) {
+            opt.status = reached;
+          }
+        });
       }
     }
 
     function updateVisuals() {
       const s = SURFACES[activeSurface];
-      const wPos = mathToWorld(s, opt.x, opt.y);
-      markerMesh.position.set(wPos.x, wPos.y + 0.12, wPos.z);
-      markerGlow.position.set(wPos.x, wPos.y + 0.12, wPos.z);
-      
-      if (opt.status.includes('Reached') || (opt.intelligenceState === 'Plateau Region' && opt.z < 0.1)) {
-        markerMesh.material.color.setHex(0x10b981);
-        markerMesh.material.emissive.setHex(0x059669);
-        markerGlow.material.color.setHex(0x10b981);
-      } else if (opt.status.includes('Instability') || opt.status.includes('Boundary') || opt.intelligenceState === 'Exploding Gradient') {
-        markerMesh.material.color.setHex(0xef4444); // red pulse
-        markerMesh.material.emissive.setHex(0xdc2626);
-        markerGlow.material.color.setHex(0xef4444);
-      } else if (opt.status.includes('Trap') || opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
-        markerMesh.material.color.setHex(0xf59e0b); // warm amber
-        markerMesh.material.emissive.setHex(0xd97706);
-        markerGlow.material.color.setHex(0xf59e0b);
-      } else if (opt.intelligenceState === 'Plateau Region') {
-        markerMesh.material.color.setHex(0x3b82f6); // dimmed subtle blue
-        markerMesh.material.emissive.setHex(0x2563eb);
-        markerGlow.material.color.setHex(0x3b82f6);
-      } else {
-        markerMesh.material.color.setHex(0xff3366); // default red-pink
-        markerMesh.material.emissive.setHex(0xff0033);
-        markerGlow.material.color.setHex(0xff0033);
-      }
+      Object.values(optimizers).forEach(opt => {
+        if (!opt.enabled) return;
+        
+        const wPos = mathToWorld(s, opt.x, opt.y);
+        if (opt.meshes.markerMesh) {
+          opt.meshes.markerMesh.position.set(wPos.x, wPos.y + 0.12, wPos.z);
+          opt.meshes.markerGlow.position.set(wPos.x, wPos.y + 0.12, wPos.z);
+          
+          if (opt.status.includes('Reached') || (opt.intelligenceState === 'Plateau Region' && opt.z < 0.1)) {
+            opt.meshes.markerMesh.material.color.setHex(0x10b981);
+            opt.meshes.markerMesh.material.emissive.setHex(0x059669);
+            opt.meshes.markerGlow.material.color.setHex(0x10b981);
+          } else if (opt.status.includes('Instability') || opt.status.includes('Boundary') || opt.intelligenceState === 'Exploding Gradient') {
+            opt.meshes.markerMesh.material.color.setHex(0xef4444);
+            opt.meshes.markerMesh.material.emissive.setHex(0xdc2626);
+            opt.meshes.markerGlow.material.color.setHex(0xef4444);
+          } else if (opt.status.includes('Trap') || opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
+            opt.meshes.markerMesh.material.color.setHex(0xf59e0b);
+            opt.meshes.markerMesh.material.emissive.setHex(0xd97706);
+            opt.meshes.markerGlow.material.color.setHex(0xf59e0b);
+          } else if (opt.intelligenceState === 'Plateau Region') {
+            opt.meshes.markerMesh.material.color.setHex(0x3b82f6);
+            opt.meshes.markerMesh.material.emissive.setHex(0x2563eb);
+            opt.meshes.markerGlow.material.color.setHex(0x3b82f6);
+          } else {
+            opt.meshes.markerMesh.material.color.setHex(opt.colorHex);
+            opt.meshes.markerMesh.material.emissive.setHex(opt.glowHex);
+            opt.meshes.markerGlow.material.color.setHex(opt.glowHex);
+          }
+        }
 
-      const positions = pathLine.geometry.attributes.position.array;
-      const colorsCore = pathLine.geometry.attributes.color.array;
-      const positions2 = pathLineUnderlay.geometry.attributes.position.array;
-      const colorsUnder = pathLineUnderlay.geometry.attributes.color.array;
-      
-      const count = opt.path.length;
-      for (let i=0; i<count; i++) {
-        const pt = opt.path[i];
-        const pw = mathToWorld(s, pt.x, pt.y);
-        positions[i*3] = pw.x; positions[i*3+1] = pw.y + 0.05; positions[i*3+2] = pw.z;
-        positions2[i*3] = pw.x; positions2[i*3+1] = pw.y + 0.05; positions2[i*3+2] = pw.z;
-        
-        // Opacity fade for older points
-        const t = Math.pow(i / Math.max(1, count - 1), 2);
-        
-        // Primary path color
-        colorsCore[i*3] = 1.0 * t;
-        colorsCore[i*3+1] = 0.2 * t;
-        colorsCore[i*3+2] = 0.4 * t;
-        
-        // Underlay glow color
-        colorsUnder[i*3] = 0.5 * t;
-        colorsUnder[i*3+1] = 0.5 * t;
-        colorsUnder[i*3+2] = 0.5 * t;
-      }
-      
-      pathLine.geometry.setDrawRange(0, count);
-      pathLine.geometry.attributes.position.needsUpdate = true;
-      pathLine.geometry.attributes.color.needsUpdate = true;
-      
-      pathLineUnderlay.geometry.setDrawRange(0, count);
-      pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
-      pathLineUnderlay.geometry.attributes.color.needsUpdate = true;
+        if (opt.meshes.pathLine && opt.meshes.pathLineUnderlay) {
+          const positions = opt.meshes.pathLine.geometry.attributes.position.array;
+          const colorsCore = opt.meshes.pathLine.geometry.attributes.color.array;
+          const positions2 = opt.meshes.pathLineUnderlay.geometry.attributes.position.array;
+          const colorsUnder = opt.meshes.pathLineUnderlay.geometry.attributes.color.array;
+          
+          const count = opt.path.length;
+          const baseColor = new THREE.Color(opt.colorHex);
+          const underColor = new THREE.Color(opt.glowHex);
+          
+          for (let i=0; i<count; i++) {
+            const pt = opt.path[i];
+            const pw = mathToWorld(s, pt.x, pt.y);
+            positions[i*3] = pw.x; positions[i*3+1] = pw.y + 0.05; positions[i*3+2] = pw.z;
+            positions2[i*3] = pw.x; positions2[i*3+1] = pw.y + 0.05; positions2[i*3+2] = pw.z;
+            
+            const t = Math.pow(i / Math.max(1, count - 1), 2);
+            
+            colorsCore[i*3] = baseColor.r * t;
+            colorsCore[i*3+1] = baseColor.g * t;
+            colorsCore[i*3+2] = baseColor.b * t;
+            
+            colorsUnder[i*3] = underColor.r * t;
+            colorsUnder[i*3+1] = underColor.g * t;
+            colorsUnder[i*3+2] = underColor.b * t;
+          }
+          
+          opt.meshes.pathLine.geometry.setDrawRange(0, count);
+          opt.meshes.pathLine.geometry.attributes.position.needsUpdate = true;
+          opt.meshes.pathLine.geometry.attributes.color.needsUpdate = true;
+          
+          opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, count);
+          opt.meshes.pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
+          opt.meshes.pathLineUnderlay.geometry.attributes.color.needsUpdate = true;
+        }
+      });
       
       updateTelemetry();
     }
 
     function updateTelemetry() {
-      document.getElementById('telStatus').textContent = opt.status === 'Running' ? opt.intelligenceState.toUpperCase() : opt.status.toUpperCase();
-      document.getElementById('telContext').textContent = opt.status === 'Running' ? opt.intelligenceContext : (opt.status === 'Ready' ? 'Optimizer is ready.' : opt.intelligenceContext);
+      const container = document.getElementById('telemetryContainer');
+      container.innerHTML = '';
       
-      document.getElementById('telIter').textContent = opt.iter;
-      document.getElementById('telX').textContent = opt.x.toFixed(4);
-      document.getElementById('telY').textContent = opt.y.toFixed(4);
-      document.getElementById('telLoss').textContent = opt.z.toFixed(4);
-      document.getElementById('telGrad').textContent = opt.gradMag.toFixed(4);
-      
-      const stEl = document.getElementById('telStatus');
-      if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || opt.status.includes('Trap') || opt.intelligenceState === 'Exploding Gradient') {
-        stEl.style.color = '#ef4444';
-      } else if (opt.status.includes('Reached') || opt.intelligenceState.includes('Convergence') || opt.intelligenceState.includes('Stable')) {
-        stEl.style.color = '#10b981';
-      } else if (opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
-        stEl.style.color = '#f59e0b';
-      } else {
-        stEl.style.color = 'var(--accent-text)';
-      }
+      Object.values(optimizers).forEach(opt => {
+        if (!opt.enabled) return;
+        
+        const card = document.createElement('div');
+        card.className = 'telemetry-card';
+        card.style.setProperty('--card-color', opt.uiColor);
+        
+        let statusText = opt.status === 'Running' ? opt.intelligenceState.toUpperCase() : opt.status.toUpperCase();
+        
+        let statusColor = opt.uiColor;
+        if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || opt.status.includes('Trap') || opt.intelligenceState === 'Exploding Gradient') {
+          statusColor = '#ef4444';
+        } else if (opt.status.includes('Reached') || opt.intelligenceState.includes('Convergence') || opt.intelligenceState.includes('Stable')) {
+          statusColor = '#10b981';
+        } else if (opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
+          statusColor = '#f59e0b';
+        }
+
+        card.innerHTML = `
+          <div class="tel-header">
+            ${opt.name}
+            <span class="tel-badge" style="color:${statusColor}; border-color:${statusColor}40;">${statusText}</span>
+          </div>
+          <div class="tel-row"><span>Loss L(x,y)</span><span style="color:#f8fafc">${opt.z.toFixed(4)}</span></div>
+          <div class="tel-row"><span>Gradient |∇L|</span><span style="color:#f8fafc">${opt.gradMag.toFixed(4)}</span></div>
+          <div class="tel-row"><span>Iteration</span><span style="color:#f8fafc">${opt.iter}</span></div>
+        `;
+        container.appendChild(card);
+      });
     }
 
     // ==========================================
@@ -987,18 +1097,20 @@
     function animate() {
       requestAnimationFrame(animate);
       
-      if (opt.running) {
+      if (globalRunning) {
         stepOptimizer();
         updateVisuals();
       }
       
       // Marker pulse effect
-      if (markerMesh && markerGlow) {
-        const time = Date.now() * 0.005;
-        const pulse = 1 + 0.05 * Math.sin(time);
-        markerMesh.scale.setScalar(pulse);
-        markerGlow.scale.setScalar(pulse + 0.1 * Math.sin(time * 1.5));
-      }
+      const time = Date.now() * 0.005;
+      Object.values(optimizers).forEach(opt => {
+        if (opt.enabled && opt.meshes.markerMesh && opt.meshes.markerGlow) {
+          const pulse = 1 + 0.05 * Math.sin(time);
+          opt.meshes.markerMesh.scale.setScalar(pulse);
+          opt.meshes.markerGlow.scale.setScalar(pulse + 0.1 * Math.sin(time * 1.5));
+        }
+      });
 
       if (vectorFieldMesh) {
          vectorFieldMesh.material.opacity = 0.4 + 0.15 * Math.sin(Date.now() * 0.003);
@@ -1035,16 +1147,47 @@
       buildVectorField(activeSurface);
     });
 
+    document.querySelectorAll('.opt-pill').forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        const id = e.target.getAttribute('data-opt');
+        const opt = optimizers[id];
+        opt.enabled = !opt.enabled;
+        e.target.classList.toggle('active', opt.enabled);
+        
+        if (opt.meshes.markerMesh) opt.meshes.markerMesh.visible = opt.enabled;
+        if (opt.meshes.markerGlow) opt.meshes.markerGlow.visible = opt.enabled;
+        if (opt.meshes.pathLine) opt.meshes.pathLine.visible = opt.enabled;
+        if (opt.meshes.pathLineUnderlay) opt.meshes.pathLineUnderlay.visible = opt.enabled;
+        
+        updateTelemetry();
+      });
+    });
+
     document.getElementById('btnRun').addEventListener('click', () => {
-      opt.running = !opt.running;
-      document.getElementById('btnRun').innerHTML = opt.running ? '⏸ Pause' : '▶ Run';
-      if (opt.running && opt.status !== 'Ready' && opt.status !== 'Running' && opt.status !== 'Paused') {
+      globalRunning = !globalRunning;
+      document.getElementById('btnRun').innerHTML = globalRunning ? '⏸ Pause' : '▶ Run';
+      
+      let needsReset = false;
+      Object.values(optimizers).forEach(opt => {
+        if (opt.enabled && opt.status !== 'Ready' && opt.status !== 'Running' && opt.status !== 'Paused') {
+          needsReset = true;
+        }
+      });
+      
+      if (globalRunning && needsReset) {
         resetOptimizer();
-        opt.running = true;
+        globalRunning = true;
         document.getElementById('btnRun').innerHTML = '⏸ Pause';
       }
-      if(opt.running) opt.status = 'Running';
-      else opt.status = 'Paused';
+      
+      Object.values(optimizers).forEach(opt => {
+        if (globalRunning) {
+          if (opt.status === 'Ready' || opt.status === 'Paused') opt.status = 'Running';
+        } else {
+          if (opt.status === 'Running') opt.status = 'Paused';
+        }
+      });
+      
       updateTelemetry();
     });
 
@@ -1054,14 +1197,13 @@
     });
 
     document.getElementById('lrSlider').addEventListener('input', (e) => {
-      opt.lr = Math.pow(10, parseFloat(e.target.value));
-      document.getElementById('lrVal').textContent = opt.lr.toPrecision(2);
-      document.getElementById('telLR').textContent = opt.lr.toPrecision(2);
+      globalLr = Math.pow(10, parseFloat(e.target.value));
+      document.getElementById('lrVal').textContent = globalLr.toPrecision(2);
     });
     
     document.getElementById('speedSlider').addEventListener('input', (e) => {
-      opt.speed = parseInt(e.target.value);
-      document.getElementById('speedVal').textContent = opt.speed;
+      globalSpeed = parseInt(e.target.value);
+      document.getElementById('speedVal').textContent = globalSpeed;
     });
 
     const rail = document.getElementById('experimentRail');
