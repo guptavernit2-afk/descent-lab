@@ -243,6 +243,17 @@
     </div>
 
     <div class="rail-section" style="border-bottom: none;">
+      <div class="section-title">VECTOR FIELD</div>
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; margin-bottom:12px; color:#c7d2fe;">
+        <input type="checkbox" id="chkVectorField" checked style="accent-color: var(--accent);"> Show Gradient Field
+      </label>
+      <div class="slider-group" style="margin-bottom:10px;">
+        <label>Density: <span id="densityVal">25</span></label>
+        <input type="range" id="densitySlider" min="10" max="50" step="5" value="25" style="width:100%">
+      </div>
+    </div>
+
+    <div class="rail-section" style="border-bottom: none; padding-top: 0;">
       <div class="section-title">LEGEND</div>
       <div class="legend-item"><span class="legend-color" style="background:var(--red)"></span> Vanilla GD</div>
       <div class="legend-item"><span class="legend-color" style="background:var(--green)"></span> Known Minimum</div>
@@ -264,6 +275,9 @@
       <div class="tel-row"><span>L(x,y)</span><span id="telLoss">0.0000</span></div>
       <div class="tel-row"><span>|∇L|</span><span id="telGrad">0.0000</span></div>
       <div class="tel-row"><span>η</span><span id="telLR">0.01</span></div>
+      <div id="telContext" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); font-size:10px; color:#94a3b8; line-height:1.4; font-style:italic;">
+        Optimizer is waiting to start.
+      </div>
     </div>
 
     <div class="runtime-dock">
@@ -395,14 +409,20 @@
     }
 
     // ==========================================
-    // 2. OPTIMIZER STATE
+    // 2. OPTIMIZER STATE & INTELLIGENCE
     // ==========================================
     const opt = {
       running: false, status: 'Ready',
+      intelligenceState: 'Ready', intelligenceContext: 'Optimizer is waiting to start.',
       x: 0, y: 0, z: 0, gradMag: 0, iter: 0,
       lr: 0.01, speed: 10,
-      path: [], maxPath: 2500
+      path: [], maxPath: 2500,
+      lossHistory: [], dirHistory: []
     };
+
+    let isVectorFieldVisible = true;
+    let currentVectorDensity = 25;
+    let vectorFieldMesh = null;
 
     // ==========================================
     // 3. THREE.JS SETUP
@@ -636,8 +656,78 @@
       buildSurfaceMesh(sKey);
       initMarkers(sKey);
       initPathTrace();
+      buildVectorField(sKey);
       resetCamera(sKey);
       resetOptimizer();
+    }
+
+    function buildVectorField(sKey) {
+      if (vectorFieldMesh) {
+         scene.remove(vectorFieldMesh);
+         vectorFieldMesh.geometry.dispose();
+         vectorFieldMesh.material.dispose();
+         vectorFieldMesh = null;
+      }
+      if (!isVectorFieldVisible) return;
+      
+      const s = SURFACES[sKey];
+      let density = currentVectorDensity;
+      if (s.id === 'rosenbrock') density = Math.min(density, 20); // readability
+      if (s.id === 'rastrigin') density = Math.min(density, 15); // avoid chaos
+      
+      const pts = [];
+      const colors = [];
+      
+      const xRange = s.domain.xmax - s.domain.xmin;
+      const yRange = s.domain.ymax - s.domain.ymin;
+      
+      const stepX = xRange / density;
+      const stepY = yRange / density;
+      
+      for(let i=0; i<=density; i++) {
+        for(let j=0; j<=density; j++) {
+           const mx = s.domain.xmin + i * stepX;
+           const my = s.domain.ymin + j * stepY;
+           
+           const mz = trueLoss(s, mx, my);
+           if (!isFinite(mz)) continue;
+           
+           const g = s.grad(mx, my);
+           const gradMag = Math.sqrt(g.gx*g.gx + g.gy*g.gy);
+           if (gradMag < 1e-6) continue;
+           
+           const dx = -g.gx / gradMag;
+           const dy = -g.gy / gradMag;
+           
+           const stepSize = Math.min(xRange, yRange) * 0.025; 
+           
+           const mx2 = mx + dx * stepSize;
+           const my2 = my + dy * stepSize;
+           
+           const w1 = mathToWorld(s, mx, my);
+           const w2 = mathToWorld(s, mx2, my2);
+           
+           pts.push(w1.x, w1.y + 0.02, w1.z); 
+           pts.push(w2.x, w2.y + 0.02, w2.z); 
+           
+           colors.push(0, 0, 0); 
+           colors.push(0.2, 0.8, 1.0); 
+        }
+      }
+      
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+      geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      
+      const mat = new THREE.LineBasicMaterial({
+         vertexColors: true,
+         transparent: true,
+         blending: THREE.AdditiveBlending,
+         opacity: 0.5
+      });
+      
+      vectorFieldMesh = new THREE.LineSegments(geom, mat);
+      scene.add(vectorFieldMesh);
     }
 
     // ==========================================
@@ -666,7 +756,11 @@
       const s = SURFACES[activeSurface];
       opt.running = false;
       opt.status = 'Ready';
+      opt.intelligenceState = 'Ready';
+      opt.intelligenceContext = 'Optimizer is waiting to start.';
       opt.iter = 0;
+      opt.lossHistory = [];
+      opt.dirHistory = [];
       opt.x = currentStart.x;
       opt.y = currentStart.y;
       opt.z = trueLoss(s, opt.x, opt.y);
@@ -747,6 +841,48 @@
         opt.x = nextX; opt.y = nextY; opt.z = nextZ;
         opt.iter++;
         
+        opt.lossHistory.push(nextZ);
+        if(opt.lossHistory.length > 6) opt.lossHistory.shift();
+        opt.dirHistory.push({dx: -gx, dy: -gy});
+        if(opt.dirHistory.length > 6) opt.dirHistory.shift();
+
+        // Intelligence Detection
+        let state = 'Stable Descent';
+        let context = 'Gradient direction is stable and loss is decreasing consistently.';
+        
+        if (opt.gradMag > 500) {
+           state = 'Exploding Gradient';
+           context = 'Extremely steep slopes detected. Risk of diverging.';
+        } else if (opt.lossHistory.length === 6) {
+           const lossDiff = opt.lossHistory[0] - opt.lossHistory[5];
+           if (lossDiff < 1e-5 && lossDiff >= 0 && opt.gradMag > 0.1) {
+              state = 'Valley Navigation';
+              context = 'Optimizer is moving along a flat valley floor, struggling to find steep descent.';
+           } else if (lossDiff < 1e-6 && opt.gradMag < 0.05) {
+              state = 'Plateau Region';
+              context = 'Extremely flat region. Progress has stalled.';
+           } else if (lossDiff > 5.0) {
+              state = 'Fast Convergence';
+              context = 'Rapidly descending toward a minimum.';
+           }
+           
+           let dotSum = 0;
+           for(let i=1; i<opt.dirHistory.length; i++) {
+              const d1 = opt.dirHistory[i-1];
+              const d2 = opt.dirHistory[i];
+              const m1 = Math.sqrt(d1.dx*d1.dx + d1.dy*d1.dy);
+              const m2 = Math.sqrt(d2.dx*d2.dx + d2.dy*d2.dy);
+              if (m1>0 && m2>0) dotSum += (d1.dx*d2.dx + d1.dy*d2.dy) / (m1*m2);
+           }
+           if (dotSum < -1.0) { 
+              state = 'Oscillation Detected';
+              context = 'Repeated directional sign changes detected. Learning rate may be too high.';
+           }
+        }
+        
+        opt.intelligenceState = state;
+        opt.intelligenceContext = context;
+        
         opt.path.push({ x: opt.x, y: opt.y, z: opt.z });
         if (opt.path.length > opt.maxPath) opt.path.shift();
         
@@ -764,16 +900,24 @@
       markerMesh.position.set(wPos.x, wPos.y + 0.12, wPos.z);
       markerGlow.position.set(wPos.x, wPos.y + 0.12, wPos.z);
       
-      if (opt.status.includes('Reached')) {
+      if (opt.status.includes('Reached') || (opt.intelligenceState === 'Plateau Region' && opt.z < 0.1)) {
         markerMesh.material.color.setHex(0x10b981);
         markerMesh.material.emissive.setHex(0x059669);
         markerGlow.material.color.setHex(0x10b981);
-      } else if (opt.status.includes('Instability') || opt.status.includes('Trap') || opt.status.includes('Boundary')) {
-        markerMesh.material.color.setHex(0xeab308);
-        markerMesh.material.emissive.setHex(0xca8a04);
-        markerGlow.material.color.setHex(0xeab308);
+      } else if (opt.status.includes('Instability') || opt.status.includes('Boundary') || opt.intelligenceState === 'Exploding Gradient') {
+        markerMesh.material.color.setHex(0xef4444); // red pulse
+        markerMesh.material.emissive.setHex(0xdc2626);
+        markerGlow.material.color.setHex(0xef4444);
+      } else if (opt.status.includes('Trap') || opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
+        markerMesh.material.color.setHex(0xf59e0b); // warm amber
+        markerMesh.material.emissive.setHex(0xd97706);
+        markerGlow.material.color.setHex(0xf59e0b);
+      } else if (opt.intelligenceState === 'Plateau Region') {
+        markerMesh.material.color.setHex(0x3b82f6); // dimmed subtle blue
+        markerMesh.material.emissive.setHex(0x2563eb);
+        markerGlow.material.color.setHex(0x3b82f6);
       } else {
-        markerMesh.material.color.setHex(0xff3366);
+        markerMesh.material.color.setHex(0xff3366); // default red-pink
         markerMesh.material.emissive.setHex(0xff0033);
         markerGlow.material.color.setHex(0xff0033);
       }
@@ -816,7 +960,9 @@
     }
 
     function updateTelemetry() {
-      document.getElementById('telStatus').textContent = opt.status;
+      document.getElementById('telStatus').textContent = opt.status === 'Running' ? opt.intelligenceState.toUpperCase() : opt.status.toUpperCase();
+      document.getElementById('telContext').textContent = opt.status === 'Running' ? opt.intelligenceContext : (opt.status === 'Ready' ? 'Optimizer is ready.' : opt.intelligenceContext);
+      
       document.getElementById('telIter').textContent = opt.iter;
       document.getElementById('telX').textContent = opt.x.toFixed(4);
       document.getElementById('telY').textContent = opt.y.toFixed(4);
@@ -824,10 +970,12 @@
       document.getElementById('telGrad').textContent = opt.gradMag.toFixed(4);
       
       const stEl = document.getElementById('telStatus');
-      if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || opt.status.includes('Trap')) {
+      if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || opt.status.includes('Trap') || opt.intelligenceState === 'Exploding Gradient') {
         stEl.style.color = '#ef4444';
-      } else if (opt.status.includes('Reached')) {
+      } else if (opt.status.includes('Reached') || opt.intelligenceState.includes('Convergence') || opt.intelligenceState.includes('Stable')) {
         stEl.style.color = '#10b981';
+      } else if (opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
+        stEl.style.color = '#f59e0b';
       } else {
         stEl.style.color = 'var(--accent-text)';
       }
@@ -851,6 +999,10 @@
         markerMesh.scale.setScalar(pulse);
         markerGlow.scale.setScalar(pulse + 0.1 * Math.sin(time * 1.5));
       }
+
+      if (vectorFieldMesh) {
+         vectorFieldMesh.material.opacity = 0.4 + 0.15 * Math.sin(Date.now() * 0.003);
+      }
       
       controls.update();
       renderer.render(scene, camera);
@@ -870,6 +1022,17 @@
 
     document.getElementById('surfaceSelect').addEventListener('change', (e) => {
       loadSurface(e.target.value);
+    });
+
+    document.getElementById('chkVectorField').addEventListener('change', (e) => {
+      isVectorFieldVisible = e.target.checked;
+      buildVectorField(activeSurface);
+    });
+
+    document.getElementById('densitySlider').addEventListener('input', (e) => {
+      currentVectorDensity = parseInt(e.target.value);
+      document.getElementById('densityVal').textContent = currentVectorDensity;
+      buildVectorField(activeSurface);
     });
 
     document.getElementById('btnRun').addEventListener('click', () => {
