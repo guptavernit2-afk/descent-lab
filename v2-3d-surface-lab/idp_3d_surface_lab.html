@@ -233,6 +233,90 @@
       .restore-btn { display: block; }
       .runtime-dock { bottom: 16px; padding: 8px 12px; gap: 8px; max-width: 96vw; }
     }
+
+    /* === PHASE 1F ADDITIONS === */
+
+    /* Convergence Graph */
+    .conv-graph-panel {
+      position: absolute; bottom: 80px; left: 20px; z-index: 55;
+      background: rgba(6, 7, 12, 0.82); backdrop-filter: blur(16px) saturate(1.4);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      overflow: hidden; transition: height 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.2s;
+      pointer-events: auto;
+    }
+    .conv-graph-panel.collapsed { height: 28px !important; }
+    .conv-graph-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px; font-size: 9px; font-weight: 700; color: var(--muted);
+      letter-spacing: 1px; text-transform: uppercase; cursor: pointer; user-select: none;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .conv-graph-header:hover { color: #fff; }
+    .conv-collapse-btn { font-size: 9px; opacity: 0.6; transition: transform 0.3s; }
+    .conv-graph-panel.collapsed .conv-collapse-btn { transform: rotate(180deg); }
+    #convCanvas { display: block; }
+
+    /* Ranking Board */
+    .ranking-board {
+      position: absolute; bottom: 80px; left: 20px; z-index: 54;
+      background: rgba(6,7,12,0.82); backdrop-filter: blur(16px) saturate(1.4);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+      width: 190px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      display: none; /* shown after graph */
+    }
+    .ranking-header {
+      padding: 6px 10px; font-size: 9px; font-weight: 700; color: var(--muted);
+      letter-spacing: 1px; text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .rank-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; font-size: 9px; font-family: var(--mono);
+      border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s;
+    }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-num { font-size: 8px; font-weight: 700; color: var(--muted); width: 14px; flex-shrink: 0; }
+    .rank-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .rank-name { flex: 1; color: #e2e4ef; font-size: 9px; }
+    .rank-loss { color: var(--muted); font-size: 8px; text-align: right; }
+    .rank-badge { font-size: 8px; }
+
+    /* Viz Mode Buttons */
+    .viz-mode-group { display: flex; gap: 4px; flex-wrap: wrap; }
+    .viz-btn {
+      flex: 1; min-width: 40px; padding: 5px 4px; border-radius: 5px; font-size: 9px;
+      font-weight: 600; text-align: center; cursor: pointer; transition: all 0.18s;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);
+      color: var(--muted); letter-spacing: 0.5px;
+    }
+    .viz-btn.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5); color: #c7d2fe; }
+    .viz-btn:hover:not(.active) { border-color: rgba(255,255,255,0.2); color: #fff; }
+
+    /* Educational Tooltip */
+    #eduTooltip {
+      position: fixed; z-index: 300; max-width: 200px;
+      background: rgba(6,7,12,0.92); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+      padding: 8px 10px; pointer-events: none;
+      font-size: 10px; line-height: 1.5; color: #c7d2fe;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+      opacity: 0; transition: opacity 0.18s;
+    }
+    #eduTooltip.visible { opacity: 1; }
+    #eduTooltip strong { color: #fff; display: block; margin-bottom: 3px; font-size: 10px; }
+
+    /* Intro / Reset Flash */
+    @keyframes stageFlash {
+      0% { opacity: 0.3; } 100% { opacity: 1; }
+    }
+    .stage-flash { animation: stageFlash 0.35s ease-out forwards; }
+
+    /* Ghost button styling handled by .btn-dock.active */
+
+    /* Contour/Heatmap canvas overlay */
+    #heatmapCanvas { display: none; }
+
   </style>
   
   <script type="importmap">
@@ -252,7 +336,7 @@
     <div class="rail-header">
       <div class="eyebrow">IDP VISUAL LAB · V2</div>
       <div class="title">3D Loss Surface Explorer</div>
-      <div class="badge">PHASE 1E · MULTI-AGENT ENGINE</div>
+      <div class="badge">PHASE 1F · VISUAL LAB</div>
       <button class="collapse-btn" id="btnCollapseRail">◀</button>
     </div>
 
@@ -297,10 +381,20 @@
     <div class="rail-section" style="border-bottom: none; padding-top: 0;">
       <div class="section-title">OPTIMIZERS</div>
       <div class="opt-pills" id="optPills">
-        <div class="opt-pill active" data-opt="gd" style="--pill-color: #ff3366; --pill-bg: rgba(255,51,102,0.15)">GD</div>
-        <div class="opt-pill active" data-opt="momentum" style="--pill-color: #0ea5e9; --pill-bg: rgba(14,165,233,0.15)">MOM</div>
-        <div class="opt-pill active" data-opt="rmsprop" style="--pill-color: #a855f7; --pill-bg: rgba(168,85,247,0.15)">RMS</div>
-        <div class="opt-pill active" data-opt="adam" style="--pill-color: #10b981; --pill-bg: rgba(16,185,129,0.15)">ADAM</div>
+        <div class="opt-pill active" data-opt="gd" style="--pill-color: #ff3366; --pill-bg: rgba(255,51,102,0.15)" data-edu-id="gd">GD</div>
+        <div class="opt-pill active" data-opt="momentum" style="--pill-color: #0ea5e9; --pill-bg: rgba(14,165,233,0.15)" data-edu-id="momentum">MOM</div>
+        <div class="opt-pill active" data-opt="rmsprop" style="--pill-color: #a855f7; --pill-bg: rgba(168,85,247,0.15)" data-edu-id="rmsprop">RMS</div>
+        <div class="opt-pill active" data-opt="adam" style="--pill-color: #10b981; --pill-bg: rgba(16,185,129,0.15)" data-edu-id="adam">ADAM</div>
+      </div>
+    </div>
+
+    <div class="rail-section" style="border-bottom: none;">
+      <div class="section-title">VISUALIZATION</div>
+      <div class="viz-mode-group" id="vizModeGroup">
+        <button class="viz-btn active" data-viz="surface">Surface</button>
+        <button class="viz-btn" data-viz="wireframe">Wire</button>
+        <button class="viz-btn" data-viz="heatmap">Heatmap</button>
+        <button class="viz-btn" data-viz="contour">Contour</button>
       </div>
     </div>
   </aside>
@@ -313,6 +407,24 @@
     <div class="telemetry-overlay" id="telemetryContainer">
       <!-- Telemetry cards generated dynamically -->
     </div>
+
+    <!-- Convergence Graph -->
+    <div class="conv-graph-panel" id="convGraphPanel" style="width:220px; height:165px;">
+      <div class="conv-graph-header" id="convGraphHeader">
+        <span>LOSS / ITER</span>
+        <span class="conv-collapse-btn">▾</span>
+      </div>
+      <canvas id="convCanvas" width="220" height="138"></canvas>
+    </div>
+
+    <!-- Ranking Board -->
+    <div class="ranking-board" id="rankingBoard" style="margin-bottom:10px;">
+      <div class="ranking-header">🏆 RANKING</div>
+      <div id="rankList"></div>
+    </div>
+
+    <!-- Educational Tooltip -->
+    <div id="eduTooltip"></div>
 
     <div class="runtime-dock">
       <button id="btnRun" class="btn-run">▶ Run</button>
@@ -327,6 +439,8 @@
         <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
       </div>
       <div class="dock-divider"></div>
+      <button id="btnGhost" class="btn-dock" title="Toggle Ghost Trails">👻 Ghost</button>
+      <button id="btnReplay" class="btn-dock" title="Replay Last Run">⏩ Replay</button>
       <button id="btnCinematic" class="btn-dock" title="Toggle Cinematic Camera">🎬 Cinematic</button>
       <button id="btnResetCam" class="btn-dock" title="Reset Camera">📷 Camera</button>
     </div>
@@ -509,6 +623,55 @@
     const rippleEvents = [];
 
     // ==========================================
+    // PHASE 1F — STATE
+    // ==========================================
+
+    // Convergence Graph
+    const graphHistory = { gd: [], momentum: [], rmsprop: [], adam: [] };
+    const GRAPH_MAX_SAMPLES = 300;
+    let graphFrameCounter = 0;
+
+    // Ghost Trails
+    let isGhostMode = false;
+    const ghostTrails = []; // [{id, color, positions[]}] — max 3 sets
+    const ghostMeshes = []; // THREE.Line objects
+
+    // Replay
+    const replayBuffer = {}; // { id: [{x,y,z}] }
+    let isReplaying = false;
+    let replayFrame = 0;
+
+    // Visualization mode
+    let currentVizMode = 'surface'; // 'surface' | 'wireframe' | 'heatmap' | 'contour'
+    let wireframeMesh = null;
+    let heatmapPlaneMesh = null;
+    let contourLineMeshes = [];
+
+    // Intro camera animation
+    let introLerpT = 0;
+    let introLerpActive = false;
+    let introTargetCamPos = new THREE.Vector3();
+    let introTargetCamLook = new THREE.Vector3();
+    let introStartCamPos = new THREE.Vector3();
+
+    // Ranking throttle
+    let rankingCounter = 0;
+
+    // Educational tooltip data
+    const EDU_DATA = {
+      gd:       { title: 'Vanilla GD', text: 'Raw gradient steps. Zigzags in narrow valleys, overshoots sharp curves. Simple but unstable.' },
+      momentum: { title: 'Momentum', text: 'Accumulates velocity from past gradients. Overshoots minima but escapes flat plateaus with kinetic carry.' },
+      rmsprop:  { title: 'RMSProp', text: 'Scales LR per-dimension using gradient history. Tighter in narrow valleys, avoids oscillation naturally.' },
+      adam:     { title: 'Adam', text: 'Combines Momentum + RMSProp with bias correction. Fastest convergence on most loss landscapes.' },
+      'Oscillation Detected': { title: 'Oscillation', text: 'Direction reverses each step — LR is too high for local curvature. Optimizer is bouncing across the valley.' },
+      'Valley Navigation':    { title: 'Valley Navigation', text: 'Gradient is mostly perpendicular to the valley. Optimizer struggles to sense the descent direction.' },
+      'Momentum Slingshot':   { title: 'Momentum Slingshot', text: 'Accumulated velocity exceeds the current gradient signal — kinetic carry is actively overshooting.' },
+      'Local Trap':           { title: 'Local Trap', text: 'Gradient has vanished but we are far from the global minimum. Stuck in a local basin.' },
+      'Adaptive Rescue':      { title: 'Adaptive Rescue', text: 'Large gradient detected, but adaptive scaling keeps the step small — preventing divergence.' },
+      'Converging':           { title: 'Converging', text: 'Fine-grained approach to the minimum. Loss delta is now extremely small.' }
+    };
+
+    // ==========================================
     // 3. THREE.JS SETUP
     // ==========================================
     const container = document.getElementById('threeCanvasHost');
@@ -638,6 +801,97 @@
       surfaceMesh.add(wireMesh);
     }
 
+    function generateHeatmapTexture(sKey) {
+      if (heatmapPlaneMesh) {
+        scene.remove(heatmapPlaneMesh);
+        heatmapPlaneMesh.geometry.dispose();
+        heatmapPlaneMesh.material.dispose();
+        if (heatmapPlaneMesh.material.map) heatmapPlaneMesh.material.map.dispose();
+        heatmapPlaneMesh = null;
+      }
+      const s = SURFACES[sKey];
+      
+      const res = 256;
+      const cvs = document.createElement('canvas');
+      cvs.width = res; cvs.height = res;
+      const ctx = cvs.getContext('2d');
+      const imgData = ctx.createImageData(res, res);
+      
+      let minL = Infinity, maxL = -Infinity;
+      const raw = new Float32Array(res * res);
+      let idx = 0;
+      for(let j = 0; j < res; j++) {
+        for(let i = 0; i < res; i++) {
+          const x = s.domain.xmin + (i / (res-1)) * (s.domain.xmax - s.domain.xmin);
+          const y = s.domain.ymin + ((res - 1 - j) / (res-1)) * (s.domain.ymax - s.domain.ymin);
+          const l = trueLoss(s, x, y);
+          raw[idx++] = l;
+          if(l < minL) minL = l;
+          if(l > maxL) maxL = l;
+        }
+      }
+      
+      idx = 0;
+      for(let j = 0; j < res; j++) {
+        for(let i = 0; i < res; i++) {
+          const l = raw[idx];
+          const t = Math.min(1, Math.max(0, (l - minL) / (Math.min(maxL, s.lossClip) - minL + 1e-6)));
+          const col = getColorMap(t);
+          const px = (j * res + i) * 4;
+          imgData.data[px] = col.r * 255;
+          imgData.data[px+1] = col.g * 255;
+          imgData.data[px+2] = col.b * 255;
+          imgData.data[px+3] = 200;
+          idx++;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+      
+      const tex = new THREE.CanvasTexture(cvs);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+      const width = s.domain.xmax - s.domain.xmin;
+      const height = s.domain.ymax - s.domain.ymin;
+      const geo = new THREE.PlaneGeometry(width, height);
+      heatmapPlaneMesh = new THREE.Mesh(geo, mat);
+      heatmapPlaneMesh.rotation.x = -Math.PI / 2;
+      heatmapPlaneMesh.position.y = 0.05;
+      heatmapPlaneMesh.visible = (currentVizMode === 'heatmap');
+      scene.add(heatmapPlaneMesh);
+    }
+
+    function buildContourLines(sKey) {
+      contourLineMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+      contourLineMeshes = [];
+      const s = SURFACES[sKey];
+      
+      const res = 150;
+      const maxH = s.maxDisplayHeight;
+      const numContours = 20;
+      
+      const geo = new THREE.BufferGeometry();
+      const pos = [];
+      for(let j=0; j<res; j++) {
+        for(let i=0; i<res; i++) {
+          const x = s.domain.xmin + (i / (res-1)) * (s.domain.xmax - s.domain.xmin);
+          const y = s.domain.ymin + (j / (res-1)) * (s.domain.ymax - s.domain.ymin);
+          const h = getDisplayHeight(s, trueLoss(s, x, y));
+          const level = h * (numContours / maxH);
+          if (Math.abs(level - Math.round(level)) < 0.08) {
+            pos.push(x, 0.05, y);
+          }
+        }
+      }
+      if(pos.length > 0) {
+         geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+         const mat = new THREE.PointsMaterial({ color: 0x6366f1, size: 0.03, transparent: true, opacity: 0.6 });
+         const mesh = new THREE.Points(geo, mat);
+         mesh.visible = (currentVizMode === 'contour');
+         scene.add(mesh);
+         contourLineMeshes.push(mesh);
+      }
+    }
+
     function initMarkers(sKey) {
       const s = SURFACES[sKey];
       
@@ -751,12 +1005,35 @@
       document.getElementById('infoChallenge').textContent = s.challenge;
       document.getElementById('infoMinima').textContent = s.minimaText;
 
+      // Clear ghost trails on surface change
+      clearGhostMeshes();
+
+      // Reset graph history
+      Object.keys(graphHistory).forEach(k => { graphHistory[k] = []; });
+
+      // Reset viz mode to surface
+      setVizMode('surface');
+
       buildSurfaceMesh(sKey);
       initMarkers(sKey);
       initPathTrace();
       buildVectorField(sKey);
       resetCamera(sKey);
+
+      // Trigger intro camera animation (lerp from current pos)
+      introStartCamPos.copy(camera.position);
+      introTargetCamPos.copy(s.camPos);
+      introTargetCamLook.copy(s.camTarget);
+      introLerpT = 0;
+      introLerpActive = true;
+
       resetOptimizer();
+
+      // Flash the stage for reset feedback
+      const host = document.getElementById('threeCanvasHost');
+      host.classList.remove('stage-flash');
+      void host.offsetWidth; // reflow
+      host.classList.add('stage-flash');
     }
 
     function buildVectorField(sKey) {
@@ -850,9 +1127,80 @@
       return null;
     }
 
+    function clearGhostMeshes() {
+      ghostMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+      ghostMeshes.length = 0;
+      ghostTrails.length = 0;
+    }
+
+    function snapshotGhostTrails() {
+      const s = SURFACES[activeSurface];
+      Object.values(optimizers).forEach(opt => {
+        if (!opt.enabled || opt.path.length < 5) return;
+        const pts = opt.path.map(p => {
+          const w = mathToWorld(s, p.x, p.y);
+          return new THREE.Vector3(w.x, w.y + 0.05, w.z);
+        });
+        ghostTrails.push({ id: opt.id, color: opt.glowHex, positions: pts });
+      });
+      
+      // Max 12 trails (3 runs * 4 optimizers)
+      while (ghostTrails.length > 12) ghostTrails.shift();
+      
+      ghostMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+      ghostMeshes.length = 0;
+      
+      ghostTrails.forEach(trail => {
+        const geo = new THREE.BufferGeometry().setFromPoints(trail.positions);
+        const mat = new THREE.LineBasicMaterial({ color: trail.color, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending });
+        const mesh = new THREE.Line(geo, mat);
+        mesh.visible = isGhostMode;
+        scene.add(mesh);
+        ghostMeshes.push(mesh);
+      });
+    }
+
+    function snapshotReplayBuffer() {
+      Object.values(optimizers).forEach(opt => {
+        if (opt.enabled && opt.path.length > 5) {
+          replayBuffer[opt.id] = [...opt.path];
+        }
+      });
+    }
+
+    function setVizMode(mode) {
+      currentVizMode = mode;
+      document.querySelectorAll('.viz-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-viz') === mode);
+      });
+      
+      if (surfaceMesh) {
+        surfaceMesh.visible = (mode === 'surface' || mode === 'wireframe');
+        if (surfaceMesh.children.length > 0) { // wireframe child
+          surfaceMesh.children[0].visible = (mode === 'wireframe');
+        }
+      }
+      
+      if (heatmapPlaneMesh) heatmapPlaneMesh.visible = (mode === 'heatmap');
+      contourLineMeshes.forEach(m => m.visible = (mode === 'contour'));
+
+      if (mode === 'heatmap' && !heatmapPlaneMesh) generateHeatmapTexture(activeSurface);
+      if (mode === 'contour' && contourLineMeshes.length === 0) buildContourLines(activeSurface);
+    }
+
     function resetOptimizer() {
       const s = SURFACES[activeSurface];
+      
+      // Snapshot ghost trails and replay buffer if we actually ran
+      let ran = false;
+      Object.values(optimizers).forEach(o => { if(o.iter > 5) ran = true; });
+      if (ran && !isReplaying) {
+        snapshotGhostTrails();
+        snapshotReplayBuffer();
+      }
+
       globalRunning = false;
+      isReplaying = false;
       document.getElementById('btnRun').innerHTML = '▶ Run';
       
       globalLr = s.defaultLR;
@@ -1227,6 +1575,101 @@
         `;
         cont.appendChild(card);
       });
+
+      // Update Phase 1F panels
+      graphFrameCounter++;
+      if (globalRunning && graphFrameCounter % 3 === 0) {
+        Object.values(optimizers).forEach(opt => {
+          if (opt.enabled) {
+            graphHistory[opt.id].push(opt.z);
+            if (graphHistory[opt.id].length > GRAPH_MAX_SAMPLES) graphHistory[opt.id].shift();
+          }
+        });
+      }
+      updateConvergenceGraph();
+      
+      rankingCounter++;
+      if (rankingCounter >= 10) {
+        updateRankingBoard();
+        rankingCounter = 0;
+      }
+    }
+
+    function updateConvergenceGraph() {
+      const cvs = document.getElementById('convCanvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+      
+      ctx.clearRect(0, 0, w, h);
+      
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i = 1; i <= 4; i++) {
+        const y = h - (i * h / 5);
+        ctx.moveTo(0, y); ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+
+      let maxL = 0.0001;
+      Object.keys(graphHistory).forEach(k => {
+        if (!optimizers[k].enabled) return;
+        graphHistory[k].forEach(val => { if (val > maxL) maxL = val; });
+      });
+
+      Object.keys(graphHistory).forEach(k => {
+        const opt = optimizers[k];
+        if (!opt.enabled) return;
+        const history = graphHistory[k];
+        if (history.length < 2) return;
+        
+        ctx.beginPath();
+        ctx.strokeStyle = opt.uiColor;
+        ctx.lineWidth = 1.5;
+        
+        const stepX = w / Math.max(1, history.length - 1);
+        history.forEach((val, idx) => {
+          const scaledY = h - (Math.log10(val + 1) / Math.log10(maxL + 1)) * h;
+          const clampY = Math.max(0, Math.min(h, scaledY));
+          if (idx === 0) ctx.moveTo(idx * stepX, clampY);
+          else ctx.lineTo(idx * stepX, clampY);
+        });
+        ctx.stroke();
+      });
+    }
+
+    function updateRankingBoard() {
+      const rankList = document.getElementById('rankList');
+      if (!rankList) return;
+      
+      const activeOpts = Object.values(optimizers).filter(o => o.enabled);
+      if (activeOpts.length === 0) {
+        document.getElementById('rankingBoard').style.display = 'none';
+        return;
+      }
+      
+      activeOpts.sort((a, b) => a.z - b.z);
+      
+      rankList.innerHTML = '';
+      activeOpts.forEach((opt, idx) => {
+        let badge = '';
+        if (opt.intelligenceState === 'Momentum Slingshot') badge = '🚀';
+        else if (opt.intelligenceState === 'Oscillation Detected') badge = '⚠️';
+        else if (opt.intelligenceState === 'Local Trap') badge = '🔵';
+        else if (opt.intelligenceState === 'Converging') badge = '✨';
+
+        rankList.innerHTML += `
+          <div class="rank-row">
+            <span class="rank-num">#${idx+1}</span>
+            <div class="rank-dot" style="background:${opt.uiColor};box-shadow:0 0 6px ${opt.glowHex}"></div>
+            <span class="rank-name">${opt.name}</span>
+            <span class="rank-badge">${badge}</span>
+            <span class="rank-loss">${opt.z.toFixed(4)}</span>
+          </div>
+        `;
+      });
+      document.getElementById('rankingBoard').style.display = 'block';
     }
 
     function updateCinematicCamera() {
@@ -1261,7 +1704,44 @@
       if (fpsSmoothed < 40) dynamicMaxPath = Math.max(MIN_PATH, dynamicMaxPath - 50);
       else if (fpsSmoothed > 55) dynamicMaxPath = Math.min(MAX_PATH, dynamicMaxPath + 20);
       
-      if (globalRunning) {
+      if (introLerpActive) {
+        introLerpT += 0.012;
+        if (introLerpT >= 1.0) {
+          introLerpT = 1.0;
+          introLerpActive = false;
+        }
+        const t = 1 - Math.pow(1 - introLerpT, 3); // ease out cubic
+        camera.position.lerpVectors(introStartCamPos, introTargetCamPos, t);
+        controls.target.lerpVectors(controls.target, introTargetCamLook, t);
+      }
+
+      if (isReplaying) {
+        const s = SURFACES[activeSurface];
+        replayFrame += Math.max(1, Math.floor(globalSpeed / 3));
+        let maxFrames = 0;
+        
+        Object.keys(replayBuffer).forEach(id => {
+          const opt = optimizers[id];
+          const buf = replayBuffer[id];
+          if (!opt.enabled || !buf) return;
+          if (buf.length > maxFrames) maxFrames = buf.length;
+          
+          const f = Math.min(replayFrame, buf.length - 1);
+          const p = buf[f];
+          
+          const pw = mathToWorld(s, p.x, p.y);
+          if (opt.meshes.markerMesh) opt.meshes.markerMesh.position.set(pw.x, pw.y + 0.12, pw.z);
+          if (opt.meshes.markerGlow) opt.meshes.markerGlow.position.set(pw.x, pw.y + 0.12, pw.z);
+          
+          if (opt.meshes.pathLine) opt.meshes.pathLine.geometry.setDrawRange(0, f + 1);
+          if (opt.meshes.pathLineUnderlay) opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, f + 1);
+        });
+        
+        if (replayFrame >= maxFrames) {
+          isReplaying = false;
+          document.getElementById('btnReplay').classList.remove('active');
+        }
+      } else if (globalRunning) {
         stepOptimizer();
         updateVisuals();
       }
@@ -1308,6 +1788,66 @@
     document.getElementById('chkVectorField').addEventListener('change', (e) => {
       isVectorFieldVisible = e.target.checked;
       buildVectorField(activeSurface);
+    });
+
+    document.querySelectorAll('.viz-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        setVizMode(e.target.getAttribute('data-viz'));
+      });
+    });
+
+    document.getElementById('btnGhost').addEventListener('click', (e) => {
+      isGhostMode = !isGhostMode;
+      e.target.classList.toggle('active', isGhostMode);
+      ghostMeshes.forEach(m => m.visible = isGhostMode);
+    });
+
+    document.getElementById('btnReplay').addEventListener('click', (e) => {
+      if (Object.keys(replayBuffer).length === 0) return; // no buffer
+      
+      if (globalRunning) {
+        globalRunning = false;
+        document.getElementById('btnRun').innerHTML = '▶ Run';
+      }
+      
+      isReplaying = true;
+      replayFrame = 0;
+      e.target.classList.add('active');
+      
+      // Setup replay visuals
+      Object.keys(replayBuffer).forEach(id => {
+        const opt = optimizers[id];
+        if (opt.enabled) {
+          opt.iter = 0;
+          opt.z = replayBuffer[id][0].z;
+        }
+      });
+      updateTelemetry();
+    });
+
+    document.getElementById('convGraphHeader').addEventListener('click', () => {
+      document.getElementById('convGraphPanel').classList.toggle('collapsed');
+    });
+
+    // Tooltips
+    const tooltip = document.getElementById('eduTooltip');
+    let tooltipTimeout;
+
+    document.querySelectorAll('.opt-pill').forEach(pill => {
+      pill.addEventListener('mouseenter', (e) => {
+        const eduId = e.target.getAttribute('data-edu-id');
+        const data = EDU_DATA[eduId];
+        if(data) {
+          tooltip.innerHTML = `<strong>${data.title}</strong>${data.text}`;
+          tooltip.classList.add('visible');
+          const rect = e.target.getBoundingClientRect();
+          tooltip.style.left = (rect.right + 15) + 'px';
+          tooltip.style.top = rect.top + 'px';
+        }
+      });
+      pill.addEventListener('mouseleave', () => {
+        tooltip.classList.remove('visible');
+      });
     });
 
     document.getElementById('densitySlider').addEventListener('input', (e) => {
@@ -1483,6 +2023,39 @@
           toast.style.zIndex = '100';
           document.body.appendChild(toast);
           setTimeout(() => toast.remove(), 2000);
+        }
+      }
+    });
+
+    // Tooltip Raycasting (Hover)
+    container.addEventListener('mousemove', (e) => {
+      if (e.buttons > 0) return; // don't trigger while orbiting
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const meshesToTest = Object.values(optimizers).filter(o => o.enabled && o.meshes.markerMesh).map(o => o.meshes.markerMesh);
+      const intersects = raycaster.intersectObjects(meshesToTest);
+      
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object;
+        const opt = Object.values(optimizers).find(o => o.meshes.markerMesh === hitMesh);
+        if (opt && opt.intelligenceState !== 'Ready') {
+          const stateData = EDU_DATA[opt.intelligenceState];
+          if (stateData) {
+            tooltip.innerHTML = `<strong>${stateData.title}</strong>${stateData.text}`;
+            tooltip.classList.add('visible');
+            tooltip.style.left = (e.clientX + 15) + 'px';
+            tooltip.style.top = (e.clientY + 15) + 'px';
+            
+            clearTimeout(tooltipTimeout);
+            tooltipTimeout = setTimeout(() => { tooltip.classList.remove('visible'); }, 3000);
+          }
+        }
+      } else {
+        if(tooltip.classList.contains('visible') && !tooltip.matches(':hover') && !document.querySelector('.opt-pill:hover')) {
+          tooltip.classList.remove('visible');
         }
       }
     });
