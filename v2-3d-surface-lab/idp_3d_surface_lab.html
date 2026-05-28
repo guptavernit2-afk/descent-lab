@@ -144,75 +144,94 @@
     }
 
     /* Opt Pills */
-    .opt-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .opt-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
     .opt-pill {
-      flex: 1; min-width: 45px; text-align: center;
+      flex: 1; min-width: 42px; text-align: center;
       background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);
-      color: var(--muted); padding: 8px 4px; border-radius: 8px;
-      font-size: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      color: var(--muted); padding: 7px 4px; border-radius: 8px;
+      font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.22s;
+      letter-spacing: 0.5px; position: relative;
     }
-    .opt-pill.active {
-      color: #fff;
-      box-shadow: 0 0 12px var(--pill-color, rgba(255,255,255,0.2));
-      border-color: var(--pill-color, #fff);
-      background: var(--pill-bg, rgba(255,255,255,0.1));
+    .opt-pill::before {
+      content: ''; display: block; width: 5px; height: 5px;
+      border-radius: 50%; margin: 0 auto 4px; background: currentColor;
+      opacity: 0.35; transition: opacity 0.22s;
     }
-    .opt-pill:hover { border-color: rgba(255,255,255,0.3); }
+    .opt-pill.active { color: #fff; }
+    .opt-pill.active::before { opacity: 1; box-shadow: 0 0 8px currentColor; }
+    .opt-pill[data-opt="gd"]::before { background: #ff3366; }
+    .opt-pill[data-opt="momentum"]::before { background: #0ea5e9; }
+    .opt-pill[data-opt="rmsprop"]::before { background: #a855f7; }
+    .opt-pill[data-opt="adam"]::before { background: #10b981; }
+    .opt-pill.active[data-opt="gd"] { box-shadow: 0 0 10px rgba(255,51,102,0.3); border-color: rgba(255,51,102,0.6); background: rgba(255,51,102,0.1); }
+    .opt-pill.active[data-opt="momentum"] { box-shadow: 0 0 10px rgba(14,165,233,0.3); border-color: rgba(14,165,233,0.6); background: rgba(14,165,233,0.1); }
+    .opt-pill.active[data-opt="rmsprop"] { box-shadow: 0 0 10px rgba(168,85,247,0.3); border-color: rgba(168,85,247,0.6); background: rgba(168,85,247,0.1); }
+    .opt-pill.active[data-opt="adam"] { box-shadow: 0 0 10px rgba(16,185,129,0.3); border-color: rgba(16,185,129,0.6); background: rgba(16,185,129,0.1); }
+    .opt-pill:hover:not(.active) { border-color: rgba(255,255,255,0.25); color: #fff; }
 
     /* Telemetry */
     .telemetry-overlay {
-      position: absolute; top: 20px; right: 20px; width: 240px;
-      display: flex; flex-direction: column; gap: 10px;
-      pointer-events: none; z-index: 50; max-height: calc(100% - 100px); overflow-y: auto;
+      position: absolute; top: 16px; right: 16px; width: 210px;
+      display: flex; flex-direction: column; gap: 6px;
+      pointer-events: none; z-index: 50; max-height: calc(100% - 90px);
+      overflow-y: auto; overflow-x: hidden;
     }
+    .telemetry-overlay::-webkit-scrollbar { display: none; }
     .telemetry-card {
-      background: var(--rail-bg); backdrop-filter: var(--glass);
-      border: 1px solid var(--border-light); border-left: 3px solid var(--card-color, var(--accent));
-      border-radius: 8px; padding: 12px; box-shadow: var(--shadow-lg);
+      background: rgba(8, 9, 14, 0.72); backdrop-filter: blur(16px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.08); border-left: 2px solid var(--card-color, var(--accent));
+      border-radius: 8px; padding: 9px 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: border-color 0.3s;
     }
-    .tel-header { font-size: 11px; font-weight: 700; color: #fff; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
-    .tel-badge { font-size: 9px; padding: 3px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); }
-    .tel-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-family: var(--mono); font-size: 10px; }
+    .tel-header { font-size: 10px; font-weight: 700; color: #fff; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+    .tel-badge { font-size: 8px; padding: 2px 5px; border-radius: 3px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.05); white-space: nowrap; flex-shrink: 0; transition: color 0.3s, border-color 0.3s; }
+    .tel-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-family: var(--mono); font-size: 9px; }
     .tel-row span:first-child { color: var(--muted); }
-    .tel-row span:last-child { color: #f8fafc; font-weight: 500; text-shadow: 0 0 6px rgba(255,255,255,0.1); }
+    .tel-row span:last-child { color: #f8fafc; font-weight: 500; }
 
 
     /* Dock */
     .runtime-dock {
-      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: var(--rail-bg); backdrop-filter: var(--glass);
-      border: 1px solid var(--border-light); border-radius: 12px; padding: 10px 20px;
-      display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; z-index: 50;
-      box-shadow: var(--shadow-lg);
+      position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+      background: rgba(8, 9, 14, 0.75); backdrop-filter: blur(16px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 8px 16px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; justify-content: center; z-index: 50;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
     }
     .btn-run { 
-      background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 6px; 
-      font-weight: 600; font-size: 13px; cursor: pointer; width: 90px; transition: all 0.2s;
-      box-shadow: 0 2px 8px rgba(255,255,255,0.15);
+      background: #fff; color: #000; border: none; padding: 7px 14px; border-radius: 6px; 
+      font-weight: 700; font-size: 12px; cursor: pointer; min-width: 80px; transition: all 0.18s;
+      box-shadow: 0 2px 8px rgba(255,255,255,0.15); letter-spacing: 0.3px;
     }
-    .btn-run:hover { background: #e2e4ef; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255,255,255,0.25); }
+    .btn-run:hover { background: #e2e4ef; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,255,255,0.22); }
     .btn-run:active { transform: translateY(1px); }
     
     .btn-dock { 
-      background: rgba(255,255,255,0.04); color: #fff; border: 1px solid rgba(255,255,255,0.08); 
-      padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 12px; font-weight: 500;
+      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.08); 
+      padding: 7px 10px; border-radius: 6px; cursor: pointer; transition: all 0.18s; font-size: 11px; font-weight: 500; white-space: nowrap;
     }
-    .btn-dock:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+    .btn-dock:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); color: #fff; }
+    .btn-dock.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5); color: #c7d2fe; }
 
-    .slider-group { display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-    .slider-group span { font-family: var(--mono); color: #fff; font-weight: 600; text-transform: none; }
+    .dock-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
+    .slider-group { display: flex; flex-direction: column; gap: 3px; font-size: 9px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .slider-group span { font-family: var(--mono); color: #fff; font-weight: 600; text-transform: none; font-size: 10px; }
     input[type=range] { 
-      width: 100px; cursor: pointer; height: 3px; background: rgba(255,255,255,0.1); border-radius: 1.5px; appearance: none;
+      width: 80px; cursor: pointer; height: 3px; background: rgba(255,255,255,0.1); border-radius: 1.5px; appearance: none;
     }
     input[type=range]::-webkit-slider-thumb {
-      appearance: none; width: 12px; height: 12px; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.4); transition: transform 0.1s;
+      appearance: none; width: 11px; height: 11px; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.4); transition: transform 0.1s;
     }
     input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
+    @media (max-width: 1280px) {
+      :root { --rail-width: 300px; }
+      .telemetry-overlay { width: 190px; right: 12px; }
+    }
     @media (max-width: 1100px) {
       .experiment-rail { position: absolute; left: 0; top: 0; box-shadow: 10px 0 40px rgba(0,0,0,0.6); }
       .restore-btn { display: block; }
-      .runtime-dock { bottom: 20px; padding: 10px 14px; gap: 10px; width: 90%; max-width: 400px; }
+      .runtime-dock { bottom: 16px; padding: 8px 12px; gap: 8px; max-width: 96vw; }
     }
   </style>
   
@@ -298,6 +317,7 @@
     <div class="runtime-dock">
       <button id="btnRun" class="btn-run">▶ Run</button>
       <button id="btnReset" class="btn-dock">↺ Reset</button>
+      <div class="dock-divider"></div>
       <div class="slider-group">
         <label>η (LR): <span id="lrVal">0.01</span></label>
         <input type="range" id="lrSlider" min="-4" max="0" step="0.1" value="-2">
@@ -306,6 +326,8 @@
         <label>Speed: <span id="speedVal">10</span></label>
         <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
       </div>
+      <div class="dock-divider"></div>
+      <button id="btnCinematic" class="btn-dock" title="Toggle Cinematic Camera">🎬 Cinematic</button>
       <button id="btnResetCam" class="btn-dock" title="Reset Camera">📷 Camera</button>
     </div>
   </main>
@@ -429,37 +451,62 @@
     let globalRunning = false;
     let globalSpeed = 10;
     let globalLr = 0.01;
-    const MAX_PATH = 2500;
+    const MAX_PATH = 2000;
+    const MIN_PATH = 400;  // FPS-adaptive floor
+
+    // Per-optimizer personality hyperparameters (intentionally tuned for visual drama)
+    const OPT_PERSONALITY = {
+      gd:       { gradClip: 4.0,  lrMult: 1.0,  beta: 0,    beta2: 0 },   // raw, unstable
+      momentum: { gradClip: 0,    lrMult: 1.0,  beta: 0.93, beta2: 0 },   // aggressive carry
+      rmsprop:  { gradClip: 0,    lrMult: 2.5,  beta: 0.95, eps: 1e-7 },  // adaptive, tight
+      adam:     { gradClip: 2.0,  lrMult: 3.0,  beta1: 0.9, beta2: 0.999, eps: 1e-8 } // smart, smooth
+    };
 
     const optimizers = {
       gd: {
         id: 'gd', name: 'Vanilla GD', colorHex: 0xff3366, glowHex: 0xff0033, uiColor: '#ff3366', enabled: true,
         status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
-        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [], meshes: {}
+        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
+        stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
       },
       momentum: {
         id: 'momentum', name: 'Momentum', colorHex: 0x0ea5e9, glowHex: 0x0284c7, uiColor: '#0ea5e9', enabled: true,
         status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
         x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
-        v_x: 0, v_y: 0, meshes: {}
+        v_x: 0, v_y: 0, stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
       },
       rmsprop: {
         id: 'rmsprop', name: 'RMSProp', colorHex: 0xa855f7, glowHex: 0x9333ea, uiColor: '#a855f7', enabled: true,
         status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
         x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
-        s_x: 0, s_y: 0, meshes: {}
+        s_x: 1e-8, s_y: 1e-8, stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
       },
       adam: {
         id: 'adam', name: 'Adam', colorHex: 0x10b981, glowHex: 0x059669, uiColor: '#10b981', enabled: true,
         status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
         x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
-        m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, meshes: {}
+        m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
       }
     };
 
     let isVectorFieldVisible = true;
     let currentVectorDensity = 25;
     let vectorFieldMesh = null;
+
+    // Cinematic camera
+    let isCinematicMode = false;
+    let cinematicLastInteract = 0;
+    const cinematicTarget = new THREE.Vector3();
+    const cinematicCamPos = new THREE.Vector3();
+    let cinematicReady = false;
+
+    // FPS tracking
+    let lastFrameTime = performance.now();
+    let fpsSmoothed = 60;
+    let dynamicMaxPath = MAX_PATH;
+
+    // Ripple event queue (convergence FX)
+    const rippleEvents = [];
 
     // ==========================================
     // 3. THREE.JS SETUP
@@ -823,6 +870,7 @@
       const wPosStart = mathToWorld(s, currentStart.x, currentStart.y);
       if (startMarkerMesh) startMarkerMesh.position.set(wPosStart.x, wPosStart.y + 0.1, wPosStart.z);
 
+      rippleEvents.length = 0;
       Object.values(optimizers).forEach(opt => {
         opt.status = 'Ready';
         opt.intelligenceState = 'Ready';
@@ -833,6 +881,9 @@
         opt.x = currentStart.x;
         opt.y = currentStart.y;
         opt.z = startZ;
+        opt.stepDist = 0;
+        opt.convergePulse = 0;
+        opt.flickerPhase = 0;
         
         const { gx, gy } = s.grad(opt.x, opt.y);
         opt.gradMag = Math.sqrt(gx*gx + gy*gy);
@@ -840,17 +891,19 @@
         opt.path = [{ x: opt.x, y: opt.y, z: opt.z }];
         
         opt.v_x = 0; opt.v_y = 0;
-        opt.s_x = 0; opt.s_y = 0;
+        opt.s_x = 1e-8; opt.s_y = 1e-8;
         opt.m_x = 0; opt.m_y = 0; opt.t = 0;
         
         if (opt.meshes.markerMesh) {
           opt.meshes.markerMesh.position.set(wPosStart.x, wPosStart.y + 0.12, wPosStart.z);
           opt.meshes.markerMesh.material.color.setHex(opt.colorHex);
           opt.meshes.markerMesh.material.emissive.setHex(opt.glowHex);
+          opt.meshes.markerMesh.material.emissiveIntensity = 0.8;
         }
         if (opt.meshes.markerGlow) {
           opt.meshes.markerGlow.position.set(wPosStart.x, wPosStart.y + 0.12, wPosStart.z);
           opt.meshes.markerGlow.material.color.setHex(opt.glowHex);
+          opt.meshes.markerGlow.material.opacity = 0.3;
         }
         
         if (opt.meshes.pathLine) {
@@ -877,106 +930,139 @@
         Object.values(optimizers).forEach(opt => {
           if (!opt.enabled || opt.status !== 'Running') return;
           
-          const { gx, gy } = s.grad(opt.x, opt.y);
+          const p = OPT_PERSONALITY[opt.id];
+          let { gx, gy } = s.grad(opt.x, opt.y);
           opt.gradMag = Math.sqrt(gx*gx + gy*gy);
           
+          if (p.gradClip > 0 && opt.gradMag > p.gradClip) {
+            const scale = p.gradClip / opt.gradMag;
+            gx *= scale; gy *= scale;
+          }
+          
+          const lr = globalLr * p.lrMult;
           let nextX = opt.x, nextY = opt.y;
+          const prevX = opt.x, prevY = opt.y;
           
           if (opt.id === 'gd') {
-            nextX -= globalLr * gx;
-            nextY -= globalLr * gy;
+            nextX -= lr * gx;
+            nextY -= lr * gy;
           } else if (opt.id === 'momentum') {
-            const beta = 0.9;
-            opt.v_x = beta * opt.v_x + globalLr * gx;
-            opt.v_y = beta * opt.v_y + globalLr * gy;
+            const beta = p.beta;
+            opt.v_x = beta * opt.v_x + lr * gx;
+            opt.v_y = beta * opt.v_y + lr * gy;
             nextX -= opt.v_x;
             nextY -= opt.v_y;
           } else if (opt.id === 'rmsprop') {
-            const beta = 0.99;
-            const eps = 1e-8;
+            const beta = p.beta, eps = p.eps;
             opt.s_x = beta * opt.s_x + (1 - beta) * gx * gx;
             opt.s_y = beta * opt.s_y + (1 - beta) * gy * gy;
-            nextX -= (globalLr / (Math.sqrt(opt.s_x) + eps)) * gx;
-            nextY -= (globalLr / (Math.sqrt(opt.s_y) + eps)) * gy;
+            nextX -= (lr / (Math.sqrt(opt.s_x) + eps)) * gx;
+            nextY -= (lr / (Math.sqrt(opt.s_y) + eps)) * gy;
           } else if (opt.id === 'adam') {
-            const beta1 = 0.9, beta2 = 0.999, eps = 1e-8;
+            const beta1 = p.beta1, beta2 = p.beta2, eps = p.eps;
             opt.t += 1;
             opt.m_x = beta1 * opt.m_x + (1 - beta1) * gx;
             opt.m_y = beta1 * opt.m_y + (1 - beta1) * gy;
             opt.v_x = beta2 * opt.v_x + (1 - beta2) * gx * gx;
             opt.v_y = beta2 * opt.v_y + (1 - beta2) * gy * gy;
-            const m_hat_x = opt.m_x / (1 - Math.pow(beta1, opt.t));
-            const m_hat_y = opt.m_y / (1 - Math.pow(beta1, opt.t));
-            const v_hat_x = opt.v_x / (1 - Math.pow(beta2, opt.t));
-            const v_hat_y = opt.v_y / (1 - Math.pow(beta2, opt.t));
-            nextX -= (globalLr / (Math.sqrt(v_hat_x) + eps)) * m_hat_x;
-            nextY -= (globalLr / (Math.sqrt(v_hat_y) + eps)) * m_hat_y;
+            const bc1 = 1 - Math.pow(beta1, opt.t);
+            const bc2 = 1 - Math.pow(beta2, opt.t);
+            const mhx = opt.m_x / bc1, mhy = opt.m_y / bc1;
+            const vhx = opt.v_x / bc2, vhy = opt.v_y / bc2;
+            nextX -= (lr / (Math.sqrt(vhx) + eps)) * mhx;
+            nextY -= (lr / (Math.sqrt(vhy) + eps)) * mhy;
           }
           
-          if (!isFinite(nextX) || !isFinite(nextY)) {
-            opt.status = 'Numerical Instability';
-            return;
-          }
-          if (nextX < s.domain.xmin || nextX > s.domain.xmax || nextY < s.domain.ymin || nextY > s.domain.ymax) {
-            opt.status = 'Boundary Reached';
-            return;
-          }
+          if (!isFinite(nextX) || !isFinite(nextY)) { opt.status = 'Numerical Instability'; return; }
+          if (nextX < s.domain.xmin || nextX > s.domain.xmax || nextY < s.domain.ymin || nextY > s.domain.ymax) { opt.status = 'Boundary Reached'; return; }
           const nextZ = trueLoss(s, nextX, nextY);
-          if (!isFinite(nextZ)) {
-            opt.status = 'Numerical Instability';
-            return;
-          }
+          if (!isFinite(nextZ)) { opt.status = 'Numerical Instability'; return; }
           
+          opt.stepDist = Math.sqrt((nextX-prevX)**2 + (nextY-prevY)**2);
           opt.x = nextX; opt.y = nextY; opt.z = nextZ;
           opt.iter++;
           
           opt.lossHistory.push(nextZ);
-          if(opt.lossHistory.length > 6) opt.lossHistory.shift();
-          opt.dirHistory.push({dx: -gx, dy: -gy});
-          if(opt.dirHistory.length > 6) opt.dirHistory.shift();
+          if (opt.lossHistory.length > 10) opt.lossHistory.shift();
+          opt.dirHistory.push({ dx: -gx, dy: -gy });
+          if (opt.dirHistory.length > 10) opt.dirHistory.shift();
 
-          // Intelligence Detection
+          // EXPANDED INTELLIGENCE ENGINE
           let state = 'Stable Descent';
           let context = 'Loss is decreasing consistently.';
+          const histLen = opt.lossHistory.length;
           
           if (opt.gradMag > 500) {
-             state = 'Exploding Gradient';
-             context = 'Extremely steep slopes detected. Risk of diverging.';
-          } else if (opt.lossHistory.length === 6) {
-             const lossDiff = opt.lossHistory[0] - opt.lossHistory[5];
-             if (lossDiff < 1e-5 && lossDiff >= 0 && opt.gradMag > 0.1) {
-                state = 'Valley Navigation';
-                context = 'Struggling to find steep descent.';
-             } else if (lossDiff < 1e-6 && opt.gradMag < 0.05) {
-                state = 'Plateau Region';
-                context = 'Progress has stalled.';
-             } else if (lossDiff > 5.0) {
-                state = 'Fast Convergence';
-                context = 'Rapidly descending.';
-             }
-             
-             let dotSum = 0;
-             for(let i=1; i<opt.dirHistory.length; i++) {
-                const d1 = opt.dirHistory[i-1];
-                const d2 = opt.dirHistory[i];
-                const m1 = Math.sqrt(d1.dx*d1.dx + d1.dy*d1.dy);
-                const m2 = Math.sqrt(d2.dx*d2.dx + d2.dy*d2.dy);
-                if (m1>0 && m2>0) dotSum += (d1.dx*d2.dx + d1.dy*d2.dy) / (m1*m2);
-             }
-             if (dotSum < -1.0) { 
+            state = 'Exploding Gradient';
+            context = 'Extreme terrain slopes. Risk of diverging.';
+          } else if (histLen >= 5) {
+            const lossDiff = opt.lossHistory[0] - opt.lossHistory[histLen - 1];
+            const lossIncreased = (histLen > 1) && (opt.lossHistory[histLen-1] > opt.lossHistory[histLen-2] + 0.01);
+            
+            if (lossIncreased && opt.iter > 5) {
+              state = 'Overshooting';
+              context = 'Loss increased. Step size too large for this curvature.';
+            }
+            
+            let dotSum = 0, dotCount = 0;
+            for (let i = 1; i < opt.dirHistory.length; i++) {
+              const d1 = opt.dirHistory[i-1], d2 = opt.dirHistory[i];
+              const m1 = Math.sqrt(d1.dx*d1.dx + d1.dy*d1.dy);
+              const m2 = Math.sqrt(d2.dx*d2.dx + d2.dy*d2.dy);
+              if (m1 > 0 && m2 > 0) { dotSum += (d1.dx*d2.dx + d1.dy*d2.dy)/(m1*m2); dotCount++; }
+            }
+            const avgDot = dotCount > 0 ? dotSum / dotCount : 1;
+            
+            if (!lossIncreased) {
+              if (avgDot < -0.3) {
                 state = 'Oscillation Detected';
-                context = 'Repeated directional sign changes.';
-             }
+                context = 'Repeated direction reversals. Zigzagging terrain.';
+              } else if (lossDiff < 1e-6 && opt.gradMag < 0.05) {
+                const minDist = s.minima.reduce((best, m) => {
+                  return Math.min(best, Math.sqrt((opt.x-m.x)**2 + (opt.y-m.y)**2));
+                }, Infinity);
+                if (minDist > 0.5) {
+                  state = 'Local Trap';
+                  context = 'Gradient vanished far from global minimum.';
+                } else {
+                  state = 'Converging';
+                  context = 'Fine-grained approach to minimum.';
+                }
+              } else if (lossDiff < 1e-4 && opt.gradMag > 0.1) {
+                state = 'Valley Navigation';
+                context = 'Narrow valley. Gradient mostly cross-valley.';
+              } else if (lossDiff > 5.0) {
+                state = 'Fast Convergence';
+                context = 'Rapid descent — strong gradient alignment.';
+              }
+              
+              if (opt.id === 'momentum') {
+                const velMag = Math.sqrt(opt.v_x*opt.v_x + opt.v_y*opt.v_y);
+                if (velMag > opt.gradMag * 1.4 && opt.iter > 10) {
+                  state = 'Momentum Slingshot';
+                  context = 'Velocity outrunning gradient — kinetic carry active.';
+                }
+              }
+              
+              if ((opt.id === 'rmsprop' || opt.id === 'adam') && opt.gradMag > 2.0 && opt.stepDist < globalLr) {
+                state = 'Adaptive Rescue';
+                context = 'Adaptive scaling dampening steep gradients.';
+              }
+            }
           }
           
           opt.intelligenceState = state;
           opt.intelligenceContext = context;
           
           opt.path.push({ x: opt.x, y: opt.y, z: opt.z });
-          if (opt.path.length > MAX_PATH) opt.path.shift();
+          if (opt.path.length > dynamicMaxPath) opt.path.shift();
           
-          let reached = checkConvergence(s, opt);
+          const reached = checkConvergence(s, opt);
           if (reached) {
+            if (opt.status === 'Running') {
+              const wPos = mathToWorld(s, opt.x, opt.y);
+              rippleEvents.push({ pos: wPos.clone().add(new THREE.Vector3(0, 0.1, 0)), color: opt.colorHex, age: 0 });
+            }
             opt.status = reached;
           }
         });
@@ -985,6 +1071,7 @@
 
     function updateVisuals() {
       const s = SURFACES[activeSurface];
+      const time = performance.now() * 0.001;
       Object.values(optimizers).forEach(opt => {
         if (!opt.enabled) return;
         
@@ -993,102 +1080,171 @@
           opt.meshes.markerMesh.position.set(wPos.x, wPos.y + 0.12, wPos.z);
           opt.meshes.markerGlow.position.set(wPos.x, wPos.y + 0.12, wPos.z);
           
-          if (opt.status.includes('Reached') || (opt.intelligenceState === 'Plateau Region' && opt.z < 0.1)) {
-            opt.meshes.markerMesh.material.color.setHex(0x10b981);
-            opt.meshes.markerMesh.material.emissive.setHex(0x059669);
-            opt.meshes.markerGlow.material.color.setHex(0x10b981);
-          } else if (opt.status.includes('Instability') || opt.status.includes('Boundary') || opt.intelligenceState === 'Exploding Gradient') {
-            opt.meshes.markerMesh.material.color.setHex(0xef4444);
-            opt.meshes.markerMesh.material.emissive.setHex(0xdc2626);
-            opt.meshes.markerGlow.material.color.setHex(0xef4444);
-          } else if (opt.status.includes('Trap') || opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
-            opt.meshes.markerMesh.material.color.setHex(0xf59e0b);
-            opt.meshes.markerMesh.material.emissive.setHex(0xd97706);
-            opt.meshes.markerGlow.material.color.setHex(0xf59e0b);
-          } else if (opt.intelligenceState === 'Plateau Region') {
-            opt.meshes.markerMesh.material.color.setHex(0x3b82f6);
-            opt.meshes.markerMesh.material.emissive.setHex(0x2563eb);
-            opt.meshes.markerGlow.material.color.setHex(0x3b82f6);
-          } else {
-            opt.meshes.markerMesh.material.color.setHex(opt.colorHex);
-            opt.meshes.markerMesh.material.emissive.setHex(opt.glowHex);
-            opt.meshes.markerGlow.material.color.setHex(opt.glowHex);
+          // Marker color based on intelligence state
+          let mHex = opt.colorHex, eHex = opt.glowHex, gHex = opt.glowHex;
+          const iState = opt.intelligenceState;
+          if (opt.status.includes('Reached') || iState === 'Converging') {
+            mHex = 0x10b981; eHex = 0x059669; gHex = 0x10b981;
+          } else if (opt.status.includes('Instability') || opt.status.includes('Boundary') || iState === 'Exploding Gradient') {
+            mHex = 0xef4444; eHex = 0xdc2626; gHex = 0xef4444;
+          } else if (iState === 'Local Trap') {
+            mHex = 0x3b82f6; eHex = 0x2563eb; gHex = 0x3b82f6;
+          } else if (iState === 'Overshooting' || iState === 'Oscillation Detected') {
+            mHex = 0xf59e0b; eHex = 0xd97706; gHex = 0xf59e0b;
+          } else if (iState === 'Momentum Slingshot' || iState === 'Valley Navigation') {
+            mHex = 0xe879f9; eHex = 0xc026d3; gHex = 0xe879f9;
           }
+          opt.meshes.markerMesh.material.color.setHex(mHex);
+          opt.meshes.markerMesh.material.emissive.setHex(eHex);
+          opt.meshes.markerGlow.material.color.setHex(gHex);
+          
+          // Velocity-reactive emissive intensity
+          const velFactor = Math.min(opt.stepDist * 50, 1.0);
+          
+          // Oscillation flicker
+          if (iState === 'Oscillation Detected' || iState === 'Overshooting') {
+            opt.flickerPhase += 0.35;
+            opt.meshes.markerMesh.material.emissiveIntensity = 0.3 + 0.9 * Math.abs(Math.sin(opt.flickerPhase));
+            opt.meshes.markerMesh.visible = true;
+          } else {
+            opt.flickerPhase = 0;
+            opt.meshes.markerMesh.material.emissiveIntensity = 0.8 + velFactor * 0.8;
+            opt.meshes.markerMesh.visible = true;
+          }
+          
+          // Velocity-reactive glow opacity
+          opt.meshes.markerGlow.material.opacity = 0.15 + velFactor * 0.45;
         }
 
-        if (opt.meshes.pathLine && opt.meshes.pathLineUnderlay) {
+        if (opt.meshes.pathLine) {
           const positions = opt.meshes.pathLine.geometry.attributes.position.array;
           const colorsCore = opt.meshes.pathLine.geometry.attributes.color.array;
-          const positions2 = opt.meshes.pathLineUnderlay.geometry.attributes.position.array;
-          const colorsUnder = opt.meshes.pathLineUnderlay.geometry.attributes.color.array;
-          
           const count = opt.path.length;
           const baseColor = new THREE.Color(opt.colorHex);
-          const underColor = new THREE.Color(opt.glowHex);
+          const velBoost = Math.min(opt.stepDist * 60, 1.0);
           
-          for (let i=0; i<count; i++) {
+          for (let i = 0; i < count; i++) {
             const pt = opt.path[i];
             const pw = mathToWorld(s, pt.x, pt.y);
             positions[i*3] = pw.x; positions[i*3+1] = pw.y + 0.05; positions[i*3+2] = pw.z;
-            positions2[i*3] = pw.x; positions2[i*3+1] = pw.y + 0.05; positions2[i*3+2] = pw.z;
-            
-            const t = Math.pow(i / Math.max(1, count - 1), 2);
-            
-            colorsCore[i*3] = baseColor.r * t;
-            colorsCore[i*3+1] = baseColor.g * t;
-            colorsCore[i*3+2] = baseColor.b * t;
-            
-            colorsUnder[i*3] = underColor.r * t;
-            colorsUnder[i*3+1] = underColor.g * t;
-            colorsUnder[i*3+2] = underColor.b * t;
+            // Smoothstep fade — recent segments stay bright longer
+            const rawT = i / Math.max(1, count - 1);
+            const alpha = rawT * rawT * (3 - 2 * rawT);
+            colorsCore[i*3]   = baseColor.r * alpha;
+            colorsCore[i*3+1] = baseColor.g * alpha;
+            colorsCore[i*3+2] = baseColor.b * alpha;
           }
-          
           opt.meshes.pathLine.geometry.setDrawRange(0, count);
           opt.meshes.pathLine.geometry.attributes.position.needsUpdate = true;
           opt.meshes.pathLine.geometry.attributes.color.needsUpdate = true;
+        }
+        
+        if (opt.meshes.pathLineUnderlay) {
+          const positions2 = opt.meshes.pathLineUnderlay.geometry.attributes.position.array;
+          const colorsUnder = opt.meshes.pathLineUnderlay.geometry.attributes.color.array;
+          const count = opt.path.length;
+          const underColor = new THREE.Color(opt.glowHex);
+          const velBoost = Math.min(opt.stepDist * 60, 1.0);
           
+          for (let i = 0; i < count; i++) {
+            const pt = opt.path[i];
+            const pw = mathToWorld(s, pt.x, pt.y);
+            positions2[i*3] = pw.x; positions2[i*3+1] = pw.y + 0.05; positions2[i*3+2] = pw.z;
+            const rawT = i / Math.max(1, count - 1);
+            const alpha = rawT * rawT * (3 - 2 * rawT);
+            const underlayIntensity = alpha * (0.4 + velBoost * 0.5);
+            colorsUnder[i*3]   = underColor.r * underlayIntensity;
+            colorsUnder[i*3+1] = underColor.g * underlayIntensity;
+            colorsUnder[i*3+2] = underColor.b * underlayIntensity;
+          }
           opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, count);
           opt.meshes.pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
           opt.meshes.pathLineUnderlay.geometry.attributes.color.needsUpdate = true;
         }
       });
-      
+
+      // Ripple events (convergence FX)
+      for (let i = rippleEvents.length - 1; i >= 0; i--) {
+        const rip = rippleEvents[i];
+        rip.age += 0.022;
+        if (!rip.ring) {
+          const geo = new THREE.RingGeometry(0.01, 0.1, 32);
+          const mat = new THREE.MeshBasicMaterial({
+            color: rip.color, transparent: true, opacity: 0.9,
+            side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+          });
+          rip.ring = new THREE.Mesh(geo, mat);
+          rip.ring.rotation.x = -Math.PI / 2;
+          rip.ring.position.copy(rip.pos);
+          scene.add(rip.ring);
+        }
+        rip.ring.scale.setScalar(1 + rip.age * 7);
+        rip.ring.material.opacity = Math.max(0, 0.9 * (1 - rip.age));
+        if (rip.age > 1) {
+          scene.remove(rip.ring);
+          rip.ring.geometry.dispose(); rip.ring.material.dispose();
+          rippleEvents.splice(i, 1);
+        }
+      }
+
       updateTelemetry();
     }
 
     function updateTelemetry() {
-      const container = document.getElementById('telemetryContainer');
-      container.innerHTML = '';
-      
+      const cont = document.getElementById('telemetryContainer');
+      cont.innerHTML = '';
       Object.values(optimizers).forEach(opt => {
         if (!opt.enabled) return;
-        
         const card = document.createElement('div');
         card.className = 'telemetry-card';
         card.style.setProperty('--card-color', opt.uiColor);
         
         let statusText = opt.status === 'Running' ? opt.intelligenceState.toUpperCase() : opt.status.toUpperCase();
+        if (statusText.length > 16) statusText = statusText.slice(0, 15) + '…';
         
         let statusColor = opt.uiColor;
-        if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || opt.status.includes('Trap') || opt.intelligenceState === 'Exploding Gradient') {
+        const iState = opt.intelligenceState;
+        if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || iState === 'Exploding Gradient') {
           statusColor = '#ef4444';
-        } else if (opt.status.includes('Reached') || opt.intelligenceState.includes('Convergence') || opt.intelligenceState.includes('Stable')) {
+        } else if (opt.status.includes('Reached') || iState === 'Converging' || iState === 'Stable Descent') {
           statusColor = '#10b981';
-        } else if (opt.intelligenceState === 'Oscillation Detected' || opt.intelligenceState === 'Valley Navigation') {
+        } else if (iState === 'Oscillation Detected' || iState === 'Overshooting' || iState === 'Valley Navigation') {
           statusColor = '#f59e0b';
+        } else if (iState === 'Local Trap') {
+          statusColor = '#3b82f6';
+        } else if (iState === 'Momentum Slingshot' || iState === 'Adaptive Rescue') {
+          statusColor = '#e879f9';
         }
-
+        
         card.innerHTML = `
           <div class="tel-header">
-            ${opt.name}
-            <span class="tel-badge" style="color:${statusColor}; border-color:${statusColor}40;">${statusText}</span>
+            <span style="color:${opt.uiColor};font-weight:700">${opt.name}</span>
+            <span class="tel-badge" style="color:${statusColor};border-color:${statusColor}40">${statusText}</span>
           </div>
-          <div class="tel-row"><span>Loss L(x,y)</span><span style="color:#f8fafc">${opt.z.toFixed(4)}</span></div>
-          <div class="tel-row"><span>Gradient |∇L|</span><span style="color:#f8fafc">${opt.gradMag.toFixed(4)}</span></div>
-          <div class="tel-row"><span>Iteration</span><span style="color:#f8fafc">${opt.iter}</span></div>
+          <div class="tel-row"><span>Loss</span><span>${opt.z.toFixed(5)}</span></div>
+          <div class="tel-row"><span>|∇L|</span><span>${opt.gradMag.toFixed(4)}</span></div>
+          <div class="tel-row"><span>Iter</span><span>${opt.iter}</span></div>
         `;
-        container.appendChild(card);
+        cont.appendChild(card);
       });
+    }
+
+    function updateCinematicCamera() {
+      if (!isCinematicMode || !globalRunning) return;
+      const runningOpts = Object.values(optimizers).filter(o => o.enabled && o.status === 'Running');
+      if (runningOpts.length === 0) return;
+      const s = SURFACES[activeSurface];
+      let cx = 0, cy = 0;
+      runningOpts.forEach(o => { cx += o.x; cy += o.y; });
+      cx /= runningOpts.length; cy /= runningOpts.length;
+      const wCentroid = mathToWorld(s, cx, cy);
+      let heightOffset = 0.5, camZOffset = 0;
+      if (s.id === 'rosenbrock') { heightOffset = -0.3; camZOffset = -1.5; }
+      if (s.id === 'himmelblau') { heightOffset = 1.5; }
+      if (s.id === 'rastrigin') { heightOffset = 2.0; }
+      const targetPos = new THREE.Vector3(wCentroid.x, wCentroid.y + heightOffset, wCentroid.z + camZOffset);
+      cinematicTarget.lerp(targetPos, 0.015);
+      controls.target.lerp(cinematicTarget, 0.012);
     }
 
     // ==========================================
@@ -1096,24 +1252,37 @@
     // ==========================================
     function animate() {
       requestAnimationFrame(animate);
+
+      // FPS tracking for adaptive trail pruning
+      const nowPerf = performance.now();
+      const delta = nowPerf - lastFrameTime;
+      lastFrameTime = nowPerf;
+      fpsSmoothed = fpsSmoothed * 0.92 + (1000 / Math.max(delta, 1)) * 0.08;
+      if (fpsSmoothed < 40) dynamicMaxPath = Math.max(MIN_PATH, dynamicMaxPath - 50);
+      else if (fpsSmoothed > 55) dynamicMaxPath = Math.min(MAX_PATH, dynamicMaxPath + 20);
       
       if (globalRunning) {
         stepOptimizer();
         updateVisuals();
       }
       
-      // Marker pulse effect
-      const time = Date.now() * 0.005;
+      updateCinematicCamera();
+      
+      // Personality-driven marker pulse
+      const time = nowPerf * 0.005;
       Object.values(optimizers).forEach(opt => {
-        if (opt.enabled && opt.meshes.markerMesh && opt.meshes.markerGlow) {
-          const pulse = 1 + 0.05 * Math.sin(time);
-          opt.meshes.markerMesh.scale.setScalar(pulse);
-          opt.meshes.markerGlow.scale.setScalar(pulse + 0.1 * Math.sin(time * 1.5));
-        }
+        if (!opt.enabled || !opt.meshes.markerMesh || !opt.meshes.markerGlow) return;
+        let pulseFreq = 1, pulseAmp = 0.05;
+        if (opt.intelligenceState === 'Momentum Slingshot') { pulseFreq = 2.4; pulseAmp = 0.13; }
+        else if (opt.intelligenceState === 'Fast Convergence') { pulseFreq = 1.8; pulseAmp = 0.08; }
+        else if (opt.status.includes('Reached') || opt.intelligenceState === 'Converging') { pulseFreq = 0.5; pulseAmp = 0.18; }
+        const pulse = 1 + pulseAmp * Math.sin(time * pulseFreq);
+        opt.meshes.markerMesh.scale.setScalar(pulse);
+        opt.meshes.markerGlow.scale.setScalar(pulse + 0.12 * Math.sin(time * pulseFreq * 1.3));
       });
 
       if (vectorFieldMesh) {
-         vectorFieldMesh.material.opacity = 0.4 + 0.15 * Math.sin(Date.now() * 0.003);
+        vectorFieldMesh.material.opacity = 0.4 + 0.12 * Math.sin(performance.now() * 0.003);
       }
       
       controls.update();
@@ -1193,7 +1362,23 @@
 
     document.getElementById('btnReset').addEventListener('click', resetOptimizer);
     document.getElementById('btnResetCam').addEventListener('click', () => {
+      isCinematicMode = false;
+      document.getElementById('btnCinematic').classList.remove('active');
       resetCamera(activeSurface);
+    });
+    document.getElementById('btnCinematic').addEventListener('click', () => {
+      isCinematicMode = !isCinematicMode;
+      document.getElementById('btnCinematic').classList.toggle('active', isCinematicMode);
+      if (isCinematicMode) {
+        // Sync cinematic target to current orbit target on enable
+        cinematicTarget.copy(controls.target);
+      }
+    });
+    // Disable cinematic on manual orbit
+    renderer.domElement.addEventListener('pointerdown', () => {
+      if (isCinematicMode) {
+        cinematicLastInteract = performance.now();
+      }
     });
 
     document.getElementById('lrSlider').addEventListener('input', (e) => {
