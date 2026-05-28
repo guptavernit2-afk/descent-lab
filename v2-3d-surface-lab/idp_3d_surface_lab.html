@@ -317,6 +317,73 @@
     /* Contour/Heatmap canvas overlay */
     #heatmapCanvas { display: none; }
 
+    /* === PHASE 2 ADDITIONS === */
+    
+    /* Preset Manager */
+    .preset-select {
+      width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+      color: var(--accent); padding: 8px 10px; border-radius: 8px; font-size: 11px;
+      font-weight: 700; cursor: pointer; outline: none; margin-top: 8px; font-family: var(--sans);
+    }
+    .preset-select option { background: #0f111a; color: #fff; }
+
+    /* Parameter Playground Drawer */
+    .param-drawer {
+      position: absolute; left: calc(var(--rail-width) + 16px); top: 16px; width: 280px;
+      background: rgba(8, 9, 14, 0.85); backdrop-filter: blur(20px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6); z-index: 60;
+      transform: translateX(-20px); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .param-drawer.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
+    .param-header { font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+    .param-close { cursor: pointer; color: var(--muted); background: none; border: none; font-size: 14px; }
+    .param-close:hover { color: #fff; }
+    .param-section { margin-bottom: 16px; border-left: 2px solid var(--card-color); padding-left: 10px; }
+    .param-title { font-size: 10px; font-weight: 700; color: #fff; margin-bottom: 8px; text-transform: uppercase; }
+    .param-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 10px; color: var(--muted); }
+    .param-row input[type=range] { width: 100px; }
+    .param-val { font-family: var(--mono); color: #fff; width: 35px; text-align: right; }
+
+    /* Tournament Modal */
+    .tournament-modal {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
+      background: rgba(8, 9, 14, 0.9); backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 24px;
+      width: 400px; box-shadow: 0 24px 64px rgba(0,0,0,0.8); z-index: 400;
+      opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .tournament-modal.visible { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
+    .tournament-modal h2 { margin: 0 0 16px; font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+    .tournament-results { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .tourney-row { display: flex; align-items: center; background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 14px; border-left: 3px solid var(--accent); }
+    .tourney-rank { font-size: 16px; font-weight: 800; width: 30px; }
+    .tourney-details { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .tourney-name { font-size: 12px; font-weight: 700; color: #fff; }
+    .tourney-stats { font-size: 10px; font-family: var(--mono); color: var(--muted); }
+    .btn-tourney-close { background: var(--accent); color: #fff; border: none; padding: 8px 24px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-tourney-close:hover { background: #818cf8; transform: scale(1.05); }
+
+    /* Timeline Scrubber */
+    .timeline-container {
+      display: flex; align-items: center; gap: 12px; width: 300px;
+    }
+    .timeline-container input[type=range] { flex: 1; }
+    .timeline-time { font-family: var(--mono); font-size: 10px; color: #fff; font-weight: 600; width: 45px; text-align: right; }
+
+    /* Export Dropdown */
+    .export-wrapper { position: relative; }
+    .export-menu {
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px);
+      background: rgba(8, 9, 14, 0.9); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px;
+      display: flex; flex-direction: column; gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      opacity: 0; pointer-events: none; transition: 0.2s; margin-bottom: 8px; z-index: 100;
+    }
+    .export-wrapper:hover .export-menu { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+    .export-item { background: transparent; color: #fff; border: none; padding: 6px 12px; font-size: 10px; font-family: var(--sans); text-align: left; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+    .export-item:hover { background: rgba(255,255,255,0.1); }
   </style>
   
   <script type="importmap">
@@ -346,6 +413,13 @@
         <option value="rosenbrock">Rosenbrock Valley</option>
         <option value="himmelblau">Himmelblau Function</option>
         <option value="rastrigin">Rastrigin Function</option>
+      </select>
+      <select id="presetSelect" class="preset-select">
+        <option value="none">-- Load Preset --</option>
+        <option value="rosenbrock_struggle">Rosenbrock Valley Struggle</option>
+        <option value="rastrigin_trap">Rastrigin Local Trap</option>
+        <option value="momentum_overshoot">Momentum Overshoot Demo</option>
+        <option value="adam_fast">Adam Fast Convergence</option>
       </select>
       <div class="info-eq" id="infoEq">L(x,y) = x² + y²</div>
       <div class="info-insight" id="infoInsight">A perfect convex landscape.</div>
@@ -396,6 +470,15 @@
         <button class="viz-btn" data-viz="heatmap">Heatmap</button>
         <button class="viz-btn" data-viz="contour">Contour</button>
       </div>
+      <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:11px; color:#c7d2fe;">
+          <input type="checkbox" id="chkVectors" style="accent-color: var(--accent);"> Show Velocity Vectors
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:11px; color:#c7d2fe;">
+          <input type="checkbox" id="chkResearch" style="accent-color: var(--accent);"> 🧪 Research Mode
+        </label>
+        <button id="btnOpenParams" class="btn-dock" style="margin-top: 6px; width: 100%;">⚙️ Parameter Playground</button>
+      </div>
     </div>
   </aside>
 
@@ -426,7 +509,38 @@
     <!-- Educational Tooltip -->
     <div id="eduTooltip"></div>
 
-    <div class="runtime-dock">
+    <!-- Parameter Drawer -->
+    <div class="param-drawer" id="paramDrawer">
+      <div class="param-header">
+        <span>Optimizer Parameters</span>
+        <button class="param-close" id="btnCloseParams">✖</button>
+      </div>
+      <div class="param-section">
+        <div class="param-title" style="color: #0ea5e9;">Momentum</div>
+        <div class="param-row"><span>LR Multiplier</span><input type="range" id="p_mom_lr" min="0.1" max="5.0" step="0.1" value="1.0"><span class="param-val" id="v_mom_lr">1.0</span></div>
+        <div class="param-row"><span>Beta (β)</span><input type="range" id="p_mom_b" min="0.5" max="0.99" step="0.01" value="0.9"><span class="param-val" id="v_mom_b">0.9</span></div>
+      </div>
+      <div class="param-section">
+        <div class="param-title" style="color: #a855f7;">RMSProp</div>
+        <div class="param-row"><span>LR Multiplier</span><input type="range" id="p_rms_lr" min="0.1" max="5.0" step="0.1" value="1.0"><span class="param-val" id="v_rms_lr">1.0</span></div>
+        <div class="param-row"><span>Beta (β)</span><input type="range" id="p_rms_b" min="0.8" max="0.999" step="0.001" value="0.99"><span class="param-val" id="v_rms_b">0.99</span></div>
+      </div>
+      <div class="param-section" style="margin-bottom:0;">
+        <div class="param-title" style="color: #10b981;">Adam</div>
+        <div class="param-row"><span>LR Multiplier</span><input type="range" id="p_adm_lr" min="0.1" max="5.0" step="0.1" value="1.0"><span class="param-val" id="v_adm_lr">1.0</span></div>
+        <div class="param-row"><span>Beta 1 (β₁)</span><input type="range" id="p_adm_b1" min="0.5" max="0.99" step="0.01" value="0.9"><span class="param-val" id="v_adm_b1">0.9</span></div>
+        <div class="param-row"><span>Beta 2 (β₂)</span><input type="range" id="p_adm_b2" min="0.9" max="0.999" step="0.001" value="0.999"><span class="param-val" id="v_adm_b2">.999</span></div>
+      </div>
+    </div>
+
+    <!-- Tournament Modal -->
+    <div class="tournament-modal" id="tourneyModal">
+      <h2>🏆 Tournament Results</h2>
+      <div class="tournament-results" id="tourneyResults"></div>
+      <button class="btn-tourney-close" id="btnTourneyClose">Close</button>
+    </div>
+
+    <div class="runtime-dock" id="mainDock">
       <button id="btnRun" class="btn-run">▶ Run</button>
       <button id="btnReset" class="btn-dock">↺ Reset</button>
       <div class="dock-divider"></div>
@@ -439,10 +553,32 @@
         <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
       </div>
       <div class="dock-divider"></div>
+      <button id="btnTourney" class="btn-dock" title="Run Tournament Race">🏆 Race</button>
+      <div class="dock-divider"></div>
       <button id="btnGhost" class="btn-dock" title="Toggle Ghost Trails">👻 Ghost</button>
       <button id="btnReplay" class="btn-dock" title="Replay Last Run">⏩ Replay</button>
-      <button id="btnCinematic" class="btn-dock" title="Toggle Cinematic Camera">🎬 Cinematic</button>
-      <button id="btnResetCam" class="btn-dock" title="Reset Camera">📷 Camera</button>
+      <div class="dock-divider"></div>
+      <button id="btnCinematic" class="btn-dock" title="Toggle Cinematic Camera">🎬 Cine</button>
+      <button id="btnSaveCam" class="btn-dock" title="Save Camera">📷 Save</button>
+      <button id="btnRestoreCam" class="btn-dock" title="Restore Camera">📍 Load</button>
+      <div class="dock-divider"></div>
+      <div class="export-wrapper">
+        <button class="btn-dock">Export ▾</button>
+        <div class="export-menu">
+          <button class="export-item" id="btnExportPng">📸 PNG Screenshot</button>
+          <button class="export-item" id="btnExportJson">📄 JSON Data</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="runtime-dock" id="scrubberDock" style="display: none;">
+      <button id="btnScrubPlay" class="btn-run">⏸ Pause</button>
+      <button id="btnScrubExit" class="btn-dock">Exit Replay</button>
+      <div class="dock-divider"></div>
+      <div class="timeline-container">
+        <input type="range" id="timelineSlider" min="0" max="100" value="0" step="1">
+        <div class="timeline-time"><span id="txtScrubIter">0</span></div>
+      </div>
     </div>
   </main>
 
@@ -670,6 +806,253 @@
       'Adaptive Rescue':      { title: 'Adaptive Rescue', text: 'Large gradient detected, but adaptive scaling keeps the step small — preventing divergence.' },
       'Converging':           { title: 'Converging', text: 'Fine-grained approach to the minimum. Loss delta is now extremely small.' }
     };
+
+    // ==========================================
+    // PHASE 2 — SYSTEM MANAGERS
+    // ==========================================
+
+    let isResearchMode = false;
+    let isVectorsVisible = false;
+
+    class PresetManager {
+      static apply(presetKey) {
+        if(presetKey === 'none') return;
+        const presets = {
+          rosenbrock_struggle: {
+            surface: 'rosenbrock', start: {x:-1.8, y:1.8},
+            opts: { gd:true, adam:true, momentum:false, rmsprop:false },
+            lr: 0.001, speed: 20, mode: 'contour', cine: true
+          },
+          rastrigin_trap: {
+            surface: 'rastrigin', start: {x:-4.0, y:-4.0},
+            opts: { gd:true, momentum:true, adam:true, rmsprop:true },
+            lr: 0.01, speed: 10, mode: 'surface', cine: true
+          },
+          momentum_overshoot: {
+            surface: 'bowl', start: {x:-3.5, y:-1.0},
+            opts: { gd:true, momentum:true, rmsprop:false, adam:false },
+            lr: 0.1, speed: 15, mode: 'surface', cine: false
+          },
+          adam_fast: {
+            surface: 'himmelblau', start: {x:-4.5, y:-4.5},
+            opts: { gd:true, rmsprop:true, adam:true, momentum:false },
+            lr: 0.02, speed: 10, mode: 'wireframe', cine: false
+          }
+        };
+        const p = presets[presetKey];
+        if(!p) return;
+        
+        document.getElementById('surfaceSelect').value = p.surface;
+        currentStart = p.start;
+        globalLr = p.lr;
+        globalSpeed = p.speed;
+        document.getElementById('lrSlider').value = Math.log10(p.lr);
+        document.getElementById('lrVal').textContent = p.lr;
+        document.getElementById('speedSlider').value = p.speed;
+        document.getElementById('speedVal').textContent = p.speed;
+        
+        Object.keys(optimizers).forEach(k => {
+          optimizers[k].enabled = p.opts[k];
+          const pill = document.querySelector(`.opt-pill[data-opt="${k}"]`);
+          if(pill) pill.classList.toggle('active', p.opts[k]);
+        });
+        
+        // This relies on the setVizMode function which handles cleanup
+        setVizMode(p.mode);
+        document.querySelectorAll('.viz-btn').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-viz') === p.mode);
+        });
+
+        isCinematicMode = p.cine;
+        document.getElementById('btnCinematic').classList.toggle('active', p.cine);
+        
+        loadSurface(p.surface);
+      }
+    }
+
+    class ParameterManager {
+      static init() {
+        const bind = (id, obj, key) => {
+          const el = document.getElementById(id);
+          const val = document.getElementById(id.replace('p_','v_'));
+          if(!el || !val) return;
+          el.addEventListener('input', (e) => {
+            const v = parseFloat(e.target.value);
+            val.textContent = v;
+            OPT_PERSONALITY[obj][key] = v;
+          });
+        };
+        bind('p_mom_lr', 'momentum', 'lrMult');
+        bind('p_mom_b', 'momentum', 'beta');
+        bind('p_rms_lr', 'rmsprop', 'lrMult');
+        bind('p_rms_b', 'rmsprop', 'beta');
+        bind('p_adm_lr', 'adam', 'lrMult');
+        bind('p_adm_b1', 'adam', 'beta1');
+        bind('p_adm_b2', 'adam', 'beta2');
+      }
+    }
+
+    class TournamentManager {
+      static active = false;
+      static ranks = [];
+      static start() {
+        if(this.active) return;
+        this.active = true;
+        this.ranks = [];
+        resetOptimizer();
+        document.getElementById('btnTourney').innerHTML = '🏁 Racing...';
+        document.getElementById('tourneyModal').classList.remove('visible');
+        globalRunning = true;
+      }
+      static check() {
+        if(!this.active) return;
+        let allDone = true;
+        Object.values(optimizers).forEach(opt => {
+          if(!opt.enabled) return;
+          if(opt.status !== 'Reached Minimum' && opt.iter < 3000) {
+            allDone = false;
+          } else if(!this.ranks.find(r => r.id === opt.id)) {
+            this.ranks.push({
+              id: opt.id, name: opt.name, color: opt.uiColor, iter: opt.iter,
+              loss: opt.z, osc: opt.dirHistory.length > 5 ? 'High' : 'Low'
+            });
+          }
+        });
+        if(allDone) this.finish();
+      }
+      static finish() {
+        this.active = false;
+        globalRunning = false;
+        document.getElementById('btnRun').innerHTML = '▶ Run';
+        document.getElementById('btnTourney').innerHTML = '🏆 Race';
+        
+        const html = this.ranks.map((r, i) => `
+          <div class="tourney-row" style="border-left-color: ${r.color}">
+            <div class="tourney-rank">#${i+1}</div>
+            <div class="tourney-details">
+              <div class="tourney-name">${r.name}</div>
+              <div class="tourney-stats">Iter: ${r.iter} | Final Loss: ${r.loss.toExponential(2)}</div>
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('tourneyResults').innerHTML = html;
+        document.getElementById('tourneyModal').classList.add('visible');
+      }
+    }
+
+    class ExportManager {
+      static downloadJSON() {
+        const payload = {
+          surface: activeSurface, lr: globalLr, speed: globalSpeed, hyperparams: OPT_PERSONALITY,
+          results: Object.keys(optimizers).map(k => {
+            const o = optimizers[k];
+            return { id: o.id, enabled: o.enabled, iterations: o.iter, finalLoss: o.z };
+          })
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+        const a = document.createElement('a'); a.href = dataStr; a.download = `opt_run_${Date.now()}.json`; a.click();
+      }
+      static downloadPNG() {
+        renderer.preserveDrawingBuffer = true;
+        renderer.render(scene, camera);
+        const dataURL = renderer.domElement.toDataURL('image/png');
+        renderer.preserveDrawingBuffer = false;
+        const a = document.createElement('a'); a.href = dataURL; a.download = `opt_snap_${Date.now()}.png`; a.click();
+      }
+    }
+
+    class CameraManager {
+      static savedPos = null;
+      static savedTarget = null;
+      static save() {
+        this.savedPos = camera.position.clone();
+        this.savedTarget = controls.target.clone();
+        const btn = document.getElementById('btnSaveCam');
+        if(btn) { btn.innerHTML = '✅ Saved'; setTimeout(() => btn.innerHTML = '📷 Save', 1000); }
+      }
+      static restore() {
+        if(!this.savedPos) return;
+        introStartCamPos.copy(camera.position);
+        introTargetCamPos.copy(this.savedPos);
+        introTargetCamLook.copy(this.savedTarget);
+        introLerpT = 0;
+        introLerpActive = true;
+      }
+    }
+
+    class ReplayTimelineManager {
+      static isDragging = false;
+      static maxFrames = 0;
+      
+      static init() {
+        const slider = document.getElementById('timelineSlider');
+        if(!slider) return;
+        slider.addEventListener('mousedown', () => this.isDragging = true);
+        slider.addEventListener('touchstart', () => this.isDragging = true);
+        slider.addEventListener('mouseup', () => this.isDragging = false);
+        slider.addEventListener('touchend', () => this.isDragging = false);
+        slider.addEventListener('input', (e) => {
+          this.setFrame(parseInt(e.target.value));
+        });
+      }
+      
+      static start() {
+        this.maxFrames = 0;
+        Object.keys(replayBuffer).forEach(id => {
+          if(replayBuffer[id] && replayBuffer[id].length > this.maxFrames) {
+            this.maxFrames = replayBuffer[id].length;
+          }
+        });
+        const slider = document.getElementById('timelineSlider');
+        if(slider) {
+          slider.max = Math.max(0, this.maxFrames - 1);
+          slider.value = 0;
+        }
+        document.getElementById('mainDock').style.display = 'none';
+        document.getElementById('scrubberDock').style.display = 'flex';
+        document.getElementById('btnScrubPlay').innerHTML = '⏸ Pause';
+        this.setFrame(0);
+      }
+      
+      static stop() {
+        isReplaying = false;
+        document.getElementById('mainDock').style.display = 'flex';
+        document.getElementById('scrubberDock').style.display = 'none';
+        document.getElementById('btnReplay').classList.remove('active');
+        document.getElementById('btnScrubPlay').innerHTML = '⏸ Pause';
+      }
+      
+      static advance(speed) {
+        if(replayFrame >= this.maxFrames - 1) {
+          document.getElementById('btnScrubPlay').innerHTML = '▶ Play';
+          return;
+        }
+        this.setFrame(replayFrame + speed);
+      }
+      
+      static setFrame(f) {
+        replayFrame = Math.min(Math.max(0, f), this.maxFrames - 1);
+        const slider = document.getElementById('timelineSlider');
+        if(slider && !this.isDragging) slider.value = replayFrame;
+        document.getElementById('txtScrubIter').textContent = replayFrame;
+        
+        const s = SURFACES[activeSurface];
+        Object.keys(replayBuffer).forEach(id => {
+          const opt = optimizers[id];
+          const buf = replayBuffer[id];
+          if (!opt.enabled || !buf) return;
+          
+          const bf = Math.min(replayFrame, buf.length - 1);
+          const p = buf[bf];
+          
+          const pw = mathToWorld(s, p.x, p.y);
+          if (opt.meshes.markerMesh) opt.meshes.markerMesh.position.set(pw.x, pw.y + 0.12, pw.z);
+          if (opt.meshes.markerGlow) opt.meshes.markerGlow.position.set(pw.x, pw.y + 0.12, pw.z);
+          if (opt.meshes.pathLine) opt.meshes.pathLine.geometry.setDrawRange(0, bf + 1);
+          if (opt.meshes.pathLineUnderlay) opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, bf + 1);
+        });
+      }
+    }
 
     // ==========================================
     // 3. THREE.JS SETUP
@@ -921,6 +1304,15 @@
 
         opt.meshes.markerMesh.visible = opt.enabled;
         opt.meshes.markerGlow.visible = opt.enabled;
+
+        // Velocity Vectors
+        if (opt.meshes.arrowMesh) { scene.remove(opt.meshes.arrowMesh); opt.meshes.arrowMesh.dispose?.(); }
+        if (opt.id === 'momentum' || opt.id === 'adam') {
+          const dir = new THREE.Vector3(1, 0, 0);
+          opt.meshes.arrowMesh = new THREE.ArrowHelper(dir, new THREE.Vector3(0,0,0), 0.5, opt.colorHex, 0.15, 0.1);
+          scene.add(opt.meshes.arrowMesh);
+          opt.meshes.arrowMesh.visible = false;
+        }
       });
 
       // Start marker - Elegant
@@ -1462,6 +1854,24 @@
           
           // Velocity-reactive glow opacity
           opt.meshes.markerGlow.material.opacity = 0.15 + velFactor * 0.45;
+          
+          if (opt.meshes.arrowMesh) {
+            opt.meshes.arrowMesh.visible = isVectorsVisible && opt.enabled;
+            if (isVectorsVisible) {
+              const vx = opt.id === 'adam' ? opt.m_x : opt.v_x;
+              const vy = opt.id === 'adam' ? opt.m_y : opt.v_y;
+              const vMag = Math.sqrt(vx*vx + vy*vy);
+              if (vMag > 0.0001) {
+                const dir = new THREE.Vector3(-vx/vMag, 0, -vy/vMag);
+                opt.meshes.arrowMesh.setDirection(dir);
+                opt.meshes.arrowMesh.position.set(wPos.x, wPos.y + 0.15, wPos.z);
+                const aLen = Math.min(0.8, 0.1 + vMag * (opt.id === 'adam' ? 0.3 : 2.0));
+                opt.meshes.arrowMesh.setLength(aLen, aLen*0.3, aLen*0.2);
+              } else {
+                opt.meshes.arrowMesh.visible = false;
+              }
+            }
+          }
         }
 
         if (opt.meshes.pathLine) {
@@ -1564,13 +1974,21 @@
           statusColor = '#e879f9';
         }
         
+        let pStr = '';
+        if (isResearchMode) {
+          const p = OPT_PERSONALITY[opt.id];
+          if (opt.id === 'momentum') pStr = `| β:${p.beta}`;
+          if (opt.id === 'rmsprop') pStr = `| β:${p.beta}`;
+          if (opt.id === 'adam') pStr = `| β₁:${p.beta1} β₂:${p.beta2}`;
+        }
+        
         card.innerHTML = `
           <div class="tel-header">
             <span style="color:${opt.uiColor};font-weight:700">${opt.name}</span>
             <span class="tel-badge" style="color:${statusColor};border-color:${statusColor}40">${statusText}</span>
           </div>
           <div class="tel-row"><span>Loss</span><span>${opt.z.toFixed(5)}</span></div>
-          <div class="tel-row"><span>|∇L|</span><span>${opt.gradMag.toFixed(4)}</span></div>
+          <div class="tel-row"><span>|∇L| ${pStr}</span><span>${opt.gradMag.toFixed(4)}</span></div>
           <div class="tel-row"><span>Iter</span><span>${opt.iter}</span></div>
         `;
         cont.appendChild(card);
@@ -1715,35 +2133,13 @@
         controls.target.lerpVectors(controls.target, introTargetCamLook, t);
       }
 
-      if (isReplaying) {
-        const s = SURFACES[activeSurface];
-        replayFrame += Math.max(1, Math.floor(globalSpeed / 3));
-        let maxFrames = 0;
-        
-        Object.keys(replayBuffer).forEach(id => {
-          const opt = optimizers[id];
-          const buf = replayBuffer[id];
-          if (!opt.enabled || !buf) return;
-          if (buf.length > maxFrames) maxFrames = buf.length;
-          
-          const f = Math.min(replayFrame, buf.length - 1);
-          const p = buf[f];
-          
-          const pw = mathToWorld(s, p.x, p.y);
-          if (opt.meshes.markerMesh) opt.meshes.markerMesh.position.set(pw.x, pw.y + 0.12, pw.z);
-          if (opt.meshes.markerGlow) opt.meshes.markerGlow.position.set(pw.x, pw.y + 0.12, pw.z);
-          
-          if (opt.meshes.pathLine) opt.meshes.pathLine.geometry.setDrawRange(0, f + 1);
-          if (opt.meshes.pathLineUnderlay) opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, f + 1);
-        });
-        
-        if (replayFrame >= maxFrames) {
-          isReplaying = false;
-          document.getElementById('btnReplay').classList.remove('active');
-        }
-      } else if (globalRunning) {
+      if (isReplaying && !ReplayTimelineManager.isDragging) {
+        const speed = Math.max(1, Math.floor(globalSpeed / 3));
+        ReplayTimelineManager.advance(speed);
+      } else if (globalRunning && !isReplaying) {
         stepOptimizer();
         updateVisuals();
+        if (TournamentManager.active) TournamentManager.check();
       }
       
       updateCinematicCamera();
@@ -1773,6 +2169,12 @@
     // 6. UI EVENT LISTENERS
     // ==========================================
     
+    function safeBind(id, event, handler) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener(event, handler);
+      else console.warn(`Element '${id}' not found for event '${event}'`);
+    }
+
     window.addEventListener('resize', () => {
       const w = container.clientWidth;
       const h = container.clientHeight;
@@ -1781,11 +2183,11 @@
       camera.updateProjectionMatrix();
     });
 
-    document.getElementById('surfaceSelect').addEventListener('change', (e) => {
+    safeBind('surfaceSelect', 'change', (e) => {
       loadSurface(e.target.value);
     });
 
-    document.getElementById('chkVectorField').addEventListener('change', (e) => {
+    safeBind('chkVectorField', 'change', (e) => {
       isVectorFieldVisible = e.target.checked;
       buildVectorField(activeSurface);
     });
@@ -1796,37 +2198,74 @@
       });
     });
 
-    document.getElementById('btnGhost').addEventListener('click', (e) => {
+    safeBind('btnGhost', 'click', (e) => {
       isGhostMode = !isGhostMode;
       e.target.classList.toggle('active', isGhostMode);
       ghostMeshes.forEach(m => m.visible = isGhostMode);
     });
 
-    document.getElementById('btnReplay').addEventListener('click', (e) => {
+    safeBind('presetSelect', 'change', (e) => {
+      PresetManager.apply(e.target.value);
+    });
+
+    safeBind('btnOpenParams', 'click', () => {
+      const p = document.getElementById('paramDrawer');
+      if(p) p.classList.add('visible');
+    });
+    safeBind('btnCloseParams', 'click', () => {
+      const p = document.getElementById('paramDrawer');
+      if(p) p.classList.remove('visible');
+    });
+
+    safeBind('chkResearch', 'change', (e) => {
+      isResearchMode = e.target.checked;
+      updateTelemetry();
+    });
+
+    safeBind('chkVectors', 'change', (e) => {
+      isVectorsVisible = e.target.checked;
+      updateVisuals();
+    });
+
+    safeBind('btnTourney', 'click', () => {
+      TournamentManager.start();
+    });
+    safeBind('btnTourneyClose', 'click', () => {
+      const t = document.getElementById('tourneyModal');
+      if(t) t.classList.remove('visible');
+    });
+
+    safeBind('btnExportJson', 'click', () => ExportManager.downloadJSON());
+    safeBind('btnExportPng', 'click', () => ExportManager.downloadPNG());
+
+    safeBind('btnSaveCam', 'click', () => CameraManager.save());
+    safeBind('btnRestoreCam', 'click', () => CameraManager.restore());
+
+    safeBind('btnScrubExit', 'click', () => ReplayTimelineManager.stop());
+    safeBind('btnScrubPlay', 'click', (e) => {
+      const isPaused = e.target.innerHTML.includes('▶');
+      e.target.innerHTML = isPaused ? '⏸ Pause' : '▶ Play';
+      ReplayTimelineManager.isDragging = !isPaused; 
+    });
+
+    safeBind('btnReplay', 'click', (e) => {
       if (Object.keys(replayBuffer).length === 0) return; // no buffer
       
       if (globalRunning) {
         globalRunning = false;
-        document.getElementById('btnRun').innerHTML = '▶ Run';
+        const btnRun = document.getElementById('btnRun');
+        if(btnRun) btnRun.innerHTML = '▶ Run';
       }
       
       isReplaying = true;
-      replayFrame = 0;
       e.target.classList.add('active');
-      
-      // Setup replay visuals
-      Object.keys(replayBuffer).forEach(id => {
-        const opt = optimizers[id];
-        if (opt.enabled) {
-          opt.iter = 0;
-          opt.z = replayBuffer[id][0].z;
-        }
-      });
+      ReplayTimelineManager.start();
       updateTelemetry();
     });
 
-    document.getElementById('convGraphHeader').addEventListener('click', () => {
-      document.getElementById('convGraphPanel').classList.toggle('collapsed');
+    safeBind('convGraphHeader', 'click', () => {
+      const p = document.getElementById('convGraphPanel');
+      if(p) p.classList.toggle('collapsed');
     });
 
     // Tooltips
@@ -1837,7 +2276,7 @@
       pill.addEventListener('mouseenter', (e) => {
         const eduId = e.target.getAttribute('data-edu-id');
         const data = EDU_DATA[eduId];
-        if(data) {
+        if(data && tooltip) {
           tooltip.innerHTML = `<strong>${data.title}</strong>${data.text}`;
           tooltip.classList.add('visible');
           const rect = e.target.getBoundingClientRect();
@@ -1846,13 +2285,14 @@
         }
       });
       pill.addEventListener('mouseleave', () => {
-        tooltip.classList.remove('visible');
+        if(tooltip) tooltip.classList.remove('visible');
       });
     });
 
-    document.getElementById('densitySlider').addEventListener('input', (e) => {
+    safeBind('densitySlider', 'input', (e) => {
       currentVectorDensity = parseInt(e.target.value);
-      document.getElementById('densityVal').textContent = currentVectorDensity;
+      const v = document.getElementById('densityVal');
+      if(v) v.textContent = currentVectorDensity;
       buildVectorField(activeSurface);
     });
 
@@ -1872,9 +2312,10 @@
       });
     });
 
-    document.getElementById('btnRun').addEventListener('click', () => {
+    safeBind('btnRun', 'click', () => {
       globalRunning = !globalRunning;
-      document.getElementById('btnRun').innerHTML = globalRunning ? '⏸ Pause' : '▶ Run';
+      const btn = document.getElementById('btnRun');
+      if(btn) btn.innerHTML = globalRunning ? '⏸ Pause' : '▶ Run';
       
       let needsReset = false;
       Object.values(optimizers).forEach(opt => {
@@ -1886,7 +2327,7 @@
       if (globalRunning && needsReset) {
         resetOptimizer();
         globalRunning = true;
-        document.getElementById('btnRun').innerHTML = '⏸ Pause';
+        if(btn) btn.innerHTML = '⏸ Pause';
       }
       
       Object.values(optimizers).forEach(opt => {
@@ -1900,20 +2341,19 @@
       updateTelemetry();
     });
 
-    document.getElementById('btnReset').addEventListener('click', resetOptimizer);
-    document.getElementById('btnResetCam').addEventListener('click', () => {
-      isCinematicMode = false;
-      document.getElementById('btnCinematic').classList.remove('active');
-      resetCamera(activeSurface);
-    });
-    document.getElementById('btnCinematic').addEventListener('click', () => {
+    safeBind('btnReset', 'click', resetOptimizer);
+    
+    // NOTE: Removed btnResetCam since it is replaced by Restore/Save Camera
+    
+    safeBind('btnCinematic', 'click', () => {
       isCinematicMode = !isCinematicMode;
-      document.getElementById('btnCinematic').classList.toggle('active', isCinematicMode);
+      const btn = document.getElementById('btnCinematic');
+      if(btn) btn.classList.toggle('active', isCinematicMode);
       if (isCinematicMode) {
-        // Sync cinematic target to current orbit target on enable
         cinematicTarget.copy(controls.target);
       }
     });
+
     // Disable cinematic on manual orbit
     renderer.domElement.addEventListener('pointerdown', () => {
       if (isCinematicMode) {
@@ -1921,40 +2361,48 @@
       }
     });
 
-    document.getElementById('lrSlider').addEventListener('input', (e) => {
+    safeBind('lrSlider', 'input', (e) => {
       globalLr = Math.pow(10, parseFloat(e.target.value));
-      document.getElementById('lrVal').textContent = globalLr.toPrecision(2);
+      const v = document.getElementById('lrVal');
+      if(v) v.textContent = globalLr.toPrecision(2);
     });
     
-    document.getElementById('speedSlider').addEventListener('input', (e) => {
+    safeBind('speedSlider', 'input', (e) => {
       globalSpeed = parseInt(e.target.value);
-      document.getElementById('speedVal').textContent = globalSpeed;
+      const v = document.getElementById('speedVal');
+      if(v) v.textContent = globalSpeed;
     });
 
-    const rail = document.getElementById('experimentRail');
-    document.getElementById('btnCollapseRail').addEventListener('click', () => {
-      rail.classList.add('rail-collapsed');
+    safeBind('btnCollapseRail', 'click', () => {
+      const rail = document.getElementById('experimentRail');
+      if(rail) rail.classList.add('rail-collapsed');
       setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
     });
-    document.getElementById('btnRestoreRail').addEventListener('click', () => {
-      rail.classList.remove('rail-collapsed');
+    safeBind('btnRestoreRail', 'click', () => {
+      const rail = document.getElementById('experimentRail');
+      if(rail) rail.classList.remove('rail-collapsed');
       setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
     });
 
     const btnPick = document.getElementById('btnPickStart');
     const modeIndicator = document.getElementById('modeIndicator');
-    btnPick.addEventListener('click', () => {
-      isPickingStart = !isPickingStart;
-      btnPick.classList.toggle('active', isPickingStart);
-      btnPick.textContent = isPickingStart ? 'Cancel Pick Mode' : '🎯 Pick Point on Surface';
-      modeIndicator.style.display = isPickingStart ? 'block' : 'none';
-      container.style.cursor = isPickingStart ? 'crosshair' : 'default';
-    });
+    if (btnPick) {
+      btnPick.addEventListener('click', () => {
+        isPickingStart = !isPickingStart;
+        btnPick.classList.toggle('active', isPickingStart);
+        btnPick.textContent = isPickingStart ? 'Cancel Pick Mode' : '🎯 Pick Point on Surface';
+        if(modeIndicator) modeIndicator.style.display = isPickingStart ? 'block' : 'none';
+        container.style.cursor = isPickingStart ? 'crosshair' : 'default';
+      });
+    }
 
-    document.getElementById('btnApplyStart').addEventListener('click', () => {
+    safeBind('btnApplyStart', 'click', () => {
       const s = SURFACES[activeSurface];
-      let nx = parseFloat(document.getElementById('startXInput').value);
-      let ny = parseFloat(document.getElementById('startYInput').value);
+      const xInput = document.getElementById('startXInput');
+      const yInput = document.getElementById('startYInput');
+      if(!xInput || !yInput) return;
+      let nx = parseFloat(xInput.value);
+      let ny = parseFloat(yInput.value);
       if (isNaN(nx) || isNaN(ny)) return;
       nx = Math.max(s.domain.xmin, Math.min(s.domain.xmax, nx));
       ny = Math.max(s.domain.ymin, Math.min(s.domain.ymax, ny));
@@ -1962,7 +2410,7 @@
       resetOptimizer();
     });
 
-    document.getElementById('btnDefaultStart').addEventListener('click', () => {
+    safeBind('btnDefaultStart', 'click', () => {
       const s = SURFACES[activeSurface];
       currentStart = { ...s.startPoint };
       resetOptimizer();
@@ -2002,9 +2450,11 @@
           resetOptimizer();
           
           isPickingStart = false;
-          btnPick.classList.remove('active');
-          btnPick.textContent = '🎯 Pick Point on Surface';
-          modeIndicator.style.display = 'none';
+          if(btnPick) {
+            btnPick.classList.remove('active');
+            btnPick.textContent = '🎯 Pick Point on Surface';
+          }
+          if(modeIndicator) modeIndicator.style.display = 'none';
           container.style.cursor = 'default';
           
           const toast = document.createElement('div');
@@ -2043,7 +2493,7 @@
         const opt = Object.values(optimizers).find(o => o.meshes.markerMesh === hitMesh);
         if (opt && opt.intelligenceState !== 'Ready') {
           const stateData = EDU_DATA[opt.intelligenceState];
-          if (stateData) {
+          if (stateData && tooltip) {
             tooltip.innerHTML = `<strong>${stateData.title}</strong>${stateData.text}`;
             tooltip.classList.add('visible');
             tooltip.style.left = (e.clientX + 15) + 'px';
@@ -2054,13 +2504,15 @@
           }
         }
       } else {
-        if(tooltip.classList.contains('visible') && !tooltip.matches(':hover') && !document.querySelector('.opt-pill:hover')) {
+        if(tooltip && tooltip.classList.contains('visible') && !tooltip.matches(':hover') && !document.querySelector('.opt-pill:hover')) {
           tooltip.classList.remove('visible');
         }
       }
     });
 
     // INIT
+    ParameterManager.init();
+    ReplayTimelineManager.init();
     loadSurface('bowl');
     animate();
   </script>
