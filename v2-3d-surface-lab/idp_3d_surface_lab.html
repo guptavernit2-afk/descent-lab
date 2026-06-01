@@ -101,17 +101,17 @@
     #threeCanvasHost { width:100%; height:100%; display:block; position:absolute; top:0; left:0; outline:none; }
     .mode-indicator { position:absolute; top:16px; left:50%; transform:translateX(-50%); background:rgba(99,102,241,0.85); backdrop-filter:blur(10px); border:1px solid #818cf8; color:#fff; padding:7px 18px; border-radius:20px; font-size:10px; font-weight:600; letter-spacing:0.5px; z-index:60; display:none; pointer-events:none; }
 
-    /* ── COMPARISON CARDS ── */
-    .comparison-overlay { position:absolute; top:16px; right:16px; display:flex; flex-direction:column; gap:5px; pointer-events:none; z-index:50; width:196px; max-height:calc(100% - 90px); overflow-y:auto; }
+    /* ── COMPARISON CARDS (compact) ── */
+    .comparison-overlay { position:absolute; top:16px; right:16px; display:flex; flex-direction:column; gap:4px; pointer-events:none; z-index:50; width:172px; max-height:calc(100% - 90px); overflow-y:auto; }
     .comparison-overlay::-webkit-scrollbar { display:none; }
-    .comp-card { background:rgba(6,8,14,0.82); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.06); border-left:2px solid var(--cc,#6366f1); border-radius:7px; padding:8px 10px; }
-    .comp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; gap:4px; }
-    .comp-name { font-size:9px; font-weight:800; color:var(--cc,#fff); letter-spacing:1.2px; text-transform:uppercase; }
-    .comp-status-badge { font-size:7px; font-weight:700; padding:2px 5px; border-radius:3px; letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap; flex-shrink:0; border:1px solid; }
-    .comp-metrics { display:flex; gap:10px; }
-    .comp-metric { display:flex; flex-direction:column; gap:1px; }
-    .comp-label { font-size:7px; color:#374151; text-transform:uppercase; letter-spacing:0.5px; }
-    .comp-value { font-family:var(--mono); font-size:10px; color:#e2e8f0; font-weight:500; }
+    .comp-card { background:rgba(6,8,14,0.78); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.05); border-left:2px solid var(--cc,#6366f1); border-radius:5px; padding:6px 8px; }
+    .comp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; gap:4px; }
+    .comp-name { font-size:8px; font-weight:800; color:var(--cc,#fff); letter-spacing:1px; text-transform:uppercase; }
+    .comp-status-badge { font-size:6px; font-weight:700; padding:1px 4px; border-radius:2px; letter-spacing:0.3px; text-transform:uppercase; white-space:nowrap; flex-shrink:0; border:1px solid; }
+    .comp-metrics { display:flex; gap:8px; }
+    .comp-metric { display:flex; flex-direction:column; gap:0px; }
+    .comp-label { font-size:6px; color:#374151; text-transform:uppercase; letter-spacing:0.5px; }
+    .comp-value { font-family:var(--mono); font-size:9px; color:#cbd5e1; font-weight:500; }
 
     /* Status classes */
     .st-success { color:#10b981; border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.08); }
@@ -139,8 +139,8 @@
     .dock-divider { width:1px; height:22px; background:rgba(255,255,255,0.07); flex-shrink:0; }
 
     /* ── INTELLIGENCE PANEL ── */
-    .intelligence-panel { position:absolute; bottom:0; left:0; right:0; max-height:0; overflow:hidden; transition:max-height 0.5s cubic-bezier(0.16,1,0.3,1); background:rgba(5,6,11,0.97); backdrop-filter:blur(20px); border-top:1px solid rgba(255,255,255,0.08); z-index:70; }
-    .intelligence-panel.open { max-height:288px; }
+    .intelligence-panel { position:absolute; bottom:0; left:0; right:0; max-height:0; overflow:hidden; transition:max-height 0.5s cubic-bezier(0.16,1,0.3,1); background:rgba(4,5,10,0.98); backdrop-filter:blur(24px); border-top:1px solid rgba(255,255,255,0.08); z-index:70; }
+    .intelligence-panel.open { max-height:340px; }
     .intel-header { display:flex; align-items:center; gap:10px; padding:9px 20px; border-bottom:1px solid rgba(255,255,255,0.05); }
     .intel-eyebrow { font-size:9px; font-weight:700; color:var(--accent); letter-spacing:1.5px; text-transform:uppercase; }
     .intel-surface-chip { font-size:9px; color:#475569; font-family:var(--mono); }
@@ -150,44 +150,47 @@
     .intel-btn:hover { background:rgba(255,255,255,0.07); color:#fff; }
     .intel-btn.primary { background:rgba(99,102,241,0.08); border-color:rgba(99,102,241,0.2); color:#818cf8; }
     .intel-btn.primary:hover { background:rgba(99,102,241,0.16); color:#c7d2fe; }
-    .intel-body { display:flex; height:calc(288px - 38px); overflow:hidden; }
+    .intel-body { display:flex; height:calc(340px - 38px); overflow:hidden; }
 
-    /* Failure section */
-    .failure-section { flex:1; padding:10px 16px; border-right:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; gap:6px; overflow:hidden; }
-    .intel-section-label { font-size:8px; font-weight:700; color:#374151; letter-spacing:1.5px; text-transform:uppercase; flex-shrink:0; }
-    .failure-cards-row { display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:3px; }
-    .failure-cards-row::-webkit-scrollbar { height:2px; }
-    .failure-cards-row::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.06); border-radius:1px; }
-    .fc { min-width:152px; max-width:175px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-top:2px solid var(--fc-color,#6366f1); border-radius:5px; padding:8px 9px; display:flex; flex-direction:column; gap:4px; }
-    .fc-top { display:flex; align-items:center; gap:5px; }
-    .fc-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
-    .fc-name { font-size:9px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.8px; flex:1; }
-    .fc-status { font-size:7px; font-weight:700; padding:1px 4px; border-radius:3px; letter-spacing:0.3px; border:1px solid; text-transform:uppercase; }
-    .fc-lbl { font-size:7px; color:#2d3748; text-transform:uppercase; letter-spacing:0.8px; font-weight:600; margin-top:2px; }
-    .fc-txt { font-size:9px; color:#64748b; line-height:1.4; }
-    .fc-suggest { font-size:9px; font-weight:600; color:#10b981; }
-    .fc-ok { font-size:9px; color:#10b981; }
+    /* Outcome cards (left column) */
+    .outcome-section { flex:1; padding:10px 14px; border-right:1px solid rgba(255,255,255,0.04); display:flex; flex-direction:column; gap:6px; overflow:hidden; }
+    .intel-section-label { font-size:8px; font-weight:700; color:#2d3748; letter-spacing:1.5px; text-transform:uppercase; flex-shrink:0; }
+    .outcome-cards-row { display:flex; gap:7px; overflow-x:auto; flex:1; padding-bottom:3px; align-items:flex-start; }
+    .outcome-cards-row::-webkit-scrollbar { height:2px; }
+    .outcome-cards-row::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.06); border-radius:1px; }
+    .oc { min-width:148px; max-width:165px; flex-shrink:0; background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:9px 10px; display:flex; flex-direction:column; gap:5px; }
+    .oc-grade-row { display:flex; align-items:center; gap:6px; }
+    .oc-emoji { font-size:13px; flex-shrink:0; line-height:1; }
+    .oc-name { font-size:9px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.8px; flex:1; }
+    .oc-grade-lbl { font-size:7px; font-weight:700; padding:2px 5px; border-radius:3px; border:1px solid; text-transform:uppercase; letter-spacing:0.3px; flex-shrink:0; }
+    .oc-verdict { font-size:10px; font-weight:600; line-height:1.3; }
+    .oc-verdict.grade-best    { color:#10b981; }
+    .oc-verdict.grade-good    { color:#34d399; }
+    .oc-verdict.grade-partial { color:#f59e0b; }
+    .oc-verdict.grade-failed  { color:#ef4444; }
+    .oc-why { font-size:9px; color:#475569; line-height:1.45; }
 
-    /* Conclusion section */
-    .conclusion-section { width:305px; flex-shrink:0; padding:10px 16px; display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
-    .ec-best-row { display:flex; align-items:baseline; gap:6px; }
-    .ec-best-tag { font-size:8px; font-weight:700; color:rgba(16,185,129,0.7); padding:2px 5px; border-radius:3px; background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.12); text-transform:uppercase; letter-spacing:0.5px; }
-    .ec-best-name { font-size:15px; font-weight:700; color:#fff; }
-    .ec-score-chip { font-size:8px; font-family:var(--mono); color:#374151; margin-left:auto; padding:1px 5px; background:rgba(255,255,255,0.02); border-radius:3px; }
-    .ec-divider { height:1px; background:rgba(255,255,255,0.04); flex-shrink:0; }
-    .score-bars { display:flex; flex-direction:column; gap:3px; }
-    .score-row { display:flex; align-items:center; gap:5px; }
-    .score-name { width:30px; font-family:var(--mono); font-size:8px; text-align:right; flex-shrink:0; }
-    .score-bar-bg { flex:1; height:3px; background:rgba(255,255,255,0.04); border-radius:2px; overflow:hidden; }
-    .score-bar-fill { height:100%; border-radius:2px; transition:width 0.8s cubic-bezier(0.16,1,0.3,1); }
-    .score-val { width:24px; font-family:var(--mono); color:#374151; text-align:right; font-size:7px; }
-    .ec-reason { font-size:10px; color:#475569; line-height:1.5; }
-    .ec-fail-block { display:flex; flex-direction:column; gap:2px; }
-    .ec-fail-item { display:flex; align-items:flex-start; gap:4px; font-size:9px; color:#475569; }
-    .ec-fail-dot { color:#d97706; font-size:8px; margin-top:1px; flex-shrink:0; }
-    .ec-rec-box { background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.12); border-radius:5px; padding:7px 9px; }
-    .ec-rec-label { font-size:7px; font-weight:700; color:rgba(99,102,241,0.6); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
-    .ec-rec-text { font-size:9px; color:#64748b; line-height:1.5; }
+    /* Recommendation hero (right column) */
+    .rec-section { width:330px; flex-shrink:0; padding:12px 16px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; border-left:1px solid rgba(255,255,255,0.04); }
+    .rec-section::-webkit-scrollbar { width:2px; }
+    .rec-hero-row { display:flex; align-items:center; gap:8px; }
+    .rec-winner-name { font-size:18px; font-weight:700; letter-spacing:-0.5px; }
+    .conf-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:8px; font-weight:700; border:1px solid; letter-spacing:0.8px; text-transform:uppercase; margin-left:auto; }
+    .rec-divider { height:1px; background:rgba(255,255,255,0.04); flex-shrink:0; }
+    .rec-block-label { font-size:8px; font-weight:700; color:#2d3748; text-transform:uppercase; letter-spacing:1.2px; }
+    .rec-block-text { font-size:10px; color:#64748b; line-height:1.55; }
+    .rec-block-text strong { color:#94a3b8; font-weight:500; }
+    .why-not-list { display:flex; flex-direction:column; gap:3px; }
+    .why-not-item { display:flex; gap:6px; font-size:9px; color:#475569; align-items:flex-start; }
+    .why-not-name { font-weight:700; flex-shrink:0; }
+    .rec-box { background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.14); border-radius:5px; padding:8px 10px; }
+    .rec-box-label { font-size:7px; font-weight:700; color:rgba(165,180,252,0.6); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+    .rec-box-text { font-size:9px; color:#818cf8; line-height:1.5; }
+    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 10px; }
+    .sg-item { display:flex; flex-direction:column; gap:1px; }
+    .sg-label { font-size:7px; color:#1e293b; text-transform:uppercase; letter-spacing:0.8px; }
+    .sg-val { font-size:9px; font-family:var(--mono); color:#475569; }
+    .sg-val.highlight { color:#64748b; font-weight:600; }
 
     /* Tooltip */
     #eduTooltip { position:fixed; z-index:300; max-width:185px; background:rgba(6,7,12,0.95); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px; pointer-events:none; font-size:9px; line-height:1.5; color:#94a3b8; box-shadow:0 6px 24px rgba(0,0,0,0.7); opacity:0; transition:opacity 0.15s; }
@@ -448,33 +451,75 @@
   // INTELLIGENCE ENGINES
   // =============================================
   class ExplainabilityEngine {
+    // grade: 'best' | 'good' | 'partial' | 'failed'
     static getAnalysis(opt) {
       const s = SURFACES[activeSurface];
       const st = opt.status, is = opt.intelligenceState;
 
       if (st.includes('Reached')||st.includes('Minimum'))
-        return {status:'Success', sc:'success', why:`Reached minimum in ${opt.iter} iterations. Final loss: ${opt.z.toFixed(5)}.`, suggestion:null};
+        return {grade:'good', sc:'success',
+          verdict:'Found the minimum.',
+          why:`Made it in ${opt.iter} steps — finished with a loss of ${opt.z < 0.001 ? opt.z.toExponential(1) : opt.z.toFixed(4)}.`,
+          suggestion:null};
       if (st.includes('Boundary'))
-        return {status:'Boundary Exit', sc:'error', why:`Exited valid domain — learning rate too large for this landscape.`, suggestion:opt.id!=='adam'?'Adam':'Reduce learning rate'};
+        return {grade:'failed', sc:'error',
+          verdict:'Walked off the map.',
+          why:'The steps grew too large and it left the valid search area entirely.',
+          suggestion:opt.id!=='adam'?'Adam':'Use a smaller learning rate'};
       if (st.includes('Instability'))
-        return {status:'Diverged', sc:'error', why:`Numerical instability. Gradient explosion caused divergence on ${s.name}.`, suggestion:'Adam (adaptive clipping)'};
+        return {grade:'failed', sc:'error',
+          verdict:'Lost control completely.',
+          why:'Hit extremely steep terrain and the numbers blew up — no recovery possible.',
+          suggestion:'Adam'};
 
       const map = {
-        'Oscillation Detected': {status:'Oscillating',     sc:'warn',    why:`Direction reversals each step. LR too high for local curvature of ${s.name}.`,                           suggestion: opt.id==='gd'?'Adam':(opt.id==='momentum'?'RMSProp':'Reduce LR')},
-        'Valley Navigation':    {status:'Valley Stalling', sc:'warn',    why:`Gradients mostly perpendicular to descent direction. Valley geometry hindering progress.`,               suggestion:'Adam'},
-        'Local Trap':           {status:'Local Trap',      sc:'info',    why:`Gradient vanished far from global minimum. Optimizer trapped in a local basin.`,                          suggestion:'Adam or lower LR'},
-        'Exploding Gradient':   {status:'Gradient Blast',  sc:'error',   why:`Extreme terrain slope produced unbounded gradients — divergence risk.`,                                   suggestion:'Adam (adaptive clipping)'},
-        'Overshooting':         {status:'Overshooting',    sc:'warn',    why:`Step exceeded local curvature — loss increased repeatedly.`,                                              suggestion: opt.id==='momentum'?'RMSProp':'Reduce LR'},
-        'Momentum Slingshot':   {status:'Vel. Excess',     sc:'warn',    why:`Accumulated momentum outran the gradient signal. Kinetic carry overshooting minimum.`,                   suggestion:'RMSProp or reduce β'},
-        'Fast Convergence':     {status:'Converging Fast', sc:'success', why:`Strong gradient alignment and efficient step sizing — rapid loss reduction.`,                             suggestion:null},
-        'Stable Descent':       {status:'Stable Descent',  sc:'success', why:`Consistent, controlled loss reduction throughout the run.`,                                               suggestion:null},
-        'Converging':           {status:'Near Minimum',    sc:'success', why:`Fine-grained approach to minimum. Loss delta extremely small.`,                                           suggestion:null},
-        'Adaptive Rescue':      {status:'Adaptive',        sc:'success', why:`Adaptive scaling actively dampening steep gradients — preventing divergence.`,                            suggestion:null}
+        'Oscillation Detected': {grade:'failed', sc:'warn',
+          verdict:'Bounced back and forth.',
+          why:'Kept overshooting and swinging back — like a pendulum that refuses to settle.',
+          suggestion: opt.id==='gd'?'Adam':(opt.id==='momentum'?'RMSProp':'Lower learning rate')},
+        'Valley Navigation':    {grade:'partial', sc:'warn',
+          verdict:'Moved sideways, not down.',
+          why:'Drifted along the valley walls instead of following the floor toward the bottom.',
+          suggestion:'Adam'},
+        'Local Trap':           {grade:'failed', sc:'info',
+          verdict:'Got stuck in a local trap.',
+          why:'Found a flat spot that felt like a minimum — but the real one is elsewhere.',
+          suggestion:'Adam or restart from a different position'},
+        'Exploding Gradient':   {grade:'failed', sc:'error',
+          verdict:'Out of control.',
+          why:'Hit a near-vertical cliff — steps became uncontrollably large and divergence risk is high.',
+          suggestion:'Adam (handles this automatically)'},
+        'Overshooting':         {grade:'partial', sc:'warn',
+          verdict:'Moving too fast — skipping past the target.',
+          why:'Steps were too big and repeatedly sailed past low-loss areas, then had to backtrack.',
+          suggestion: opt.id==='momentum'?'RMSProp':'Lower learning rate'},
+        'Momentum Slingshot':   {grade:'partial', sc:'warn',
+          verdict:'Too much built-up speed.',
+          why:'Momentum carried it too far past the minimum — kept overshooting before correcting.',
+          suggestion:'RMSProp'},
+        'Fast Convergence':     {grade:'good', sc:'success',
+          verdict:'Fast and efficient.',
+          why:'Found a clear downhill path and followed it quickly — strong progress throughout.',
+          suggestion:null},
+        'Stable Descent':       {grade:'good', sc:'success',
+          verdict:'Steady, reliable descent.',
+          why:'Moved consistently downhill with controlled steps — no wasted effort.',
+          suggestion:null},
+        'Converging':           {grade:'good', sc:'success',
+          verdict:'Almost there.',
+          why:'Very close to the minimum — taking tiny careful steps to zero in precisely.',
+          suggestion:null},
+        'Adaptive Rescue':      {grade:'good', sc:'success',
+          verdict:'Adjusted and stayed on track.',
+          why:'Automatically reduced its step size on steep terrain — avoided losing control.',
+          suggestion:null}
       };
 
       return map[is] || {
-        status: opt.iter>5 ? (opt.status==='Paused'?'Paused':'In Progress') : 'Ready',
-        sc:'neutral', why: opt.iter>5?'Paused before natural completion.':'Not yet started.', suggestion:null
+        grade:'partial', sc:'neutral',
+        verdict: opt.iter>5?'Paused mid-run.':'Not yet started.',
+        why: opt.iter>5?'The run was paused before it could finish naturally.':'Waiting to start.',
+        suggestion:null
       };
     }
   }
@@ -492,44 +537,92 @@
       const good=new Set(['Fast Convergence','Stable Descent','Converging','Adaptive Rescue']);
 
       const scored = active.map(opt=>{
-        const lossScore   = (maxLoss-minLoss)>1e-10 ? 1-(opt.z-minLoss)/(maxLoss-minLoss) : 1;
-        const iterScore   = (maxIter-minIter)>0     ? 1-(opt.iter-minIter)/(maxIter-minIter) : 1;
-        const stabScore   = bad.has(opt.intelligenceState)?0.15 : good.has(opt.intelligenceState)?1.0 : 0.6;
-        const conv        = opt.status.includes('Reached')||opt.status.includes('Minimum');
-        const trap        = opt.intelligenceState==='Local Trap'||opt.status.includes('Boundary')||opt.status.includes('Instability');
-        const convScore   = conv?1.0:trap?0.05:0.4;
-        const total       = Math.max(0,Math.min(1, lossScore*0.40+iterScore*0.30+stabScore*0.20+convScore*0.10));
+        const lossScore = (maxLoss-minLoss)>1e-10 ? 1-(opt.z-minLoss)/(maxLoss-minLoss) : 1;
+        const iterScore = (maxIter-minIter)>0     ? 1-(opt.iter-minIter)/(maxIter-minIter) : 1;
+        const stabScore = bad.has(opt.intelligenceState)?0.15 : good.has(opt.intelligenceState)?1.0 : 0.6;
+        const conv      = opt.status.includes('Reached')||opt.status.includes('Minimum');
+        const trap      = opt.intelligenceState==='Local Trap'||opt.status.includes('Boundary')||opt.status.includes('Instability');
+        const convScore = conv?1.0:trap?0.05:0.4;
+        const total     = Math.max(0,Math.min(1, lossScore*0.40+iterScore*0.30+stabScore*0.20+convScore*0.10));
         return {opt,total,lossScore,iterScore,stabScore,convScore};
       });
       scored.sort((a,b)=>b.total-a.total);
 
-      const best=scored[0], worst=scored[scored.length-1];
-      const s=SURFACES[activeSurface];
-      const failures = active.map(o=>{const a=ExplainabilityEngine.getAnalysis(o);return{opt:o,a};})
-                            .filter(({a})=>a.sc==='warn'||a.sc==='error')
-                            .map(({opt,a})=>`${opt.name}: ${a.status}`);
+      const best=scored[0], s=SURFACES[activeSurface];
+      const conf=this._confidence(scored);
+      const whyNot=this._whyNot(scored);
+      const ctx=this._surfaceCtx(s);
 
-      return {scores:scored, best:best.opt, bestScore:best.total, worst:worst.opt, failures,
-              reason:this._reason(best.opt,s), recommendation:this._rec(best.opt,s)};
+      return {scores:scored, best:best.opt, bestScore:best.total,
+              worst:scored[scored.length-1].opt, confidence:conf, whyNot,
+              surfaceCtx:ctx, reason:this._reason(best.opt,s,best),
+              recommendation:this._rec(best.opt,s)};
     }
 
-    static _reason(opt,s) {
-      const conv=opt.status.includes('Reached')||opt.status.includes('Minimum');
-      const prefix=conv
-        ?`${opt.name} converged in ${opt.iter} iterations (final loss ${opt.z.toExponential(2)}).`
-        :`${opt.name} achieved the lowest loss (${opt.z.toExponential(2)}) among active optimizers.`;
-      const ctx={bowl:'Convex symmetry rewarded stable step sizes.',rosenbrock:'Adaptive scaling was critical for the narrow, curved Rosenbrock valley.',himmelblau:'Stable gradient estimates aided reliable basin selection from four minima.',rastrigin:'Adaptive step sizes reduced trap susceptibility across dense local minima.'};
-      return `${prefix} ${ctx[s.id]||''}`;
+    static _confidence(scored) {
+      if (scored.length < 2) return {level:'HIGH', pct:95, color:'#10b981'};
+      const gap = scored[0].total - scored[1].total;
+      if (gap > 0.28) return {level:'HIGH',   pct:Math.min(99,Math.round(65+gap*120)), color:'#10b981'};
+      if (gap > 0.12) return {level:'MEDIUM', pct:Math.round(45+gap*200),             color:'#f59e0b'};
+      return               {level:'LOW',    pct:Math.max(25,Math.round(30+gap*150)), color:'#ef4444'};
     }
 
-    static _rec(opt,s) {
-      const r={
-        bowl:`For convex symmetric landscapes, ${opt.name} showed the best efficiency-stability balance.`,
-        rosenbrock:`For curved narrow valleys with anisotropic curvature, ${opt.name} is recommended — adaptive per-dimension scaling handles the valley geometry.`,
-        himmelblau:`For multi-modal landscapes, ${opt.name} is recommended — stable gradient estimates improve convergence to a valid basin.`,
-        rastrigin:`For highly multimodal landscapes, ${opt.name} performed best — adaptive step sizes reduce susceptibility to local traps.`
+    static _whyNot(scored) {
+      if (scored.length < 2) return [];
+      const best=scored[0];
+      return scored.slice(1).map(sc=>{
+        const opt=sc.opt, a=ExplainabilityEngine.getAnalysis(opt);
+        let reason;
+        if (opt.status.includes('Boundary')||opt.status.includes('Instability'))
+          reason='Lost control and exited the search area entirely.';
+        else if (a.grade==='failed' && a.sc==='warn')
+          reason='Wasted too many steps bouncing instead of descending cleanly.';
+        else if (opt.intelligenceState==='Local Trap')
+          reason="Got stuck in a local trap and couldn't find the real minimum.";
+        else if (opt.intelligenceState==='Momentum Slingshot')
+          reason='Built up too much speed and overshot the minimum repeatedly.';
+        else if (sc.iterScore < 0.5 && sc.lossScore > 0.6)
+          reason=`Got there eventually, but needed ${opt.iter} steps — much slower than ${best.opt.name}.`;
+        else if (sc.lossScore < 0.5)
+          reason=`Ended further from the minimum (loss: ${opt.z.toExponential(1)}) compared to ${best.opt.name}.`;
+        else
+          reason=`Performed respectably but ${best.opt.name} was faster and more consistent.`;
+        return {opt, reason};
+      });
+    }
+
+    static _surfaceCtx(s) {
+      const ctx = {
+        bowl:        {desc:'a smooth, bowl-shaped surface with one clear lowest point', note:'Almost any optimizer handles this well — the differences come down to speed and stability.'},
+        rosenbrock:  {desc:'a long, narrow curved valley where the floor barely slopes', note:'The steep walls mislead fixed-step methods, causing sideways drifting instead of forward progress.'},
+        himmelblau:  {desc:'a landscape with four separate equally valid destinations', note:'Where you start determines which destination you land in — each optimizer may pick a different one.'},
+        rastrigin:   {desc:'a bumpy landscape packed with hundreds of small traps', note:'Fixed-step methods fall into the first trap they find. Adaptive methods have a better chance of skipping over them.'}
       };
-      return r[s.id]||`${opt.name} is recommended for this landscape based on convergence quality and stability.`;
+      return ctx[s.id] || {desc:'this landscape', note:''};
+    }
+
+    static _reason(opt, s, sc) {
+      const conv=opt.status.includes('Reached')||opt.status.includes('Minimum');
+      const opening = conv
+        ? `${opt.name} reached the minimum in ${opt.iter} steps with a final loss of ${opt.z < 0.001 ? opt.z.toExponential(1) : opt.z.toFixed(5)}.`
+        : `${opt.name} achieved the lowest final loss (${opt.z.toExponential(1)}) of all active optimizers.`;
+      const surfaceNote = {
+        bowl:       'The simple terrain meant steady steps worked perfectly.',
+        rosenbrock: 'Automatic step-size adjustment let it follow the valley floor without drifting sideways.',
+        himmelblau: 'Reliable estimates let it lock onto a valid destination without being thrown off.',
+        rastrigin:  'Smaller adaptive steps helped it avoid falling into the wrong trap.'
+      };
+      return `${opening} ${surfaceNote[s.id]||''}`;
+    }
+
+    static _rec(opt, s) {
+      const r = {
+        bowl:       `This surface is friendly to all optimizers. If speed matters, ${opt.name} is your best starting point.`,
+        rosenbrock: `For curved narrow valleys like this one, use ${opt.name}. Its per-dimension step sizing handles the difficult geometry much better than fixed-step methods.`,
+        himmelblau: `For landscapes with multiple valid destinations, ${opt.name} is the most reliable choice — it navigates between basins with fewer surprises.`,
+        rastrigin:  `For landscapes full of local traps, ${opt.name} gives the best odds of finding the real minimum. Avoid fixed-step methods here.`
+      };
+      return r[s.id] || `${opt.name} is the recommended choice for this landscape.`;
     }
   }
 
@@ -959,53 +1052,98 @@
     document.getElementById('intelSurfaceChip').innerHTML=`Surface: <strong>${s.name}</strong>`;
     const active=Object.values(optimizers).filter(o=>o.enabled&&o.iter>2);
 
-    const fcHTML=active.map(opt=>{
-      const a=ExplainabilityEngine.getAnalysis(opt);
-      return `<div class="fc" style="--fc-color:${opt.uiColor}">
-        <div class="fc-top">
-          <div class="fc-dot" style="background:${opt.uiColor};box-shadow:0 0 5px ${opt.uiColor}50"></div>
-          <span class="fc-name">${opt.name}</span>
-          <span class="fc-status st-${a.sc}">${a.status}</span>
+    // Grade → emoji + label
+    const gradeInfo = {
+      best:    {emoji:'🏆', lbl:'Best',    cls:'grade-best',    badge:'st-success'},
+      good:    {emoji:'✅', lbl:'Strong',  cls:'grade-good',    badge:'st-success'},
+      partial: {emoji:'⚠', lbl:'Partial', cls:'grade-partial', badge:'st-warn'},
+      failed:  {emoji:'❌', lbl:'Failed',  cls:'grade-failed',  badge:'st-error'}
+    };
+
+    // Assign best grade to the winner
+    const bestId = result.best.id;
+
+    // Build outcome cards (left column)
+    const ocHTML = active.map(opt=>{
+      const a = ExplainabilityEngine.getAnalysis(opt);
+      const rawGrade = (opt.id===bestId && (a.grade==='good'||a.grade==='partial')) ? 'best' : a.grade;
+      const gi = gradeInfo[rawGrade] || gradeInfo.partial;
+      return `<div class="oc" style="border-top:2px solid ${opt.uiColor}20">
+        <div class="oc-grade-row">
+          <span class="oc-emoji">${gi.emoji}</span>
+          <span class="oc-name" style="color:${opt.uiColor}">${opt.name}</span>
+          <span class="oc-grade-lbl ${gi.badge}">${gi.lbl}</span>
         </div>
-        <div><span class="fc-lbl">Why</span><div class="fc-txt">${a.why}</div></div>
-        ${a.suggestion?`<div><span class="fc-lbl">Try Instead</span><div class="fc-suggest">${a.suggestion}</div></div>`:`<div class="fc-ok">✓ Performed well</div>`}
+        <div class="oc-verdict ${gi.cls}">${a.verdict}</div>
+        <div class="oc-why">${a.why}</div>
+        ${a.suggestion?`<div style="font-size:8px;color:#374151;margin-top:2px">Try: <span style="color:#10b981;font-weight:600">${a.suggestion}</span></div>`:''}
       </div>`;
     }).join('');
 
-    const sbHTML=result.scores.map(sc=>`
-      <div class="score-row">
-        <span class="score-name" style="color:${sc.opt.uiColor}">${sc.opt.id.toUpperCase()}</span>
-        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${Math.round(sc.total*100)}%;background:${sc.opt.uiColor}"></div></div>
-        <span class="score-val">${sc.total.toFixed(2)}</span>
+    // Build score bars
+    const sbHTML = result.scores.map(sc=>`
+      <div style="display:flex;align-items:center;gap:5px">
+        <span style="width:28px;font-family:var(--mono);font-size:7px;color:${sc.opt.uiColor};text-align:right;flex-shrink:0">${sc.opt.id.toUpperCase()}</span>
+        <div style="flex:1;height:3px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.round(sc.total*100)}%;background:${sc.opt.uiColor};border-radius:2px"></div></div>
+        <span style="width:22px;font-family:var(--mono);font-size:7px;color:#374151;text-align:right">${sc.total.toFixed(2)}</span>
       </div>`).join('');
 
-    const fiHTML=result.failures.length
-      ?result.failures.map(f=>`<div class="ec-fail-item"><span class="ec-fail-dot">▸</span>${f}</div>`).join('')
-      :`<div class="ec-fail-item" style="color:#2d3748"><span class="ec-fail-dot" style="color:#1f2937">▸</span>No critical failures detected.</div>`;
+    // Build Why Not section
+    const whyNotHTML = result.whyNot.length
+      ? result.whyNot.map(({opt,reason})=>`
+          <div class="why-not-item">
+            <span class="why-not-name" style="color:${opt.uiColor}">${opt.name}:</span>
+            <span>${reason}</span>
+          </div>`).join('')
+      : `<div style="font-size:9px;color:#2d3748">Only one optimizer was active.</div>`;
+
+    // Build summary grid
+    const convOpt = active.find(o=>o.status.includes('Reached')||o.status.includes('Minimum'));
+    const summaryHTML = `
+      <div class="summary-grid">
+        <div class="sg-item"><span class="sg-label">Surface</span><span class="sg-val highlight">${s.name}</span></div>
+        <div class="sg-item"><span class="sg-label">Start Point</span><span class="sg-val">(${currentStart.x.toFixed(1)}, ${currentStart.y.toFixed(1)})</span></div>
+        <div class="sg-item"><span class="sg-label">Winner</span><span class="sg-val highlight" style="color:${result.best.uiColor}">${result.best.name}</span></div>
+        <div class="sg-item"><span class="sg-label">Iterations</span><span class="sg-val">${result.best.iter}</span></div>
+        <div class="sg-item"><span class="sg-label">Final Loss</span><span class="sg-val">${result.best.z < 0.001 ? result.best.z.toExponential(2) : result.best.z.toFixed(5)}</span></div>
+        <div class="sg-item"><span class="sg-label">Confidence</span><span class="sg-val" style="color:${result.confidence.color}">${result.confidence.level} ${result.confidence.pct}%</span></div>
+      </div>`;
+
+    // Confidence badge
+    const conf = result.confidence;
 
     document.getElementById('intelBody').innerHTML=`
-      <div class="failure-section">
-        <div class="intel-section-label">Failure Analysis</div>
-        <div class="failure-cards-row">${fcHTML}</div>
+      <div class="outcome-section">
+        <div class="intel-section-label">Optimizer Outcomes</div>
+        <div class="outcome-cards-row">${ocHTML}</div>
+        <div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.04)">
+          <div class="intel-section-label" style="margin-bottom:4px">Score Breakdown</div>
+          <div style="display:flex;flex-direction:column;gap:3px">${sbHTML}</div>
+        </div>
       </div>
-      <div class="conclusion-section">
-        <div class="intel-section-label">Experiment Conclusion</div>
-        <div class="ec-best-row">
-          <span class="ec-best-tag">Best</span>
-          <span class="ec-best-name" style="color:${result.best.uiColor}">${result.best.name}</span>
-          <span class="ec-score-chip">score ${result.bestScore.toFixed(2)}</span>
+      <div class="rec-section">
+        <div style="font-size:8px;font-weight:700;color:#1e293b;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px">Recommended Optimizer</div>
+        <div class="rec-hero-row">
+          <span class="rec-winner-name" style="color:${result.best.uiColor}">${result.best.name}</span>
+          <span class="conf-badge" style="color:${conf.color};border-color:${conf.color}40;background:${conf.color}10">
+            ${conf.level} &nbsp;${conf.pct}%
+          </span>
         </div>
-        <div class="ec-divider"></div>
-        <div class="score-bars">${sbHTML}</div>
-        <div class="ec-divider"></div>
-        <div class="ec-reason">${result.reason}</div>
-        <div class="ec-fail-block">
-          <div class="intel-section-label" style="margin-bottom:3px">Observed Failures</div>
-          ${fiHTML}
+        <div class="rec-divider"></div>
+        <div class="rec-block-label">Why it worked</div>
+        <div class="rec-block-text">${result.reason}</div>
+        <div class="rec-block-label">Why this surface mattered</div>
+        <div class="rec-block-text">This is <strong>${result.surfaceCtx.desc}</strong>. ${result.surfaceCtx.note}</div>
+        <div class="rec-divider"></div>
+        <div class="rec-block-label">Why not the others?</div>
+        <div class="why-not-list">${whyNotHTML}</div>
+        <div class="rec-box">
+          <div class="rec-box-label">Use this next time</div>
+          <div class="rec-box-text">${result.recommendation}</div>
         </div>
-        <div class="ec-rec-box">
-          <div class="ec-rec-label">Recommendation</div>
-          <div class="ec-rec-text">${result.recommendation}</div>
+        <div style="margin-top:2px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.04)">
+          <div class="intel-section-label" style="margin-bottom:5px">Experiment Summary</div>
+          ${summaryHTML}
         </div>
       </div>`;
 
