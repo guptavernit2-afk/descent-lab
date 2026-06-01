@@ -104,14 +104,14 @@
     /* ── COMPARISON CARDS (compact) ── */
     .comparison-overlay { position:absolute; top:16px; right:16px; display:flex; flex-direction:column; gap:4px; pointer-events:none; z-index:50; width:172px; max-height:calc(100% - 90px); overflow-y:auto; }
     .comparison-overlay::-webkit-scrollbar { display:none; }
-    .comp-card { background:rgba(6,8,14,0.78); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.05); border-left:2px solid var(--cc,#6366f1); border-radius:5px; padding:6px 8px; }
-    .comp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; gap:4px; }
-    .comp-name { font-size:8px; font-weight:800; color:var(--cc,#fff); letter-spacing:1px; text-transform:uppercase; }
-    .comp-status-badge { font-size:6px; font-weight:700; padding:1px 4px; border-radius:2px; letter-spacing:0.3px; text-transform:uppercase; white-space:nowrap; flex-shrink:0; border:1px solid; }
-    .comp-metrics { display:flex; gap:8px; }
-    .comp-metric { display:flex; flex-direction:column; gap:0px; }
-    .comp-label { font-size:6px; color:#374151; text-transform:uppercase; letter-spacing:0.5px; }
-    .comp-value { font-family:var(--mono); font-size:9px; color:#cbd5e1; font-weight:500; }
+    .comp-card { background:rgba(6,8,14,0.78); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.05); border-left:4px solid var(--cc,#6366f1); border-radius:5px; padding:8px 10px; }
+    .comp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; gap:4px; }
+    .comp-name { font-size:10px; font-weight:800; color:var(--cc,#fff); letter-spacing:0.5px; text-transform:uppercase; }
+    .comp-status-badge { font-size:7px; font-weight:700; padding:2px 5px; border-radius:2px; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; flex-shrink:0; border:1px solid; margin-left:auto; }
+    .comp-metrics { display:flex; gap:12px; }
+    .comp-metric { display:flex; flex-direction:column; gap:1px; }
+    .comp-label { font-size:6px; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; }
+    .comp-value { font-family:var(--mono); font-size:8px; color:#cbd5e1; font-weight:500; }
 
     /* Status classes */
     .st-success { color:#10b981; border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.08); }
@@ -339,8 +339,18 @@
       <div class="intel-tab active" data-target="intelTabRec">Optimizer Recommendation</div>
       <div class="intel-tab" data-target="intelTabAnalysis">Experiment Analysis</div>
     </div>
-    <div class="intel-body active" id="intelTabRec"></div>
-    <div class="intel-body" id="intelTabAnalysis"></div>
+    <div class="intel-body active" id="intelTabRec">
+            <div style="padding:40px; text-align:center; color:#64748b; font-size:12px; width:100%;">
+              <div style="font-size:24px; margin-bottom:12px;">📊</div>
+              Run an experiment to generate optimizer insights and recommendations.
+            </div>
+          </div>
+          <div class="intel-body" id="intelTabAnalysis">
+            <div style="padding:40px; text-align:center; color:#64748b; font-size:12px; width:100%;">
+              <div style="font-size:24px; margin-bottom:12px;">📈</div>
+              Run an experiment to generate optimizer insights and recommendations.
+            </div>
+          </div>
   </div>
   <!-- Hidden compat elements -->
   <div id="rankingBoard" style="display:none"><div id="rankList"></div></div>
@@ -1198,47 +1208,61 @@
     
     document.getElementById('intelTabRec').innerHTML=`
       <div class="rec-section">
-        <div class="rec-left-col">
-          <div style="font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;">RECOMMENDED OPTIMIZER</div>
-          <div class="rec-hero-row">
-            <span class="rec-winner-name" style="color:${result.best.uiColor}">${result.best.name}</span>
-            <span class="conf-badge" style="color:${conf.color};border-color:${conf.color}40;background:${conf.color}10">
-              Confidence: ${conf.level} (${conf.pct}%)
+        <div class="rec-left-col" style="flex:1.5;">
+          
+          <div style="background:rgba(255,255,255,0.02); padding:10px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); margin-bottom:12px;">
+             <span style="font-size:8px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">Surface Challenge: ${s.name}</span>
+             <span style="font-size:11px; color:#e2e8f0;">${result.surfaceCtx.desc} — ${result.surfaceCtx.note}</span>
+          </div>
+
+          <div style="font-size:10px; font-weight:700; color:#94a3b8; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px;">🏆 Recommended Optimizer</div>
+          <div class="rec-hero-row" style="margin-bottom:8px;">
+            <span class="rec-winner-name" style="color:${result.best.uiColor}; font-size:32px;">${result.best.name}</span>
+            <span class="conf-badge" style="color:${conf.color};border-color:${conf.color}40;background:${conf.color}10; padding:6px 12px; font-size:10px;">
+              ${conf.level} CONFIDENCE
             </span>
           </div>
-          <div style="font-size:11px;color:#cbd5e1;margin-bottom:12px">${conf.desc}</div>
-          <div class="rec-divider"></div>
+          <div style="font-size:11px; color:#cbd5e1; margin-bottom:16px; font-weight:500;">${conf.desc}</div>
           
-          <div class="rec-block-label" style="margin-top:4px">Why it worked</div>
-          <div class="rec-block-text">${result.reason}</div>
+          <div class="rec-divider" style="margin-bottom:16px;"></div>
           
-          <div class="rec-block-label" style="margin-top:8px">Why this surface mattered</div>
-          <div class="rec-block-text">This landscape contains <strong>${result.surfaceCtx.desc}</strong>. ${result.surfaceCtx.note}</div>
-          
-          <div class="rec-box" style="margin-top:12px">
-            <div class="rec-box-label">Practical Advice</div>
-            <div style="font-size:11px;color:#e2e8f0;margin-bottom:4px"><strong>Use When:</strong><br/>${result.practicalAdvice.use.map(s=>'• '+s).join('<br/>')}</div>
-            <div style="font-size:11px;color:#e2e8f0;margin-bottom:4px"><strong>Avoid When:</strong><br/>${result.practicalAdvice.avoid.map(s=>'• '+s).join('<br/>')}</div>
-            <div style="font-size:11px;color:#e2e8f0"><strong>Expected Behavior:</strong><br/>${result.practicalAdvice.exp}</div>
+          <div style="display:flex; gap:20px;">
+            <div style="flex:1;">
+              <div class="rec-block-label" style="margin-bottom:8px; color:#cbd5e1; font-size:9px;">Why It Worked</div>
+              <div class="rec-block-text" style="font-size:12px;">${result.reason}</div>
+            </div>
           </div>
+          
+          <div class="rec-box" style="margin-top:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:16px;">
+            <div class="rec-block-label" style="margin-bottom:10px; color:#a5b4fc; font-size:9px;">Practical Advice</div>
+            <div style="display:flex; gap:16px;">
+              <div style="flex:1;">
+                <div style="font-size:10px; color:#94a3b8; margin-bottom:6px; font-weight:700; text-transform:uppercase;">Use When</div>
+                <div style="font-size:11px; color:#e2e8f0; line-height:1.6;">${result.practicalAdvice.use.map(s=>'• '+s).join('<br/>')}</div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:10px; color:#94a3b8; margin-bottom:6px; font-weight:700; text-transform:uppercase;">Avoid When</div>
+                <div style="font-size:11px; color:#e2e8f0; line-height:1.6;">${result.practicalAdvice.avoid.map(s=>'• '+s).join('<br/>')}</div>
+              </div>
+            </div>
+            <div style="margin-top:12px; font-size:11px; color:#94a3b8;"><span style="font-weight:700; text-transform:uppercase;">Expected:</span> <span style="color:#e2e8f0">${result.practicalAdvice.exp}</span></div>
+          </div>
+
         </div>
         
-        <div class="rec-right-col">
-          <div class="rec-block-label" style="margin-bottom:2px">Why Others Struggled</div>
-          <div class="why-not-list" style="margin-bottom:12px">${whyNotHTML}</div>
+        <div class="rec-right-col" style="flex:1; width:auto; border-left:1px solid rgba(255,255,255,0.06); padding-left:20px;">
+          <div class="rec-block-label" style="margin-bottom:8px; color:#cbd5e1; font-size:9px;">Why Others Struggled</div>
+          <div class="why-not-list" style="margin-bottom:20px;">${whyNotHTML}</div>
           
-          <div class="rec-block-label" style="margin-bottom:6px">Key Observations</div>
-          <div style="font-size:11px;color:#cbd5e1;line-height:1.5;margin-bottom:12px;background:rgba(255,255,255,0.02);padding:8px;border-radius:4px;border:1px solid rgba(255,255,255,0.05);">
+          <div class="rec-block-label" style="margin-bottom:8px; color:#cbd5e1; font-size:9px;">Key Observations</div>
+          <div style="font-size:11px; color:#94a3b8; line-height:1.6; margin-bottom:20px;">
             ${result.observations.join('<br/>')}
           </div>
           
-          <div class="key-learning-box" style="margin-bottom:12px">
-            <div class="key-learning-label">💡 What This Experiment Teaches</div>
-            <div class="key-learning-text">${result.learning}</div>
+          <div class="key-learning-box" style="margin-top:auto;">
+            <div class="key-learning-label" style="font-size:9px;">💡 Key Learning</div>
+            <div class="key-learning-text" style="font-size:11px;">${result.learning}</div>
           </div>
-          
-          <div class="rec-block-label" style="margin-bottom:6px">Experiment Summary</div>
-          ${summaryHTML}
         </div>
       </div>`;
 
