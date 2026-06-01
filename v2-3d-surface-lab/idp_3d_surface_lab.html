@@ -150,47 +150,63 @@
     .intel-btn:hover { background:rgba(255,255,255,0.07); color:#fff; }
     .intel-btn.primary { background:rgba(99,102,241,0.08); border-color:rgba(99,102,241,0.2); color:#818cf8; }
     .intel-btn.primary:hover { background:rgba(99,102,241,0.16); color:#c7d2fe; }
-    .intel-body { display:flex; height:calc(340px - 38px); overflow:hidden; }
+    
+    /* Tabs */
+    .intel-tabs { display:flex; gap:16px; margin:0 20px; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .intel-tab { font-size:10px; font-weight:600; color:#64748b; padding:8px 0; cursor:pointer; text-transform:uppercase; letter-spacing:1px; position:relative; transition:color 0.2s; }
+    .intel-tab:hover { color:#cbd5e1; }
+    .intel-tab.active { color:#fff; }
+    .intel-tab.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--accent); border-radius:2px; }
+    
+    .intel-body { display:none; height:calc(340px - 66px); overflow:hidden; }
+    .intel-body.active { display:flex; }
 
-    /* Outcome cards (left column) */
-    .outcome-section { flex:1; padding:10px 14px; border-right:1px solid rgba(255,255,255,0.04); display:flex; flex-direction:column; gap:6px; overflow:hidden; }
-    .intel-section-label { font-size:8px; font-weight:700; color:#2d3748; letter-spacing:1.5px; text-transform:uppercase; flex-shrink:0; }
-    .outcome-cards-row { display:flex; gap:7px; overflow-x:auto; flex:1; padding-bottom:3px; align-items:flex-start; }
-    .outcome-cards-row::-webkit-scrollbar { height:2px; }
-    .outcome-cards-row::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.06); border-radius:1px; }
-    .oc { min-width:148px; max-width:165px; flex-shrink:0; background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:9px 10px; display:flex; flex-direction:column; gap:5px; }
+    /* Outcome cards (Tab 1 full width layout) */
+    .outcome-section { flex:1; padding:12px 20px; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+    .intel-section-label { font-size:8px; font-weight:700; color:#475569; letter-spacing:1.5px; text-transform:uppercase; flex-shrink:0; }
+    .outcome-cards-row { display:flex; gap:10px; overflow-x:auto; flex:1; padding-bottom:5px; align-items:stretch; }
+    .outcome-cards-row::-webkit-scrollbar { height:4px; }
+    .outcome-cards-row::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:2px; }
+    .oc { min-width:200px; max-width:240px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
     .oc-grade-row { display:flex; align-items:center; gap:6px; }
-    .oc-emoji { font-size:13px; flex-shrink:0; line-height:1; }
-    .oc-name { font-size:9px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.8px; flex:1; }
-    .oc-grade-lbl { font-size:7px; font-weight:700; padding:2px 5px; border-radius:3px; border:1px solid; text-transform:uppercase; letter-spacing:0.3px; flex-shrink:0; }
-    .oc-verdict { font-size:10px; font-weight:600; line-height:1.3; }
+    .oc-emoji { font-size:16px; flex-shrink:0; line-height:1; }
+    .oc-name { font-size:10px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.8px; flex:1; }
+    .oc-grade-lbl { font-size:7px; font-weight:700; padding:2px 5px; border-radius:3px; border:1px solid; text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
+    .oc-verdict { font-size:11px; font-weight:600; line-height:1.4; margin-top:4px; }
     .oc-verdict.grade-best    { color:#10b981; }
     .oc-verdict.grade-good    { color:#34d399; }
     .oc-verdict.grade-partial { color:#f59e0b; }
     .oc-verdict.grade-failed  { color:#ef4444; }
-    .oc-why { font-size:9px; color:#475569; line-height:1.45; }
+    .oc-why { font-size:10px; color:#94a3b8; line-height:1.5; margin-top:2px; flex:1; }
 
-    /* Recommendation hero (right column) */
-    .rec-section { width:330px; flex-shrink:0; padding:12px 16px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; border-left:1px solid rgba(255,255,255,0.04); }
-    .rec-section::-webkit-scrollbar { width:2px; }
-    .rec-hero-row { display:flex; align-items:center; gap:8px; }
-    .rec-winner-name { font-size:18px; font-weight:700; letter-spacing:-0.5px; }
-    .conf-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:8px; font-weight:700; border:1px solid; letter-spacing:0.8px; text-transform:uppercase; margin-left:auto; }
-    .rec-divider { height:1px; background:rgba(255,255,255,0.04); flex-shrink:0; }
-    .rec-block-label { font-size:8px; font-weight:700; color:#2d3748; text-transform:uppercase; letter-spacing:1.2px; }
-    .rec-block-text { font-size:10px; color:#64748b; line-height:1.55; }
-    .rec-block-text strong { color:#94a3b8; font-weight:500; }
-    .why-not-list { display:flex; flex-direction:column; gap:3px; }
-    .why-not-item { display:flex; gap:6px; font-size:9px; color:#475569; align-items:flex-start; }
-    .why-not-name { font-weight:700; flex-shrink:0; }
-    .rec-box { background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.14); border-radius:5px; padding:8px 10px; }
-    .rec-box-label { font-size:7px; font-weight:700; color:rgba(165,180,252,0.6); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
-    .rec-box-text { font-size:9px; color:#818cf8; line-height:1.5; }
-    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px 10px; }
-    .sg-item { display:flex; flex-direction:column; gap:1px; }
-    .sg-label { font-size:7px; color:#1e293b; text-transform:uppercase; letter-spacing:0.8px; }
-    .sg-val { font-size:9px; font-family:var(--mono); color:#475569; }
-    .sg-val.highlight { color:#64748b; font-weight:600; }
+    /* Recommendation hero (Tab 2 full width layout) */
+    .rec-section { flex:1; padding:12px 20px; display:flex; gap:20px; overflow-y:auto; }
+    .rec-left-col { flex:1; display:flex; flex-direction:column; gap:8px; }
+    .rec-right-col { width:280px; flex-shrink:0; display:flex; flex-direction:column; gap:8px; }
+    .rec-section::-webkit-scrollbar { width:4px; }
+    .rec-hero-row { display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+    .rec-winner-name { font-size:24px; font-weight:800; letter-spacing:-0.5px; }
+    .conf-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:4px; font-size:9px; font-weight:800; border:1px solid; letter-spacing:1px; text-transform:uppercase; margin-left:auto; }
+    .rec-divider { height:1px; background:rgba(255,255,255,0.06); flex-shrink:0; margin:4px 0; }
+    .rec-block-label { font-size:8px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:1.5px; }
+    .rec-block-text { font-size:12px; color:#e2e8f0; line-height:1.6; }
+    .rec-block-text strong { color:#fff; font-weight:600; }
+    .why-not-list { display:flex; flex-direction:column; gap:6px; }
+    .why-not-item { display:flex; flex-direction:column; gap:2px; font-size:11px; color:#94a3b8; }
+    .why-not-name { font-weight:700; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; }
+    .rec-box { background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.25); border-radius:6px; padding:12px 14px; margin-top:auto; }
+    .rec-box-label { font-size:8px; font-weight:700; color:#a5b4fc; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
+    .rec-box-text { font-size:11px; color:#e0e7ff; line-height:1.5; font-weight:500; }
+    
+    .key-learning-box { background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:6px; padding:12px 14px; }
+    .key-learning-label { font-size:8px; font-weight:700; color:#34d399; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; display:flex; align-items:center; gap:4px; }
+    .key-learning-text { font-size:11px; color:#d1fae5; line-height:1.5; font-weight:500; }
+    
+    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.03); }
+    .sg-item { display:flex; flex-direction:column; gap:2px; }
+    .sg-label { font-size:7px; color:#64748b; text-transform:uppercase; letter-spacing:1px; }
+    .sg-val { font-size:10px; font-family:var(--mono); color:#cbd5e1; }
+    .sg-val.highlight { color:#fff; font-weight:600; font-family:var(--sans); }
 
     /* Tooltip */
     #eduTooltip { position:fixed; z-index:300; max-width:185px; background:rgba(6,7,12,0.95); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px; pointer-events:none; font-size:9px; line-height:1.5; color:#94a3b8; box-shadow:0 6px 24px rgba(0,0,0,0.7); opacity:0; transition:opacity 0.15s; }
@@ -297,6 +313,8 @@
     <button id="btnRun" class="btn-run">▶ Run</button>
     <button id="btnReset" class="btn-dock">↺ Reset</button>
     <div class="dock-divider"></div>
+    <button id="btnReopenAnalysis" class="btn-dock" style="display:none; color:#10b981; border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.1)">📋 Analysis</button>
+    <div class="dock-divider" id="analysisDivider" style="display:none"></div>
     <div class="slider-group">
       <label>η (LR): <span id="lrVal">0.01</span></label>
       <input type="range" id="lrSlider" min="-4" max="0" step="0.1" value="-2">
@@ -317,7 +335,12 @@
         <button class="intel-btn" id="btnCloseIntel">Dismiss</button>
       </div>
     </div>
-    <div class="intel-body" id="intelBody"></div>
+    <div class="intel-tabs">
+      <div class="intel-tab active" data-target="intelTabRec">Optimizer Recommendation</div>
+      <div class="intel-tab" data-target="intelTabAnalysis">Experiment Analysis</div>
+    </div>
+    <div class="intel-body active" id="intelTabRec"></div>
+    <div class="intel-body" id="intelTabAnalysis"></div>
   </div>
   <!-- Hidden compat elements -->
   <div id="rankingBoard" style="display:none"><div id="rankList"></div></div>
@@ -421,7 +444,7 @@
   const cinematicTarget=new THREE.Vector3();
   let lastFrameTime=performance.now(), fpsSmoothed=60, dynamicMaxPath=MAX_PATH;
   const rippleEvents=[];
-  let runCompleted=false;
+  let runCompleted=false, lastReport=null;
 
   // Convergence graph
   const graphHistory={gd:[],momentum:[],rmsprop:[],adam:[]};
@@ -456,20 +479,30 @@
       const s = SURFACES[activeSurface];
       const st = opt.status, is = opt.intelligenceState;
 
-      if (st.includes('Reached')||st.includes('Minimum'))
+      if (st==='SUCCESS')
         return {grade:'good', sc:'success',
-          verdict:'Found the minimum.',
-          why:`Made it in ${opt.iter} steps — finished with a loss of ${opt.z < 0.001 ? opt.z.toExponential(1) : opt.z.toFixed(4)}.`,
+          verdict:'Reached the minimum.',
+          why:`Found the destination successfully.`,
           suggestion:null};
-      if (st.includes('Boundary'))
+      if (st==='FAILED' || st.includes('Boundary') || st.includes('Instability'))
         return {grade:'failed', sc:'error',
           verdict:'Walked off the map.',
-          why:'The steps grew too large and it left the valid search area entirely.',
+          why:'The steps grew too large and it left the valid area entirely.',
           suggestion:opt.id!=='adam'?'Adam':'Use a smaller learning rate'};
-      if (st.includes('Instability'))
+      if (st==='DIVERGED')
         return {grade:'failed', sc:'error',
-          verdict:'Lost control completely.',
-          why:'Hit extremely steep terrain and the numbers blew up — no recovery possible.',
+          verdict:'Moved further away.',
+          why:'Loss kept increasing. The optimizer lost control and could not recover.',
+          suggestion:'Adam'};
+      if (st==='TIMEOUT')
+        return {grade:'failed', sc:'warn',
+          verdict:'Took too long.',
+          why:'Exceeded the step limit before finding a useful solution.',
+          suggestion:opt.id==='gd'?'Momentum or Adam':'Increase learning rate or change optimizer'};
+      if (st==='STUCK')
+        return {grade:'failed', sc:'info',
+          verdict:'Stopped making progress.',
+          why:'Got stuck in a flat region or local trap and could not escape.',
           suggestion:'Adam'};
 
       const map = {
@@ -487,31 +520,31 @@
           suggestion:'Adam or restart from a different position'},
         'Exploding Gradient':   {grade:'failed', sc:'error',
           verdict:'Out of control.',
-          why:'Hit a near-vertical cliff — steps became uncontrollably large and divergence risk is high.',
-          suggestion:'Adam (handles this automatically)'},
+          why:'Hit a steep cliff — steps became uncontrollably large.',
+          suggestion:'Adam'},
         'Overshooting':         {grade:'partial', sc:'warn',
-          verdict:'Moving too fast — skipping past the target.',
-          why:'Steps were too big and repeatedly sailed past low-loss areas, then had to backtrack.',
+          verdict:'Moving too fast.',
+          why:'Steps were too big and repeatedly sailed past turns, forcing it to backtrack.',
           suggestion: opt.id==='momentum'?'RMSProp':'Lower learning rate'},
         'Momentum Slingshot':   {grade:'partial', sc:'warn',
           verdict:'Too much built-up speed.',
-          why:'Momentum carried it too far past the minimum — kept overshooting before correcting.',
+          why:'Momentum carried it past the minimum — kept overshooting before correcting.',
           suggestion:'RMSProp'},
         'Fast Convergence':     {grade:'good', sc:'success',
           verdict:'Fast and efficient.',
-          why:'Found a clear downhill path and followed it quickly — strong progress throughout.',
+          why:'Found a clear downhill path and followed it quickly without hesitating.',
           suggestion:null},
         'Stable Descent':       {grade:'good', sc:'success',
           verdict:'Steady, reliable descent.',
-          why:'Moved consistently downhill with controlled steps — no wasted effort.',
+          why:'Moved consistently downhill with controlled, stable steps.',
           suggestion:null},
         'Converging':           {grade:'good', sc:'success',
           verdict:'Almost there.',
-          why:'Very close to the minimum — taking tiny careful steps to zero in precisely.',
+          why:'Very close to the target — taking tiny careful steps to zero in precisely.',
           suggestion:null},
         'Adaptive Rescue':      {grade:'good', sc:'success',
           verdict:'Adjusted and stayed on track.',
-          why:'Automatically reduced its step size on steep terrain — avoided losing control.',
+          why:'Automatically reduced its step size on steep terrain to keep control.',
           suggestion:null}
       };
 
@@ -524,7 +557,7 @@
     }
   }
 
-  class RecommendationEngineV2 {
+  class RecommendationEngineV3 {
     static analyze() {
       const active = Object.values(optimizers).filter(o=>o.enabled&&o.iter>2);
       if (!active.length) return null;
@@ -540,8 +573,8 @@
         const lossScore = (maxLoss-minLoss)>1e-10 ? 1-(opt.z-minLoss)/(maxLoss-minLoss) : 1;
         const iterScore = (maxIter-minIter)>0     ? 1-(opt.iter-minIter)/(maxIter-minIter) : 1;
         const stabScore = bad.has(opt.intelligenceState)?0.15 : good.has(opt.intelligenceState)?1.0 : 0.6;
-        const conv      = opt.status.includes('Reached')||opt.status.includes('Minimum');
-        const trap      = opt.intelligenceState==='Local Trap'||opt.status.includes('Boundary')||opt.status.includes('Instability');
+        const conv      = opt.status==='SUCCESS';
+        const trap      = opt.status==='STUCK'||opt.status==='DIVERGED'||opt.status==='FAILED'||opt.status.includes('Boundary')||opt.status.includes('Instability');
         const convScore = conv?1.0:trap?0.05:0.4;
         const total     = Math.max(0,Math.min(1, lossScore*0.40+iterScore*0.30+stabScore*0.20+convScore*0.10));
         return {opt,total,lossScore,iterScore,stabScore,convScore};
@@ -550,79 +583,107 @@
 
       const best=scored[0], s=SURFACES[activeSurface];
       const conf=this._confidence(scored);
-      const whyNot=this._whyNot(scored);
+      const whyNot=this._whyNot(scored, best.opt);
       const ctx=this._surfaceCtx(s);
 
       return {scores:scored, best:best.opt, bestScore:best.total,
               worst:scored[scored.length-1].opt, confidence:conf, whyNot,
               surfaceCtx:ctx, reason:this._reason(best.opt,s,best),
-              recommendation:this._rec(best.opt,s)};
+              practicalAdvice:this._practicalAdvice(best.opt),
+              learning:this._learning(s),
+              observations:this._observations(scored)};
     }
 
     static _confidence(scored) {
-      if (scored.length < 2) return {level:'HIGH', pct:95, color:'#10b981'};
+      if (scored.length < 2) return {level:'HIGH', pct:95, color:'#10b981', desc:'The winner consistently outperformed every other optimizer across speed, stability, and final accuracy.'};
       const gap = scored[0].total - scored[1].total;
-      if (gap > 0.28) return {level:'HIGH',   pct:Math.min(99,Math.round(65+gap*120)), color:'#10b981'};
-      if (gap > 0.12) return {level:'MEDIUM', pct:Math.round(45+gap*200),             color:'#f59e0b'};
-      return               {level:'LOW',    pct:Math.max(25,Math.round(30+gap*150)), color:'#ef4444'};
+      if (gap > 0.28) return {level:'HIGH',   pct:Math.min(99,Math.round(65+gap*120)), color:'#10b981', desc:'The winner consistently outperformed every other optimizer across speed, stability, and final accuracy.'};
+      if (gap > 0.12) return {level:'MEDIUM', pct:Math.round(45+gap*200),             color:'#f59e0b', desc:'Several optimizers produced similar results, making the recommendation less definitive.'};
+      return               {level:'LOW',    pct:Math.max(25,Math.round(30+gap*150)), color:'#ef4444', desc:'No optimizer demonstrated a clear advantage during this experiment.'};
     }
 
-    static _whyNot(scored) {
+    static _whyNot(scored, best) {
       if (scored.length < 2) return [];
-      const best=scored[0];
       return scored.slice(1).map(sc=>{
-        const opt=sc.opt, a=ExplainabilityEngine.getAnalysis(opt);
+        const opt=sc.opt;
         let reason;
-        if (opt.status.includes('Boundary')||opt.status.includes('Instability'))
-          reason='Lost control and exited the search area entirely.';
-        else if (a.grade==='failed' && a.sc==='warn')
-          reason='Wasted too many steps bouncing instead of descending cleanly.';
-        else if (opt.intelligenceState==='Local Trap')
-          reason="Got stuck in a local trap and couldn't find the real minimum.";
-        else if (opt.intelligenceState==='Momentum Slingshot')
-          reason='Built up too much speed and overshot the minimum repeatedly.';
-        else if (sc.iterScore < 0.5 && sc.lossScore > 0.6)
-          reason=`Got there eventually, but needed ${opt.iter} steps — much slower than ${best.opt.name}.`;
-        else if (sc.lossScore < 0.5)
-          reason=`Ended further from the minimum (loss: ${opt.z.toExponential(1)}) compared to ${best.opt.name}.`;
-        else
-          reason=`Performed respectably but ${best.opt.name} was faster and more consistent.`;
+        if(opt.id==='gd') reason = `${opt.name} spent much of the run correcting its direction. ${best.name} adapted automatically and followed a cleaner path.`;
+        else if(opt.id==='momentum') reason = `${opt.name} reached the valley quickly but carried too much speed through turns. ${best.name} adjusted more smoothly and wasted fewer steps.`;
+        else if(opt.id==='rmsprop') reason = `${opt.name} remained stable but progressed more cautiously than ${best.name}.`;
+        else if(opt.id==='adam') reason = `${opt.name} handled the terrain well but was simply outpaced by ${best.name}'s raw efficiency on this specific landscape.`;
+        else reason = `Progressed more cautiously and was simply beaten by ${best.name}.`;
+        
+        if (opt.status === 'TIMEOUT' || opt.status === 'STUCK') reason += ' It eventually got stuck or timed out.';
+        if (opt.status === 'DIVERGED' || opt.status === 'FAILED') reason += ' It eventually lost control and diverged.';
         return {opt, reason};
       });
     }
 
     static _surfaceCtx(s) {
       const ctx = {
-        bowl:        {desc:'a smooth, bowl-shaped surface with one clear lowest point', note:'Almost any optimizer handles this well — the differences come down to speed and stability.'},
-        rosenbrock:  {desc:'a long, narrow curved valley where the floor barely slopes', note:'The steep walls mislead fixed-step methods, causing sideways drifting instead of forward progress.'},
-        himmelblau:  {desc:'a landscape with four separate equally valid destinations', note:'Where you start determines which destination you land in — each optimizer may pick a different one.'},
-        rastrigin:   {desc:'a bumpy landscape packed with hundreds of small traps', note:'Fixed-step methods fall into the first trap they find. Adaptive methods have a better chance of skipping over them.'}
+        bowl:        {desc:'a smooth, bowl-shaped surface', note:'Almost any optimizer handles this well.'},
+        rosenbrock:  {desc:'a long, narrow curved valley', note:'The steep walls mislead fixed-step methods, causing sideways drifting.'},
+        himmelblau:  {desc:'a landscape with multiple valid destinations', note:'Where you start determines which destination you land in.'},
+        rastrigin:   {desc:'a bumpy landscape packed with many local traps', note:'Fixed-step methods easily fall into the first trap they find.'}
       };
       return ctx[s.id] || {desc:'this landscape', note:''};
     }
 
-    static _reason(opt, s, sc) {
-      const conv=opt.status.includes('Reached')||opt.status.includes('Minimum');
-      const opening = conv
-        ? `${opt.name} reached the minimum in ${opt.iter} steps with a final loss of ${opt.z < 0.001 ? opt.z.toExponential(1) : opt.z.toFixed(5)}.`
-        : `${opt.name} achieved the lowest final loss (${opt.z.toExponential(1)}) of all active optimizers.`;
-      const surfaceNote = {
-        bowl:       'The simple terrain meant steady steps worked perfectly.',
-        rosenbrock: 'Automatic step-size adjustment let it follow the valley floor without drifting sideways.',
-        himmelblau: 'Reliable estimates let it lock onto a valid destination without being thrown off.',
-        rastrigin:  'Smaller adaptive steps helped it avoid falling into the wrong trap.'
+    static _learning(s) {
+      const kl = {
+        bowl:        'Most optimizers perform similarly on smooth convex landscapes.',
+        rosenbrock:  'Curved valleys reward optimizers that can adjust direction without excessive zig-zagging.',
+        himmelblau:  'Different optimizers may naturally settle into different valid solutions.',
+        rastrigin:   'Escaping local traps is often more important than moving quickly.'
       };
-      return `${opening} ${surfaceNote[s.id]||''}`;
+      return kl[s.id] || 'Different landscapes require different optimization strategies.';
     }
 
-    static _rec(opt, s) {
-      const r = {
-        bowl:       `This surface is friendly to all optimizers. If speed matters, ${opt.name} is your best starting point.`,
-        rosenbrock: `For curved narrow valleys like this one, use ${opt.name}. Its per-dimension step sizing handles the difficult geometry much better than fixed-step methods.`,
-        himmelblau: `For landscapes with multiple valid destinations, ${opt.name} is the most reliable choice — it navigates between basins with fewer surprises.`,
-        rastrigin:  `For landscapes full of local traps, ${opt.name} gives the best odds of finding the real minimum. Avoid fixed-step methods here.`
+    static _reason(opt, s, sc) {
+      const conv = opt.status==='SUCCESS';
+      if(opt.id==='adam') return `Adam succeeded because it continuously adjusted its step sizes while travelling through the ${s.id==='rosenbrock'?'narrow curved valley':'landscape'}.`;
+      if(opt.id==='rmsprop') return `RMSProp consistently scaled its steps to match the terrain, avoiding the severe oscillations that trapped others.`;
+      if(opt.id==='momentum') return `Momentum successfully leveraged its built-up speed to power through flat regions faster than the rest.`;
+      if(opt.id==='gd') return `Vanilla GD maintained a steady, predictable pace on this straightforward surface.`;
+      return `Achieved the best balance of speed and stability.`;
+    }
+
+    static _practicalAdvice(opt) {
+      const adv = {
+        adam: {use:['Landscape is complex','Reliability matters','Multiple traps may exist'], avoid:['Simplicity is preferred', 'Memory efficiency is critical'], exp:'Stable progress with fewer manual adjustments.'},
+        momentum: {use:['Long valleys exist','Extra speed is desired'], avoid:['Overshooting becomes problematic', 'Surface has many sharp turns'], exp:'Fast initial progress but may swing past the target.'},
+        rmsprop: {use:['Stable progress matters','Gradients vary wildly in size'], avoid:['Fastest convergence is required'], exp:'Cautious, consistent descent.'},
+        gd: {use:['Problem is simple','Educational understanding is desired'], avoid:['Surface is highly non-convex'], exp:'Direct but potentially slow descent.'}
       };
-      return r[s.id] || `${opt.name} is the recommended choice for this landscape.`;
+      return adv[opt.id] || adv.gd;
+    }
+    
+    static _observations(scored) {
+      const obs = [];
+      const adam = scored.find(s=>s.opt.id==='adam');
+      const mom = scored.find(s=>s.opt.id==='momentum');
+      const gd = scored.find(s=>s.opt.id==='gd');
+      
+      if(mom && mom.opt.status==='SUCCESS' && mom.opt.iter < (adam?adam.opt.iter:Infinity)) {
+        obs.push(`• Momentum reached the target fastest by building up speed.`);
+      } else if (mom && (mom.opt.status==='TIMEOUT' || mom.opt.status==='STUCK')) {
+        obs.push(`• Momentum reached the valley quickly but struggled to slow down and settle.`);
+      }
+      
+      if(adam && adam.opt.status==='SUCCESS') {
+        obs.push(`• Adam recovered from difficult terrain more consistently than others.`);
+      } else if (adam) {
+        obs.push(`• Adam avoided catastrophic failure but couldn't find the exact minimum.`);
+      }
+      
+      if(gd) {
+        if(gd.opt.status==='SUCCESS') obs.push(`• Vanilla GD found the minimum through sheer persistence.`);
+        else obs.push(`• Vanilla GD spent significant time correcting its direction instead of descending.`);
+      }
+      
+      if(obs.length < 3 && scored.length > 0) obs.push(`• ${scored[0].opt.name} maintained the most stable path overall.`);
+      if(obs.length < 3 && scored.length > 1) obs.push(`• ${scored[1].opt.name} struggled to match the winner's efficiency.`);
+      return obs.slice(0,3);
     }
   }
 
@@ -831,7 +892,7 @@
 
   function resetOptimizer(){
     const s=SURFACES[activeSurface];
-    globalRunning=false; isReplaying=false; runCompleted=false;
+    globalRunning=false; isReplaying=false; runCompleted=false; lastReport=null;
     document.getElementById('btnRun').innerHTML='▶ Run';
     hideIntelligencePanel();
     globalLr=s.defaultLR;
@@ -906,8 +967,19 @@
         }
         opt.intelligenceState=state;
         opt.path.push({x:opt.x,y:opt.y,z:opt.z}); if(opt.path.length>dynamicMaxPath)opt.path.shift();
+        
         const reached=checkConvergence(s,opt);
-        if(reached){if(opt.status==='Running'){const w=mathToWorld(s,opt.x,opt.y);rippleEvents.push({pos:w.clone().add(new THREE.Vector3(0,0.1,0)),color:opt.colorHex,age:0});}opt.status=reached;}
+        if(reached){
+          if(opt.status==='Running'){const w=mathToWorld(s,opt.x,opt.y);rippleEvents.push({pos:w.clone().add(new THREE.Vector3(0,0.1,0)),color:opt.colorHex,age:0});}
+          opt.status='SUCCESS';
+          opt.intelligenceState=reached;
+        } else {
+          const maxIterMap = { bowl: 500, rosenbrock: 1500, himmelblau: 1500, rastrigin: 2500 };
+          const mx = maxIterMap[s.id] || 1500;
+          if (opt.iter >= mx) { opt.status='TIMEOUT'; opt.intelligenceState='Took too long'; }
+          else if (!isFinite(nz) || nz > 1e4 || (hl >= 20 && nz > opt.lossHistory[0] + 50)) { opt.status='DIVERGED'; opt.intelligenceState='Diverging'; }
+          else if (opt.iter > 50 && hl >= 10 && Math.abs(opt.lossHistory[0] - nz) < 1e-7 && opt.gradMag < 0.05) { opt.status='STUCK'; opt.intelligenceState='Local Trap'; }
+        }
       });
     }
     // Check completion
@@ -1046,8 +1118,16 @@
   // =============================================
   // INTELLIGENCE PANEL
   // =============================================
-  function showIntelligencePanel(){
-    const result=RecommendationEngineV2.analyze(); if(!result)return;
+  function showIntelligencePanel(reopen = false){
+    let result;
+    if (reopen && lastReport) {
+      result = lastReport;
+    } else {
+      result = RecommendationEngineV3.analyze();
+      lastReport = result;
+    }
+    if(!result)return;
+    
     const s=SURFACES[activeSurface];
     document.getElementById('intelSurfaceChip').innerHTML=`Surface: <strong>${s.name}</strong>`;
     const active=Object.values(optimizers).filter(o=>o.enabled&&o.iter>2);
@@ -1060,15 +1140,14 @@
       failed:  {emoji:'❌', lbl:'Failed',  cls:'grade-failed',  badge:'st-error'}
     };
 
-    // Assign best grade to the winner
     const bestId = result.best.id;
 
-    // Build outcome cards (left column)
+    // --- TAB 1: EXPERIMENT ANALYSIS ---
     const ocHTML = active.map(opt=>{
       const a = ExplainabilityEngine.getAnalysis(opt);
       const rawGrade = (opt.id===bestId && (a.grade==='good'||a.grade==='partial')) ? 'best' : a.grade;
       const gi = gradeInfo[rawGrade] || gradeInfo.partial;
-      return `<div class="oc" style="border-top:2px solid ${opt.uiColor}20">
+      return `<div class="oc" style="border-top:2px solid ${opt.uiColor}">
         <div class="oc-grade-row">
           <span class="oc-emoji">${gi.emoji}</span>
           <span class="oc-name" style="color:${opt.uiColor}">${opt.name}</span>
@@ -1076,78 +1155,103 @@
         </div>
         <div class="oc-verdict ${gi.cls}">${a.verdict}</div>
         <div class="oc-why">${a.why}</div>
-        ${a.suggestion?`<div style="font-size:8px;color:#374151;margin-top:2px">Try: <span style="color:#10b981;font-weight:600">${a.suggestion}</span></div>`:''}
       </div>`;
     }).join('');
 
-    // Build score bars
     const sbHTML = result.scores.map(sc=>`
-      <div style="display:flex;align-items:center;gap:5px">
-        <span style="width:28px;font-family:var(--mono);font-size:7px;color:${sc.opt.uiColor};text-align:right;flex-shrink:0">${sc.opt.id.toUpperCase()}</span>
-        <div style="flex:1;height:3px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.round(sc.total*100)}%;background:${sc.opt.uiColor};border-radius:2px"></div></div>
-        <span style="width:22px;font-family:var(--mono);font-size:7px;color:#374151;text-align:right">${sc.total.toFixed(2)}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:36px;font-family:var(--mono);font-size:9px;color:${sc.opt.uiColor};text-align:right;flex-shrink:0;font-weight:600">${sc.opt.id.toUpperCase()}</span>
+        <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.round(sc.total*100)}%;background:${sc.opt.uiColor};border-radius:2px"></div></div>
+        <span style="width:28px;font-family:var(--mono);font-size:9px;color:#94a3b8;text-align:right">${Math.round(sc.total*100)}%</span>
       </div>`).join('');
 
-    // Build Why Not section
+    document.getElementById('intelTabAnalysis').innerHTML=`
+      <div class="outcome-section">
+        <div class="intel-section-label" style="margin-bottom:6px">Optimizer Outcomes</div>
+        <div class="outcome-cards-row">${ocHTML}</div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04)">
+          <div class="intel-section-label" style="margin-bottom:8px">Stability & Performance Scores</div>
+          <div style="display:flex;flex-direction:column;gap:6px;max-width:300px">${sbHTML}</div>
+        </div>
+      </div>`;
+
+    // --- TAB 2: RECOMMENDATION HERO ---
     const whyNotHTML = result.whyNot.length
       ? result.whyNot.map(({opt,reason})=>`
           <div class="why-not-item">
-            <span class="why-not-name" style="color:${opt.uiColor}">${opt.name}:</span>
+            <span class="why-not-name" style="color:${opt.uiColor}">Why not ${opt.name}?</span>
             <span>${reason}</span>
           </div>`).join('')
-      : `<div style="font-size:9px;color:#2d3748">Only one optimizer was active.</div>`;
+      : `<div style="font-size:11px;color:#64748b">Only one optimizer was active.</div>`;
 
-    // Build summary grid
-    const convOpt = active.find(o=>o.status.includes('Reached')||o.status.includes('Minimum'));
     const summaryHTML = `
       <div class="summary-grid">
         <div class="sg-item"><span class="sg-label">Surface</span><span class="sg-val highlight">${s.name}</span></div>
-        <div class="sg-item"><span class="sg-label">Start Point</span><span class="sg-val">(${currentStart.x.toFixed(1)}, ${currentStart.y.toFixed(1)})</span></div>
         <div class="sg-item"><span class="sg-label">Winner</span><span class="sg-val highlight" style="color:${result.best.uiColor}">${result.best.name}</span></div>
+        <div class="sg-item"><span class="sg-label">Start Point</span><span class="sg-val">(${currentStart.x.toFixed(1)}, ${currentStart.y.toFixed(1)})</span></div>
         <div class="sg-item"><span class="sg-label">Iterations</span><span class="sg-val">${result.best.iter}</span></div>
         <div class="sg-item"><span class="sg-label">Final Loss</span><span class="sg-val">${result.best.z < 0.001 ? result.best.z.toExponential(2) : result.best.z.toFixed(5)}</span></div>
-        <div class="sg-item"><span class="sg-label">Confidence</span><span class="sg-val" style="color:${result.confidence.color}">${result.confidence.level} ${result.confidence.pct}%</span></div>
+        <div class="sg-item"><span class="sg-label">Confidence</span><span class="sg-val" style="color:${result.confidence.color}">${result.confidence.level}</span></div>
       </div>`;
 
-    // Confidence badge
     const conf = result.confidence;
-
-    document.getElementById('intelBody').innerHTML=`
-      <div class="outcome-section">
-        <div class="intel-section-label">Optimizer Outcomes</div>
-        <div class="outcome-cards-row">${ocHTML}</div>
-        <div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.04)">
-          <div class="intel-section-label" style="margin-bottom:4px">Score Breakdown</div>
-          <div style="display:flex;flex-direction:column;gap:3px">${sbHTML}</div>
-        </div>
-      </div>
+    
+    document.getElementById('intelTabRec').innerHTML=`
       <div class="rec-section">
-        <div style="font-size:8px;font-weight:700;color:#1e293b;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px">Recommended Optimizer</div>
-        <div class="rec-hero-row">
-          <span class="rec-winner-name" style="color:${result.best.uiColor}">${result.best.name}</span>
-          <span class="conf-badge" style="color:${conf.color};border-color:${conf.color}40;background:${conf.color}10">
-            ${conf.level} &nbsp;${conf.pct}%
-          </span>
+        <div class="rec-left-col">
+          <div style="font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;">RECOMMENDED OPTIMIZER</div>
+          <div class="rec-hero-row">
+            <span class="rec-winner-name" style="color:${result.best.uiColor}">${result.best.name}</span>
+            <span class="conf-badge" style="color:${conf.color};border-color:${conf.color}40;background:${conf.color}10">
+              Confidence: ${conf.level} (${conf.pct}%)
+            </span>
+          </div>
+          <div style="font-size:11px;color:#cbd5e1;margin-bottom:12px">${conf.desc}</div>
+          <div class="rec-divider"></div>
+          
+          <div class="rec-block-label" style="margin-top:4px">Why it worked</div>
+          <div class="rec-block-text">${result.reason}</div>
+          
+          <div class="rec-block-label" style="margin-top:8px">Why this surface mattered</div>
+          <div class="rec-block-text">This landscape contains <strong>${result.surfaceCtx.desc}</strong>. ${result.surfaceCtx.note}</div>
+          
+          <div class="rec-box" style="margin-top:12px">
+            <div class="rec-box-label">Practical Advice</div>
+            <div style="font-size:11px;color:#e2e8f0;margin-bottom:4px"><strong>Use When:</strong><br/>${result.practicalAdvice.use.map(s=>'• '+s).join('<br/>')}</div>
+            <div style="font-size:11px;color:#e2e8f0;margin-bottom:4px"><strong>Avoid When:</strong><br/>${result.practicalAdvice.avoid.map(s=>'• '+s).join('<br/>')}</div>
+            <div style="font-size:11px;color:#e2e8f0"><strong>Expected Behavior:</strong><br/>${result.practicalAdvice.exp}</div>
+          </div>
         </div>
-        <div class="rec-divider"></div>
-        <div class="rec-block-label">Why it worked</div>
-        <div class="rec-block-text">${result.reason}</div>
-        <div class="rec-block-label">Why this surface mattered</div>
-        <div class="rec-block-text">This is <strong>${result.surfaceCtx.desc}</strong>. ${result.surfaceCtx.note}</div>
-        <div class="rec-divider"></div>
-        <div class="rec-block-label">Why not the others?</div>
-        <div class="why-not-list">${whyNotHTML}</div>
-        <div class="rec-box">
-          <div class="rec-box-label">Use this next time</div>
-          <div class="rec-box-text">${result.recommendation}</div>
-        </div>
-        <div style="margin-top:2px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.04)">
-          <div class="intel-section-label" style="margin-bottom:5px">Experiment Summary</div>
+        
+        <div class="rec-right-col">
+          <div class="rec-block-label" style="margin-bottom:2px">Why Others Struggled</div>
+          <div class="why-not-list" style="margin-bottom:12px">${whyNotHTML}</div>
+          
+          <div class="rec-block-label" style="margin-bottom:6px">Key Observations</div>
+          <div style="font-size:11px;color:#cbd5e1;line-height:1.5;margin-bottom:12px;background:rgba(255,255,255,0.02);padding:8px;border-radius:4px;border:1px solid rgba(255,255,255,0.05);">
+            ${result.observations.join('<br/>')}
+          </div>
+          
+          <div class="key-learning-box" style="margin-bottom:12px">
+            <div class="key-learning-label">💡 What This Experiment Teaches</div>
+            <div class="key-learning-text">${result.learning}</div>
+          </div>
+          
+          <div class="rec-block-label" style="margin-bottom:6px">Experiment Summary</div>
           ${summaryHTML}
         </div>
       </div>`;
 
     document.getElementById('mainDock').classList.add('hidden');
+    document.getElementById('intelligencePanel').classList.add('open');
+    document.getElementById('btnReopenAnalysis').style.display = 'block';
+    document.getElementById('analysisDivider').style.display = 'block';
+    
+    // Ensure Rec tab is active initially
+    document.querySelectorAll('.intel-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelector('.intel-tab[data-target="intelTabRec"]').classList.add('active');
+    document.querySelectorAll('.intel-body').forEach(b=>b.classList.remove('active'));
+    document.getElementById('intelTabRec').classList.add('active');
     document.getElementById('intelligencePanel').classList.add('open');
   }
 
@@ -1254,6 +1358,7 @@
   S('btnCollapseRail','click',()=>{const r=document.getElementById('experimentRail');if(r)r.classList.add('rail-collapsed');setTimeout(()=>window.dispatchEvent(new Event('resize')),300);});
   S('btnRestoreRail','click',()=>{const r=document.getElementById('experimentRail');if(r)r.classList.remove('rail-collapsed');setTimeout(()=>window.dispatchEvent(new Event('resize')),300);});
   S('btnCloseIntel','click',hideIntelligencePanel);
+  S('btnReopenAnalysis','click',()=>showIntelligencePanel(true));
   S('btnIntelReset','click',resetOptimizer);
   S('convGraphHeader','click',()=>{const p=document.getElementById('convGraphPanel');if(p)p.classList.toggle('collapsed');});
 
@@ -1311,7 +1416,7 @@
       const opt=Object.values(optimizers).find(o=>o.meshes.markerMesh===hits[0].object);
       if(opt&&opt.intelligenceState!=='Ready'){
         const a=ExplainabilityEngine.getAnalysis(opt);
-        if(tooltip){tooltip.innerHTML=`<strong>${opt.name}: ${a.status}</strong>${a.why}`;tooltip.classList.add('visible');tooltip.style.left=(e.clientX+15)+'px';tooltip.style.top=(e.clientY+15)+'px';clearTimeout(ttTimeout);ttTimeout=setTimeout(()=>tooltip.classList.remove('visible'),3000);}
+        if(tooltip){tooltip.innerHTML=`<strong>${opt.name}: ${a.verdict}</strong>${a.why}`;tooltip.classList.add('visible');tooltip.style.left=(e.clientX+15)+'px';tooltip.style.top=(e.clientY+15)+'px';clearTimeout(ttTimeout);ttTimeout=setTimeout(()=>tooltip.classList.remove('visible'),3000);}
       }
     } else if(tooltip&&!document.querySelector('.opt-pill:hover'))tooltip.classList.remove('visible');
   });
