@@ -3,2518 +3,1192 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IDP Visual Lab - 3D Loss Surface Explorer</title>
-  
+  <title>Optimizer Intelligence Lab — IDP Analysis Platform</title>
+  <meta name="description" content="Professional optimizer comparison, explainability, and recommendation platform for loss landscape analysis.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #030305;
-      --rail-bg: rgba(8, 9, 14, 0.55);
-      --border: rgba(255, 255, 255, 0.06);
-      --border-light: rgba(255, 255, 255, 0.12);
+      --rail-bg: rgba(6, 8, 14, 0.94);
+      --border: rgba(255,255,255,0.06);
+      --border-light: rgba(255,255,255,0.10);
       --text: #e2e4ef;
-      --text-glow: rgba(226, 228, 239, 0.8);
       --muted: #8b95a5;
       --accent: #6366f1;
-      --accent-soft: rgba(99, 102, 241, 0.15);
+      --accent-soft: rgba(99,102,241,0.10);
       --green: #10b981;
-      --red: #f43f5e;
       --mono: 'JetBrains Mono', monospace;
       --sans: 'Inter', sans-serif;
-      --rail-width: 340px;
-      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
-      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
-      --glass: blur(12px);
+      --rail-width: 300px;
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
     }
-    
-    html, body {
-      width: 100%; height: 100%; overflow: hidden;
-      background: var(--bg); color: var(--text);
-      font-family: var(--sans); font-size: 13px;
-      /* Subtle radial gradient background */
-      background: radial-gradient(circle at 50% 0%, #0a0c12 0%, #030305 100%);
-    }
+    html, body { width:100%; height:100%; overflow:hidden; background:radial-gradient(circle at 50% 0%,#0a0c12 0%,#030305 100%); color:var(--text); font-family:var(--sans); font-size:13px; }
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border-light); border-radius:4px; }
+    .app { display:flex; width:100%; height:100%; }
 
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
-
-    /* Layout */
-    .app { display: flex; width: 100%; height: 100%; position: relative; }
-    
+    /* ── SETUP RAIL ── */
     .experiment-rail {
-      width: var(--rail-width); height: 100%; flex-shrink: 0;
-      background: var(--rail-bg); backdrop-filter: var(--glass);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      z-index: 100; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow-y: auto; box-shadow: var(--shadow-lg);
+      width:var(--rail-width); height:100%; flex-shrink:0;
+      background:var(--rail-bg); backdrop-filter:blur(10px);
+      border-right:1px solid var(--border);
+      display:flex; flex-direction:column; z-index:100;
+      transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);
+      overflow-y:auto; box-shadow:var(--shadow-lg);
     }
-
-    .rail-collapsed { transform: translateX(calc(-1 * var(--rail-width))); position: absolute; }
-
-    .graph-stage {
-      flex: 1; height: 100%; position: relative;
-      background: transparent; overflow: hidden; display: flex;
-    }
-
-    #threeCanvasHost { width: 100%; height: 100%; display: block; position: absolute; top:0; left:0; outline: none; }
-
-    /* Rail Internals */
-    .rail-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--border); position: relative; }
-    .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-    .title { font-size: 18px; font-weight: 300; color: #fff; margin-bottom: 12px; letter-spacing: -0.5px; text-shadow: 0 0 12px rgba(255,255,255,0.08); }
-    .badge { display: inline-flex; align-items: center; background: var(--accent-soft); color: #c7d2fe; padding: 4px 8px; border-radius: 6px; font-size: 9px; font-weight: 600; letter-spacing: 1px; border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 0 12px rgba(99,102,241,0.05); }
-    
-    .collapse-btn {
-      position: absolute; right: 20px; top: 24px;
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      color: var(--text); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center; font-size: 10px;
-    }
-    .collapse-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--border-light); transform: scale(1.05); }
-    
+    .rail-collapsed { transform:translateX(calc(-1 * var(--rail-width))); position:absolute; }
     .restore-btn {
-      position: absolute; left: 20px; top: 20px;
-      background: var(--rail-bg); backdrop-filter: var(--glass);
-      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
-      color: #fff; padding: 8px 14px; border-radius: 6px; cursor: pointer;
-      z-index: 90; display: none; font-family: var(--sans); font-size: 12px; font-weight: 500; transition: all 0.2s;
+      position:absolute; left:16px; top:16px;
+      background:var(--rail-bg); backdrop-filter:blur(10px);
+      border:1px solid var(--border-light); color:#fff;
+      padding:7px 12px; border-radius:6px; cursor:pointer;
+      z-index:90; display:none; font-family:var(--sans); font-size:11px; font-weight:500;
     }
-    .restore-btn:hover { background: rgba(255,255,255,0.08); }
+    .restore-btn:hover { background:rgba(255,255,255,0.07); }
+    .rail-header { padding:20px 20px 14px; border-bottom:1px solid var(--border); position:relative; }
+    .eyebrow { font-size:9px; text-transform:uppercase; letter-spacing:1.8px; color:var(--accent); margin-bottom:5px; font-weight:700; }
+    .title { font-size:16px; font-weight:300; color:#fff; margin-bottom:10px; letter-spacing:-0.3px; }
+    .badge { display:inline-flex; align-items:center; background:var(--accent-soft); color:#a5b4fc; padding:3px 7px; border-radius:4px; font-size:8px; font-weight:600; letter-spacing:1px; border:1px solid rgba(99,102,241,0.15); }
+    .collapse-btn { position:absolute; right:16px; top:20px; background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--muted); width:26px; height:26px; border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:9px; transition:all 0.2s; }
+    .collapse-btn:hover { background:rgba(255,255,255,0.07); color:#fff; }
+    .rail-section { padding:14px 20px; border-bottom:1px solid var(--border); }
+    .section-title { font-size:9px; font-weight:700; color:var(--muted); letter-spacing:1.2px; margin-bottom:10px; text-transform:uppercase; }
+    select { width:100%; background:rgba(0,0,0,0.2); color:#fff; border:1px solid var(--border-light); border-radius:5px; padding:8px 12px; font-family:var(--sans); font-size:12px; font-weight:500; margin-bottom:8px; outline:none; appearance:none; cursor:pointer; transition:border 0.2s; }
+    select:hover { border-color:rgba(255,255,255,0.18); }
+    .preset-select { background:rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.08); color:#a5b4fc; font-size:11px; font-weight:600; margin-top:4px; }
+    .preset-select option { background:#0f111a; color:#fff; }
+    .info-eq { background:rgba(0,0,0,0.22); padding:8px; border-radius:5px; font-family:var(--mono); font-size:11px; margin:8px 0 6px; border:1px solid rgba(255,255,255,0.04); text-align:center; color:#c7d2fe; }
+    .info-insight { font-size:11px; color:#f1f5f9; margin-bottom:3px; line-height:1.4; }
+    .info-challenge { font-size:10px; color:#64748b; margin-bottom:8px; line-height:1.4; }
+    .info-minima { display:inline-flex; padding:4px 8px; border-radius:4px; background:rgba(16,185,129,0.05); color:#34d399; font-size:9px; font-weight:600; border:1px solid rgba(16,185,129,0.12); }
+    .btn-pick { width:100%; background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.25); color:#a5b4fc; padding:8px; border-radius:5px; font-family:var(--sans); font-weight:500; cursor:pointer; margin-bottom:8px; transition:all 0.2s; font-size:11px; }
+    .btn-pick:hover, .btn-pick.active { background:var(--accent-soft); border-color:var(--accent); color:#fff; }
+    .coord-row { display:flex; gap:6px; margin-bottom:6px; }
+    .coord-input { flex:1; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; padding:5px; border-radius:4px; font-family:var(--mono); font-size:11px; text-align:center; outline:none; transition:border 0.2s; }
+    .coord-input:focus { border-color:var(--accent); }
+    .btn-action { flex:1; background:rgba(255,255,255,0.02); border:1px solid var(--border); color:var(--muted); padding:5px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:500; transition:all 0.2s; }
+    .btn-action:hover { background:rgba(255,255,255,0.05); color:#fff; }
+    .start-status { margin-top:6px; padding:6px 8px; background:rgba(0,0,0,0.12); border-radius:4px; font-family:var(--mono); font-size:9px; color:#475569; border:1px solid var(--border); }
+    .opt-pills { display:flex; gap:5px; flex-wrap:wrap; }
+    .opt-pill { flex:1; min-width:42px; text-align:center; background:rgba(255,255,255,0.02); border:1px solid var(--border-light); color:var(--muted); padding:7px 4px; border-radius:7px; font-size:9px; font-weight:700; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; position:relative; }
+    .opt-pill::before { content:''; display:block; width:5px; height:5px; border-radius:50%; margin:0 auto 4px; background:currentColor; opacity:0.3; transition:opacity 0.2s; }
+    .opt-pill.active { color:#fff; }
+    .opt-pill.active::before { opacity:1; box-shadow:0 0 6px currentColor; }
+    .opt-pill[data-opt="gd"]::before { background:#ff3366; }
+    .opt-pill[data-opt="momentum"]::before { background:#0ea5e9; }
+    .opt-pill[data-opt="rmsprop"]::before { background:#a855f7; }
+    .opt-pill[data-opt="adam"]::before { background:#10b981; }
+    .opt-pill.active[data-opt="gd"] { box-shadow:0 0 8px rgba(255,51,102,0.2); border-color:rgba(255,51,102,0.5); background:rgba(255,51,102,0.08); }
+    .opt-pill.active[data-opt="momentum"] { box-shadow:0 0 8px rgba(14,165,233,0.2); border-color:rgba(14,165,233,0.5); background:rgba(14,165,233,0.08); }
+    .opt-pill.active[data-opt="rmsprop"] { box-shadow:0 0 8px rgba(168,85,247,0.2); border-color:rgba(168,85,247,0.5); background:rgba(168,85,247,0.08); }
+    .opt-pill.active[data-opt="adam"] { box-shadow:0 0 8px rgba(16,185,129,0.2); border-color:rgba(16,185,129,0.5); background:rgba(16,185,129,0.08); }
+    .opt-pill:hover:not(.active) { border-color:rgba(255,255,255,0.2); color:#fff; }
+    .viz-mode-group { display:flex; gap:4px; }
+    .viz-btn { flex:1; padding:5px 3px; border-radius:4px; font-size:9px; font-weight:600; text-align:center; cursor:pointer; transition:all 0.15s; background:rgba(255,255,255,0.02); border:1px solid var(--border-light); color:var(--muted); }
+    .viz-btn.active { background:var(--accent-soft); border-color:rgba(99,102,241,0.4); color:#c7d2fe; }
+    .viz-btn:hover:not(.active) { border-color:rgba(255,255,255,0.18); color:#fff; }
+    .slider-group { display:flex; flex-direction:column; gap:3px; font-size:9px; color:var(--muted); font-weight:500; text-transform:uppercase; letter-spacing:0.5px; }
+    .slider-group span { font-family:var(--mono); color:#fff; font-weight:600; text-transform:none; font-size:10px; }
+    input[type=range] { width:80px; cursor:pointer; height:3px; background:rgba(255,255,255,0.08); border-radius:2px; appearance:none; }
+    input[type=range]::-webkit-slider-thumb { appearance:none; width:10px; height:10px; background:#fff; border-radius:50%; box-shadow:0 0 5px rgba(255,255,255,0.3); }
 
-    .rail-section { padding: 20px 24px; border-bottom: 1px solid var(--border); }
-    .section-title { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
-    
-    select {
-      width: 100%; background: rgba(0,0,0,0.25); color: #fff;
-      border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 14px;
-      font-family: var(--sans); font-size: 13px; font-weight: 500; margin-bottom: 12px; outline: none;
-      appearance: none; cursor: pointer; transition: border 0.2s;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    }
-    select:hover { border-color: rgba(255,255,255,0.2); }
+    /* ── GRAPH STAGE ── */
+    .graph-stage { flex:1; height:100%; position:relative; overflow:hidden; }
+    #threeCanvasHost { width:100%; height:100%; display:block; position:absolute; top:0; left:0; outline:none; }
+    .mode-indicator { position:absolute; top:16px; left:50%; transform:translateX(-50%); background:rgba(99,102,241,0.85); backdrop-filter:blur(10px); border:1px solid #818cf8; color:#fff; padding:7px 18px; border-radius:20px; font-size:10px; font-weight:600; letter-spacing:0.5px; z-index:60; display:none; pointer-events:none; }
 
-    .info-eq { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-family: var(--mono); font-size: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.04); text-align: center; color: #c7d2fe; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3); }
-    .info-insight { font-size: 12px; color: #f8fafc; margin-bottom: 4px; line-height: 1.4; font-weight: 400; }
-    .info-challenge { font-size: 11px; color: #94a3b8; margin-bottom: 12px; line-height: 1.4; }
-    .info-minima { display: inline-flex; padding: 5px 10px; border-radius: 4px; background: rgba(16, 185, 129, 0.05); color: #34d399; font-size: 10px; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.15); letter-spacing: 0.5px; }
+    /* ── COMPARISON CARDS ── */
+    .comparison-overlay { position:absolute; top:16px; right:16px; display:flex; flex-direction:column; gap:5px; pointer-events:none; z-index:50; width:196px; max-height:calc(100% - 90px); overflow-y:auto; }
+    .comparison-overlay::-webkit-scrollbar { display:none; }
+    .comp-card { background:rgba(6,8,14,0.82); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.06); border-left:2px solid var(--cc,#6366f1); border-radius:7px; padding:8px 10px; }
+    .comp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; gap:4px; }
+    .comp-name { font-size:9px; font-weight:800; color:var(--cc,#fff); letter-spacing:1.2px; text-transform:uppercase; }
+    .comp-status-badge { font-size:7px; font-weight:700; padding:2px 5px; border-radius:3px; letter-spacing:0.4px; text-transform:uppercase; white-space:nowrap; flex-shrink:0; border:1px solid; }
+    .comp-metrics { display:flex; gap:10px; }
+    .comp-metric { display:flex; flex-direction:column; gap:1px; }
+    .comp-label { font-size:7px; color:#374151; text-transform:uppercase; letter-spacing:0.5px; }
+    .comp-value { font-family:var(--mono); font-size:10px; color:#e2e8f0; font-weight:500; }
 
-    .btn-pick {
-      width: 100%; background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, rgba(99,102,241,0.03) 100%);
-      border: 1px solid var(--accent); color: #c7d2fe;
-      padding: 10px; border-radius: 6px; font-family: var(--sans); font-weight: 500; cursor: pointer;
-      margin-bottom: 10px; transition: all 0.2s; font-size: 12px;
-      box-shadow: 0 2px 8px rgba(99,102,241,0.08);
-    }
-    .btn-pick:hover, .btn-pick.active { background: var(--accent-soft); box-shadow: 0 4px 12px rgba(99,102,241,0.2); border-color: #818cf8; color: #fff; }
-    
-    .coord-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    .coord-input {
-      flex: 1; background: rgba(0,0,0,0.25); border: 1px solid var(--border); color: #fff;
-      padding: 6px; border-radius: 4px; font-family: var(--mono); font-size: 11px; text-align: center;
-      width: 100%; outline: none; transition: border 0.2s;
-    }
-    .coord-input:focus { border-color: var(--accent); }
-    
-    .btn-action {
-      flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border-light); color: var(--text);
-      padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s;
-    }
-    .btn-action:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
-    
-    .start-status { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 4px; font-family: var(--mono); font-size: 10px; color: #cbd5e1; line-height: 1.5; border: 1px solid var(--border); }
+    /* Status classes */
+    .st-success { color:#10b981; border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.08); }
+    .st-warn    { color:#f59e0b; border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.08); }
+    .st-error   { color:#ef4444; border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.08); }
+    .st-info    { color:#3b82f6; border-color:rgba(59,130,246,0.3); background:rgba(59,130,246,0.08); }
+    .st-neutral { color:#64748b; border-color:rgba(100,116,139,0.25); background:rgba(100,116,139,0.05); }
 
-    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; color: #f1f5f9; }
-    .legend-color { width: 8px; height: 8px; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px currentColor; }
+    /* ── CONVERGENCE GRAPH ── */
+    .conv-graph-panel { position:absolute; bottom:72px; left:16px; z-index:55; background:rgba(6,7,12,0.82); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; transition:height 0.3s cubic-bezier(0.16,1,0.3,1); pointer-events:auto; }
+    .conv-graph-panel.collapsed { height:26px !important; }
+    .conv-graph-header { display:flex; align-items:center; justify-content:space-between; padding:5px 8px; font-size:8px; font-weight:700; color:var(--muted); letter-spacing:1.2px; text-transform:uppercase; cursor:pointer; user-select:none; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .conv-graph-header:hover { color:#fff; }
+    .conv-collapse-btn { font-size:8px; opacity:0.5; transition:transform 0.3s; }
+    .conv-graph-panel.collapsed .conv-collapse-btn { transform:rotate(180deg); }
 
-    /* Mode Indicator */
-    .mode-indicator {
-      position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
-      background: rgba(99, 102, 241, 0.85); backdrop-filter: var(--glass); border: 1px solid #818cf8;
-      color: #fff; padding: 8px 20px; border-radius: 20px;
-      font-size: 11px; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
-      z-index: 60; display: none; pointer-events: none;
-    }
+    /* ── RUNTIME DOCK ── */
+    .runtime-dock { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(6,8,14,0.82); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:7px 14px; display:flex; align-items:center; gap:10px; z-index:50; box-shadow:0 6px 32px rgba(0,0,0,0.5); transition:opacity 0.3s; }
+    .runtime-dock.hidden { opacity:0; pointer-events:none; }
+    .btn-run { background:#fff; color:#000; border:none; padding:6px 14px; border-radius:5px; font-weight:700; font-size:11px; cursor:pointer; min-width:70px; transition:all 0.15s; letter-spacing:0.3px; }
+    .btn-run:hover { background:#e2e4ef; transform:translateY(-1px); }
+    .btn-dock { background:rgba(255,255,255,0.03); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.07); padding:6px 10px; border-radius:5px; cursor:pointer; transition:all 0.15s; font-size:10px; font-weight:500; white-space:nowrap; }
+    .btn-dock:hover { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.16); color:#fff; }
+    .btn-dock.active { background:rgba(99,102,241,0.12); border-color:rgba(99,102,241,0.4); color:#c7d2fe; }
+    .dock-divider { width:1px; height:22px; background:rgba(255,255,255,0.07); flex-shrink:0; }
 
-    /* Opt Pills */
-    .opt-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-    .opt-pill {
-      flex: 1; min-width: 42px; text-align: center;
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);
-      color: var(--muted); padding: 7px 4px; border-radius: 8px;
-      font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.22s;
-      letter-spacing: 0.5px; position: relative;
-    }
-    .opt-pill::before {
-      content: ''; display: block; width: 5px; height: 5px;
-      border-radius: 50%; margin: 0 auto 4px; background: currentColor;
-      opacity: 0.35; transition: opacity 0.22s;
-    }
-    .opt-pill.active { color: #fff; }
-    .opt-pill.active::before { opacity: 1; box-shadow: 0 0 8px currentColor; }
-    .opt-pill[data-opt="gd"]::before { background: #ff3366; }
-    .opt-pill[data-opt="momentum"]::before { background: #0ea5e9; }
-    .opt-pill[data-opt="rmsprop"]::before { background: #a855f7; }
-    .opt-pill[data-opt="adam"]::before { background: #10b981; }
-    .opt-pill.active[data-opt="gd"] { box-shadow: 0 0 10px rgba(255,51,102,0.3); border-color: rgba(255,51,102,0.6); background: rgba(255,51,102,0.1); }
-    .opt-pill.active[data-opt="momentum"] { box-shadow: 0 0 10px rgba(14,165,233,0.3); border-color: rgba(14,165,233,0.6); background: rgba(14,165,233,0.1); }
-    .opt-pill.active[data-opt="rmsprop"] { box-shadow: 0 0 10px rgba(168,85,247,0.3); border-color: rgba(168,85,247,0.6); background: rgba(168,85,247,0.1); }
-    .opt-pill.active[data-opt="adam"] { box-shadow: 0 0 10px rgba(16,185,129,0.3); border-color: rgba(16,185,129,0.6); background: rgba(16,185,129,0.1); }
-    .opt-pill:hover:not(.active) { border-color: rgba(255,255,255,0.25); color: #fff; }
+    /* ── INTELLIGENCE PANEL ── */
+    .intelligence-panel { position:absolute; bottom:0; left:0; right:0; max-height:0; overflow:hidden; transition:max-height 0.5s cubic-bezier(0.16,1,0.3,1); background:rgba(5,6,11,0.97); backdrop-filter:blur(20px); border-top:1px solid rgba(255,255,255,0.08); z-index:70; }
+    .intelligence-panel.open { max-height:288px; }
+    .intel-header { display:flex; align-items:center; gap:10px; padding:9px 20px; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .intel-eyebrow { font-size:9px; font-weight:700; color:var(--accent); letter-spacing:1.5px; text-transform:uppercase; }
+    .intel-surface-chip { font-size:9px; color:#475569; font-family:var(--mono); }
+    .intel-surface-chip strong { color:#64748b; font-weight:500; }
+    .intel-actions { margin-left:auto; display:flex; gap:6px; }
+    .intel-btn { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); color:#64748b; padding:3px 10px; border-radius:4px; cursor:pointer; font-size:9px; font-weight:600; font-family:var(--sans); transition:all 0.2s; letter-spacing:0.5px; text-transform:uppercase; }
+    .intel-btn:hover { background:rgba(255,255,255,0.07); color:#fff; }
+    .intel-btn.primary { background:rgba(99,102,241,0.08); border-color:rgba(99,102,241,0.2); color:#818cf8; }
+    .intel-btn.primary:hover { background:rgba(99,102,241,0.16); color:#c7d2fe; }
+    .intel-body { display:flex; height:calc(288px - 38px); overflow:hidden; }
 
-    /* Telemetry */
-    .telemetry-overlay {
-      position: absolute; top: 16px; right: 16px; width: 210px;
-      display: flex; flex-direction: column; gap: 6px;
-      pointer-events: none; z-index: 50; max-height: calc(100% - 90px);
-      overflow-y: auto; overflow-x: hidden;
-    }
-    .telemetry-overlay::-webkit-scrollbar { display: none; }
-    .telemetry-card {
-      background: rgba(8, 9, 14, 0.72); backdrop-filter: blur(16px) saturate(1.5);
-      border: 1px solid rgba(255,255,255,0.08); border-left: 2px solid var(--card-color, var(--accent));
-      border-radius: 8px; padding: 9px 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      transition: border-color 0.3s;
-    }
-    .tel-header { font-size: 10px; font-weight: 700; color: #fff; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
-    .tel-badge { font-size: 8px; padding: 2px 5px; border-radius: 3px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.05); white-space: nowrap; flex-shrink: 0; transition: color 0.3s, border-color 0.3s; }
-    .tel-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-family: var(--mono); font-size: 9px; }
-    .tel-row span:first-child { color: var(--muted); }
-    .tel-row span:last-child { color: #f8fafc; font-weight: 500; }
+    /* Failure section */
+    .failure-section { flex:1; padding:10px 16px; border-right:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; gap:6px; overflow:hidden; }
+    .intel-section-label { font-size:8px; font-weight:700; color:#374151; letter-spacing:1.5px; text-transform:uppercase; flex-shrink:0; }
+    .failure-cards-row { display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:3px; }
+    .failure-cards-row::-webkit-scrollbar { height:2px; }
+    .failure-cards-row::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.06); border-radius:1px; }
+    .fc { min-width:152px; max-width:175px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-top:2px solid var(--fc-color,#6366f1); border-radius:5px; padding:8px 9px; display:flex; flex-direction:column; gap:4px; }
+    .fc-top { display:flex; align-items:center; gap:5px; }
+    .fc-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+    .fc-name { font-size:9px; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:0.8px; flex:1; }
+    .fc-status { font-size:7px; font-weight:700; padding:1px 4px; border-radius:3px; letter-spacing:0.3px; border:1px solid; text-transform:uppercase; }
+    .fc-lbl { font-size:7px; color:#2d3748; text-transform:uppercase; letter-spacing:0.8px; font-weight:600; margin-top:2px; }
+    .fc-txt { font-size:9px; color:#64748b; line-height:1.4; }
+    .fc-suggest { font-size:9px; font-weight:600; color:#10b981; }
+    .fc-ok { font-size:9px; color:#10b981; }
 
+    /* Conclusion section */
+    .conclusion-section { width:305px; flex-shrink:0; padding:10px 16px; display:flex; flex-direction:column; gap:5px; overflow-y:auto; }
+    .ec-best-row { display:flex; align-items:baseline; gap:6px; }
+    .ec-best-tag { font-size:8px; font-weight:700; color:rgba(16,185,129,0.7); padding:2px 5px; border-radius:3px; background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.12); text-transform:uppercase; letter-spacing:0.5px; }
+    .ec-best-name { font-size:15px; font-weight:700; color:#fff; }
+    .ec-score-chip { font-size:8px; font-family:var(--mono); color:#374151; margin-left:auto; padding:1px 5px; background:rgba(255,255,255,0.02); border-radius:3px; }
+    .ec-divider { height:1px; background:rgba(255,255,255,0.04); flex-shrink:0; }
+    .score-bars { display:flex; flex-direction:column; gap:3px; }
+    .score-row { display:flex; align-items:center; gap:5px; }
+    .score-name { width:30px; font-family:var(--mono); font-size:8px; text-align:right; flex-shrink:0; }
+    .score-bar-bg { flex:1; height:3px; background:rgba(255,255,255,0.04); border-radius:2px; overflow:hidden; }
+    .score-bar-fill { height:100%; border-radius:2px; transition:width 0.8s cubic-bezier(0.16,1,0.3,1); }
+    .score-val { width:24px; font-family:var(--mono); color:#374151; text-align:right; font-size:7px; }
+    .ec-reason { font-size:10px; color:#475569; line-height:1.5; }
+    .ec-fail-block { display:flex; flex-direction:column; gap:2px; }
+    .ec-fail-item { display:flex; align-items:flex-start; gap:4px; font-size:9px; color:#475569; }
+    .ec-fail-dot { color:#d97706; font-size:8px; margin-top:1px; flex-shrink:0; }
+    .ec-rec-box { background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.12); border-radius:5px; padding:7px 9px; }
+    .ec-rec-label { font-size:7px; font-weight:700; color:rgba(99,102,241,0.6); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+    .ec-rec-text { font-size:9px; color:#64748b; line-height:1.5; }
 
-    /* Dock */
-    .runtime-dock {
-      position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
-      background: rgba(8, 9, 14, 0.75); backdrop-filter: blur(16px) saturate(1.5);
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 8px 16px;
-      display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; justify-content: center; z-index: 50;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
-    }
-    .btn-run { 
-      background: #fff; color: #000; border: none; padding: 7px 14px; border-radius: 6px; 
-      font-weight: 700; font-size: 12px; cursor: pointer; min-width: 80px; transition: all 0.18s;
-      box-shadow: 0 2px 8px rgba(255,255,255,0.15); letter-spacing: 0.3px;
-    }
-    .btn-run:hover { background: #e2e4ef; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,255,255,0.22); }
-    .btn-run:active { transform: translateY(1px); }
-    
-    .btn-dock { 
-      background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.08); 
-      padding: 7px 10px; border-radius: 6px; cursor: pointer; transition: all 0.18s; font-size: 11px; font-weight: 500; white-space: nowrap;
-    }
-    .btn-dock:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); color: #fff; }
-    .btn-dock.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5); color: #c7d2fe; }
+    /* Tooltip */
+    #eduTooltip { position:fixed; z-index:300; max-width:185px; background:rgba(6,7,12,0.95); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px; pointer-events:none; font-size:9px; line-height:1.5; color:#94a3b8; box-shadow:0 6px 24px rgba(0,0,0,0.7); opacity:0; transition:opacity 0.15s; }
+    #eduTooltip.visible { opacity:1; }
+    #eduTooltip strong { color:#fff; display:block; margin-bottom:2px; font-size:9px; }
 
-    .dock-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
-    .slider-group { display: flex; flex-direction: column; gap: 3px; font-size: 9px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-    .slider-group span { font-family: var(--mono); color: #fff; font-weight: 600; text-transform: none; font-size: 10px; }
-    input[type=range] { 
-      width: 80px; cursor: pointer; height: 3px; background: rgba(255,255,255,0.1); border-radius: 1.5px; appearance: none;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      appearance: none; width: 11px; height: 11px; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.4); transition: transform 0.1s;
-    }
-    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+    @keyframes stageFlash { 0%{opacity:0.3} 100%{opacity:1} }
+    .stage-flash { animation:stageFlash 0.35s ease-out forwards; }
 
-    @media (max-width: 1280px) {
-      :root { --rail-width: 300px; }
-      .telemetry-overlay { width: 190px; right: 12px; }
+    @media (max-width:1100px) {
+      :root { --rail-width:280px; }
+      .experiment-rail { position:absolute; left:0; top:0; box-shadow:8px 0 32px rgba(0,0,0,0.6); }
+      .restore-btn { display:block; }
     }
-    @media (max-width: 1100px) {
-      .experiment-rail { position: absolute; left: 0; top: 0; box-shadow: 10px 0 40px rgba(0,0,0,0.6); }
-      .restore-btn { display: block; }
-      .runtime-dock { bottom: 16px; padding: 8px 12px; gap: 8px; max-width: 96vw; }
-    }
-
-    /* === PHASE 1F ADDITIONS === */
-
-    /* Convergence Graph */
-    .conv-graph-panel {
-      position: absolute; bottom: 80px; left: 20px; z-index: 55;
-      background: rgba(6, 7, 12, 0.82); backdrop-filter: blur(16px) saturate(1.4);
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-      overflow: hidden; transition: height 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.2s;
-      pointer-events: auto;
-    }
-    .conv-graph-panel.collapsed { height: 28px !important; }
-    .conv-graph-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 6px 10px; font-size: 9px; font-weight: 700; color: var(--muted);
-      letter-spacing: 1px; text-transform: uppercase; cursor: pointer; user-select: none;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .conv-graph-header:hover { color: #fff; }
-    .conv-collapse-btn { font-size: 9px; opacity: 0.6; transition: transform 0.3s; }
-    .conv-graph-panel.collapsed .conv-collapse-btn { transform: rotate(180deg); }
-    #convCanvas { display: block; }
-
-    /* Ranking Board */
-    .ranking-board {
-      position: absolute; bottom: 80px; left: 20px; z-index: 54;
-      background: rgba(6,7,12,0.82); backdrop-filter: blur(16px) saturate(1.4);
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
-      width: 190px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-      display: none; /* shown after graph */
-    }
-    .ranking-header {
-      padding: 6px 10px; font-size: 9px; font-weight: 700; color: var(--muted);
-      letter-spacing: 1px; text-transform: uppercase;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .rank-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 10px; font-size: 9px; font-family: var(--mono);
-      border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s;
-    }
-    .rank-row:last-child { border-bottom: none; }
-    .rank-num { font-size: 8px; font-weight: 700; color: var(--muted); width: 14px; flex-shrink: 0; }
-    .rank-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .rank-name { flex: 1; color: #e2e4ef; font-size: 9px; }
-    .rank-loss { color: var(--muted); font-size: 8px; text-align: right; }
-    .rank-badge { font-size: 8px; }
-
-    /* Viz Mode Buttons */
-    .viz-mode-group { display: flex; gap: 4px; flex-wrap: wrap; }
-    .viz-btn {
-      flex: 1; min-width: 40px; padding: 5px 4px; border-radius: 5px; font-size: 9px;
-      font-weight: 600; text-align: center; cursor: pointer; transition: all 0.18s;
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);
-      color: var(--muted); letter-spacing: 0.5px;
-    }
-    .viz-btn.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.5); color: #c7d2fe; }
-    .viz-btn:hover:not(.active) { border-color: rgba(255,255,255,0.2); color: #fff; }
-
-    /* Educational Tooltip */
-    #eduTooltip {
-      position: fixed; z-index: 300; max-width: 200px;
-      background: rgba(6,7,12,0.92); backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
-      padding: 8px 10px; pointer-events: none;
-      font-size: 10px; line-height: 1.5; color: #c7d2fe;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.7);
-      opacity: 0; transition: opacity 0.18s;
-    }
-    #eduTooltip.visible { opacity: 1; }
-    #eduTooltip strong { color: #fff; display: block; margin-bottom: 3px; font-size: 10px; }
-
-    /* Intro / Reset Flash */
-    @keyframes stageFlash {
-      0% { opacity: 0.3; } 100% { opacity: 1; }
-    }
-    .stage-flash { animation: stageFlash 0.35s ease-out forwards; }
-
-    /* Ghost button styling handled by .btn-dock.active */
-
-    /* Contour/Heatmap canvas overlay */
-    #heatmapCanvas { display: none; }
-
-    /* === PHASE 2 ADDITIONS === */
-    
-    /* Preset Manager */
-    .preset-select {
-      width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-      color: var(--accent); padding: 8px 10px; border-radius: 8px; font-size: 11px;
-      font-weight: 700; cursor: pointer; outline: none; margin-top: 8px; font-family: var(--sans);
-    }
-    .preset-select option { background: #0f111a; color: #fff; }
-
-    /* Parameter Playground Drawer */
-    .param-drawer {
-      position: absolute; left: calc(var(--rail-width) + 16px); top: 16px; width: 280px;
-      background: rgba(8, 9, 14, 0.85); backdrop-filter: blur(20px) saturate(1.5);
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.6); z-index: 60;
-      transform: translateX(-20px); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
-    }
-    .param-drawer.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
-    .param-header { font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: flex; justify-content: space-between; }
-    .param-close { cursor: pointer; color: var(--muted); background: none; border: none; font-size: 14px; }
-    .param-close:hover { color: #fff; }
-    .param-section { margin-bottom: 16px; border-left: 2px solid var(--card-color); padding-left: 10px; }
-    .param-title { font-size: 10px; font-weight: 700; color: #fff; margin-bottom: 8px; text-transform: uppercase; }
-    .param-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 10px; color: var(--muted); }
-    .param-row input[type=range] { width: 100px; }
-    .param-val { font-family: var(--mono); color: #fff; width: 35px; text-align: right; }
-
-    /* Tournament Modal */
-    .tournament-modal {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
-      background: rgba(8, 9, 14, 0.9); backdrop-filter: blur(24px) saturate(1.5);
-      border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 24px;
-      width: 400px; box-shadow: 0 24px 64px rgba(0,0,0,0.8); z-index: 400;
-      opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-      display: flex; flex-direction: column; align-items: center;
-    }
-    .tournament-modal.visible { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: auto; }
-    .tournament-modal h2 { margin: 0 0 16px; font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 1px; }
-    .tournament-results { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-    .tourney-row { display: flex; align-items: center; background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 14px; border-left: 3px solid var(--accent); }
-    .tourney-rank { font-size: 16px; font-weight: 800; width: 30px; }
-    .tourney-details { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-    .tourney-name { font-size: 12px; font-weight: 700; color: #fff; }
-    .tourney-stats { font-size: 10px; font-family: var(--mono); color: var(--muted); }
-    .btn-tourney-close { background: var(--accent); color: #fff; border: none; padding: 8px 24px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-    .btn-tourney-close:hover { background: #818cf8; transform: scale(1.05); }
-
-    /* Timeline Scrubber */
-    .timeline-container {
-      display: flex; align-items: center; gap: 12px; width: 300px;
-    }
-    .timeline-container input[type=range] { flex: 1; }
-    .timeline-time { font-family: var(--mono); font-size: 10px; color: #fff; font-weight: 600; width: 45px; text-align: right; }
-
-    /* Export Dropdown */
-    .export-wrapper { position: relative; }
-    .export-menu {
-      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px);
-      background: rgba(8, 9, 14, 0.9); backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px;
-      display: flex; flex-direction: column; gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-      opacity: 0; pointer-events: none; transition: 0.2s; margin-bottom: 8px; z-index: 100;
-    }
-    .export-wrapper:hover .export-menu { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
-    .export-item { background: transparent; color: #fff; border: none; padding: 6px 12px; font-size: 10px; font-family: var(--sans); text-align: left; cursor: pointer; border-radius: 4px; white-space: nowrap; }
-    .export-item:hover { background: rgba(255,255,255,0.1); }
   </style>
-  
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+  <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
 </head>
 <body class="app">
 
-  <button class="restore-btn" id="btnRestoreRail">☰ Setup</button>
+<button class="restore-btn" id="btnRestoreRail">☰ Setup</button>
 
-  <aside class="experiment-rail" id="experimentRail">
-    <div class="rail-header">
-      <div class="eyebrow">IDP VISUAL LAB · V2</div>
-      <div class="title">3D Loss Surface Explorer</div>
-      <div class="badge">PHASE 1F · VISUAL LAB</div>
-      <button class="collapse-btn" id="btnCollapseRail">◀</button>
+<aside class="experiment-rail" id="experimentRail">
+  <div class="rail-header">
+    <div class="eyebrow">Optimizer Intelligence Lab</div>
+    <div class="title">Analysis Platform</div>
+    <div class="badge">PHASE 3 · IDP VISUAL LAB</div>
+    <button class="collapse-btn" id="btnCollapseRail">◀</button>
+  </div>
+  <div class="rail-section">
+    <div class="section-title">Loss Surface</div>
+    <select id="surfaceSelect">
+      <option value="bowl">Quadratic Bowl</option>
+      <option value="rosenbrock">Rosenbrock Valley</option>
+      <option value="himmelblau">Himmelblau Function</option>
+      <option value="rastrigin">Rastrigin Function</option>
+    </select>
+    <select id="presetSelect" class="preset-select">
+      <option value="none">— Load Experiment Preset —</option>
+      <option value="rosenbrock_struggle">Rosenbrock Valley Struggle</option>
+      <option value="rastrigin_trap">Rastrigin Local Trap</option>
+      <option value="momentum_overshoot">Momentum Overshoot Demo</option>
+      <option value="adam_fast">Adam Fast Convergence</option>
+    </select>
+    <div class="info-eq" id="infoEq">L(x,y) = x² + y²</div>
+    <div class="info-insight" id="infoInsight">A perfect convex landscape.</div>
+    <div class="info-challenge" id="infoChallenge">Demonstrates baseline convergence.</div>
+    <div class="info-minima" id="infoMinima">Global Minimum: (0.0, 0.0) → L=0</div>
+  </div>
+  <div class="rail-section">
+    <div class="section-title">Start Point</div>
+    <button id="btnPickStart" class="btn-pick">🎯 Pick Point on Surface</button>
+    <div class="coord-row">
+      <input type="number" id="startXInput" class="coord-input" step="0.1" placeholder="X">
+      <input type="number" id="startYInput" class="coord-input" step="0.1" placeholder="Y">
     </div>
-
-    <div class="rail-section">
-      <select id="surfaceSelect">
-        <option value="bowl">Quadratic Bowl</option>
-        <option value="rosenbrock">Rosenbrock Valley</option>
-        <option value="himmelblau">Himmelblau Function</option>
-        <option value="rastrigin">Rastrigin Function</option>
-      </select>
-      <select id="presetSelect" class="preset-select">
-        <option value="none">-- Load Preset --</option>
-        <option value="rosenbrock_struggle">Rosenbrock Valley Struggle</option>
-        <option value="rastrigin_trap">Rastrigin Local Trap</option>
-        <option value="momentum_overshoot">Momentum Overshoot Demo</option>
-        <option value="adam_fast">Adam Fast Convergence</option>
-      </select>
-      <div class="info-eq" id="infoEq">L(x,y) = x² + y²</div>
-      <div class="info-insight" id="infoInsight">A perfect convex landscape.</div>
-      <div class="info-challenge" id="infoChallenge">Demonstrates baseline convergence.</div>
-      <div class="info-minima" id="infoMinima">Global Minimum: (0.0, 0.0) → L=0</div>
+    <div class="coord-row">
+      <button id="btnApplyStart" class="btn-action">Apply Coords</button>
+      <button id="btnDefaultStart" class="btn-action">Default</button>
     </div>
-
-    <div class="rail-section">
-      <div class="section-title">INITIALIZATION POINT</div>
-      <button id="btnPickStart" class="btn-pick">🎯 Pick Point on Surface</button>
-      <div class="coord-row">
-        <input type="number" id="startXInput" class="coord-input" step="0.1" placeholder="X">
-        <input type="number" id="startYInput" class="coord-input" step="0.1" placeholder="Y">
-      </div>
-      <div class="coord-row">
-        <button id="btnApplyStart" class="btn-action">Apply Coordinates</button>
-        <button id="btnDefaultStart" class="btn-action">Default Start</button>
-      </div>
-      <div class="start-status">Start: (<span id="txtStartX">0.0</span>, <span id="txtStartY">0.0</span>)<br>L = <span id="txtStartZ">0.0</span></div>
+    <div class="start-status">Start: (<span id="txtStartX">0.0</span>, <span id="txtStartY">0.0</span>) &nbsp;L=<span id="txtStartZ">0.0</span></div>
+  </div>
+  <div class="rail-section">
+    <div class="section-title">Gradient Field</div>
+    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:11px;color:#a5b4fc;margin-bottom:8px;">
+      <input type="checkbox" id="chkVectorField" checked style="accent-color:var(--accent);"> Show Gradient Field
+    </label>
+    <div class="slider-group">
+      <label>Density: <span id="densityVal">25</span></label>
+      <input type="range" id="densitySlider" min="10" max="50" step="5" value="25" style="width:100%">
     </div>
-
-    <div class="rail-section" style="border-bottom: none;">
-      <div class="section-title">VECTOR FIELD</div>
-      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; margin-bottom:12px; color:#c7d2fe;">
-        <input type="checkbox" id="chkVectorField" checked style="accent-color: var(--accent);"> Show Gradient Field
-      </label>
-      <div class="slider-group" style="margin-bottom:10px;">
-        <label>Density: <span id="densityVal">25</span></label>
-        <input type="range" id="densitySlider" min="10" max="50" step="5" value="25" style="width:100%">
-      </div>
+  </div>
+  <div class="rail-section">
+    <div class="section-title">Visualization</div>
+    <div class="viz-mode-group" id="vizModeGroup">
+      <button class="viz-btn active" data-viz="surface">Surface</button>
+      <button class="viz-btn" data-viz="wireframe">Wire</button>
+      <button class="viz-btn" data-viz="heatmap">Heatmap</button>
+      <button class="viz-btn" data-viz="contour">Contour</button>
     </div>
-
-    <div class="rail-section" style="border-bottom: none; padding-top: 0;">
-      <div class="section-title">OPTIMIZERS</div>
-      <div class="opt-pills" id="optPills">
-        <div class="opt-pill active" data-opt="gd" style="--pill-color: #ff3366; --pill-bg: rgba(255,51,102,0.15)" data-edu-id="gd">GD</div>
-        <div class="opt-pill active" data-opt="momentum" style="--pill-color: #0ea5e9; --pill-bg: rgba(14,165,233,0.15)" data-edu-id="momentum">MOM</div>
-        <div class="opt-pill active" data-opt="rmsprop" style="--pill-color: #a855f7; --pill-bg: rgba(168,85,247,0.15)" data-edu-id="rmsprop">RMS</div>
-        <div class="opt-pill active" data-opt="adam" style="--pill-color: #10b981; --pill-bg: rgba(16,185,129,0.15)" data-edu-id="adam">ADAM</div>
-      </div>
+  </div>
+  <div class="rail-section" style="border-bottom:none;">
+    <div class="section-title">Active Optimizers</div>
+    <div class="opt-pills" id="optPills">
+      <div class="opt-pill active" data-opt="gd" data-edu-id="gd">GD</div>
+      <div class="opt-pill active" data-opt="momentum" data-edu-id="momentum">MOM</div>
+      <div class="opt-pill active" data-opt="rmsprop" data-edu-id="rmsprop">RMS</div>
+      <div class="opt-pill active" data-opt="adam" data-edu-id="adam">ADAM</div>
     </div>
+  </div>
+</aside>
 
-    <div class="rail-section" style="border-bottom: none;">
-      <div class="section-title">VISUALIZATION</div>
-      <div class="viz-mode-group" id="vizModeGroup">
-        <button class="viz-btn active" data-viz="surface">Surface</button>
-        <button class="viz-btn" data-viz="wireframe">Wire</button>
-        <button class="viz-btn" data-viz="heatmap">Heatmap</button>
-        <button class="viz-btn" data-viz="contour">Contour</button>
-      </div>
-      <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:11px; color:#c7d2fe;">
-          <input type="checkbox" id="chkVectors" style="accent-color: var(--accent);"> Show Velocity Vectors
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:11px; color:#c7d2fe;">
-          <input type="checkbox" id="chkResearch" style="accent-color: var(--accent);"> 🧪 Research Mode
-        </label>
-        <button id="btnOpenParams" class="btn-dock" style="margin-top: 6px; width: 100%;">⚙️ Parameter Playground</button>
-      </div>
+<main class="graph-stage" id="graphStage">
+  <div id="threeCanvasHost"></div>
+  <div id="modeIndicator" class="mode-indicator">PICK MODE — Click a point on the surface</div>
+  <div class="comparison-overlay" id="comparisonOverlay"></div>
+  <div class="conv-graph-panel" id="convGraphPanel" style="width:220px;height:160px;">
+    <div class="conv-graph-header" id="convGraphHeader">
+      <span>Loss / Iter</span><span class="conv-collapse-btn">▾</span>
     </div>
-  </aside>
-
-  <main class="graph-stage" id="graphStage">
-    <div id="threeCanvasHost"></div>
-    
-    <div id="modeIndicator" class="mode-indicator">PICK MODE ACTIVE — Click a surface point</div>
-
-    <div class="telemetry-overlay" id="telemetryContainer">
-      <!-- Telemetry cards generated dynamically -->
+    <canvas id="convCanvas" width="220" height="133"></canvas>
+  </div>
+  <div id="eduTooltip"></div>
+  <div class="runtime-dock" id="mainDock">
+    <button id="btnRun" class="btn-run">▶ Run</button>
+    <button id="btnReset" class="btn-dock">↺ Reset</button>
+    <div class="dock-divider"></div>
+    <div class="slider-group">
+      <label>η (LR): <span id="lrVal">0.01</span></label>
+      <input type="range" id="lrSlider" min="-4" max="0" step="0.1" value="-2">
     </div>
-
-    <!-- Convergence Graph -->
-    <div class="conv-graph-panel" id="convGraphPanel" style="width:220px; height:165px;">
-      <div class="conv-graph-header" id="convGraphHeader">
-        <span>LOSS / ITER</span>
-        <span class="conv-collapse-btn">▾</span>
-      </div>
-      <canvas id="convCanvas" width="220" height="138"></canvas>
+    <div class="slider-group">
+      <label>Speed: <span id="speedVal">10</span></label>
+      <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
     </div>
-
-    <!-- Ranking Board -->
-    <div class="ranking-board" id="rankingBoard" style="margin-bottom:10px;">
-      <div class="ranking-header">🏆 RANKING</div>
-      <div id="rankList"></div>
-    </div>
-
-    <!-- Educational Tooltip -->
-    <div id="eduTooltip"></div>
-
-    <!-- Parameter Drawer -->
-    <div class="param-drawer" id="paramDrawer">
-      <div class="param-header">
-        <span>Optimizer Parameters</span>
-        <button class="param-close" id="btnCloseParams">✖</button>
-      </div>
-      <div class="param-section">
-        <div class="param-title" style="color: #0ea5e9;">Momentum</div>
-        <div class="param-row"><span>LR Multiplier</span><input type="range" id="p_mom_lr" min="0.1" max="5.0" step="0.1" value="1.0"><span class="param-val" id="v_mom_lr">1.0</span></div>
-        <div class="param-row"><span>Beta (β)</span><input type="range" id="p_mom_b" min="0.5" max="0.99" step="0.01" value="0.9"><span class="param-val" id="v_mom_b">0.9</span></div>
-      </div>
-      <div class="param-section">
-        <div class="param-title" style="color: #a855f7;">RMSProp</div>
-        <div class="param-row"><span>LR Multiplier</span><input type="range" id="p_rms_lr" min="0.1" max="5.0" step="0.1" value="1.0"><span class="param-val" id="v_rms_lr">1.0</span></div>
-        <div class="param-row"><span>Beta (β)</span><input type="range" id="p_rms_b" min="0.8" max="0.999" step="0.001" value="0.99"><span class="param-val" id="v_rms_b">0.99</span></div>
-      </div>
-      <div class="param-section" style="margin-bottom:0;">
-        <div class="param-title" style="color: #10b981;">Adam</div>
-        <div class="param-row"><span>LR Multiplier</span><input type="range" id="p_adm_lr" min="0.1" max="5.0" step="0.1" value="1.0"><span class="param-val" id="v_adm_lr">1.0</span></div>
-        <div class="param-row"><span>Beta 1 (β₁)</span><input type="range" id="p_adm_b1" min="0.5" max="0.99" step="0.01" value="0.9"><span class="param-val" id="v_adm_b1">0.9</span></div>
-        <div class="param-row"><span>Beta 2 (β₂)</span><input type="range" id="p_adm_b2" min="0.9" max="0.999" step="0.001" value="0.999"><span class="param-val" id="v_adm_b2">.999</span></div>
+    <div class="dock-divider"></div>
+    <button id="btnCinematic" class="btn-dock" title="Cinematic Camera">🎬 Cine</button>
+  </div>
+  <div class="intelligence-panel" id="intelligencePanel">
+    <div class="intel-header">
+      <span class="intel-eyebrow">Intelligence Analysis</span>
+      <span class="intel-surface-chip" id="intelSurfaceChip"></span>
+      <div class="intel-actions">
+        <button class="intel-btn primary" id="btnIntelReset">↺ New Experiment</button>
+        <button class="intel-btn" id="btnCloseIntel">Dismiss</button>
       </div>
     </div>
+    <div class="intel-body" id="intelBody"></div>
+  </div>
+  <!-- Hidden compat elements -->
+  <div id="rankingBoard" style="display:none"><div id="rankList"></div></div>
+  <div id="tourneyModal" style="display:none!important"><div id="tourneyResults"></div><button id="btnTourneyClose"></button></div>
+  <div id="paramDrawer" style="display:none!important">
+    <button id="btnCloseParams"></button>
+    <input type="range" id="p_mom_lr" min="0.1" max="5" step="0.1" value="1"><span id="v_mom_lr">1</span>
+    <input type="range" id="p_mom_b" min="0.5" max="0.99" step="0.01" value="0.9"><span id="v_mom_b">0.9</span>
+    <input type="range" id="p_rms_lr" min="0.1" max="5" step="0.1" value="1"><span id="v_rms_lr">1</span>
+    <input type="range" id="p_rms_b" min="0.8" max="0.999" step="0.001" value="0.99"><span id="v_rms_b">0.99</span>
+    <input type="range" id="p_adm_lr" min="0.1" max="5" step="0.1" value="1"><span id="v_adm_lr">1</span>
+    <input type="range" id="p_adm_b1" min="0.5" max="0.99" step="0.01" value="0.9"><span id="v_adm_b1">0.9</span>
+    <input type="range" id="p_adm_b2" min="0.9" max="0.999" step="0.001" value="0.999"><span id="v_adm_b2">.999</span>
+  </div>
+  <div id="scrubberDock" style="display:none!important">
+    <button id="btnScrubPlay"></button><button id="btnScrubExit"></button>
+    <input type="range" id="timelineSlider" min="0" max="100" value="0"><span id="txtScrubIter">0</span>
+  </div>
+</main>
 
-    <!-- Tournament Modal -->
-    <div class="tournament-modal" id="tourneyModal">
-      <h2>🏆 Tournament Results</h2>
-      <div class="tournament-results" id="tourneyResults"></div>
-      <button class="btn-tourney-close" id="btnTourneyClose">Close</button>
-    </div>
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    <div class="runtime-dock" id="mainDock">
-      <button id="btnRun" class="btn-run">▶ Run</button>
-      <button id="btnReset" class="btn-dock">↺ Reset</button>
-      <div class="dock-divider"></div>
-      <div class="slider-group">
-        <label>η (LR): <span id="lrVal">0.01</span></label>
-        <input type="range" id="lrSlider" min="-4" max="0" step="0.1" value="-2">
-      </div>
-      <div class="slider-group">
-        <label>Speed: <span id="speedVal">10</span></label>
-        <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
-      </div>
-      <div class="dock-divider"></div>
-      <button id="btnTourney" class="btn-dock" title="Run Tournament Race">🏆 Race</button>
-      <div class="dock-divider"></div>
-      <button id="btnGhost" class="btn-dock" title="Toggle Ghost Trails">👻 Ghost</button>
-      <button id="btnReplay" class="btn-dock" title="Replay Last Run">⏩ Replay</button>
-      <div class="dock-divider"></div>
-      <button id="btnCinematic" class="btn-dock" title="Toggle Cinematic Camera">🎬 Cine</button>
-      <button id="btnSaveCam" class="btn-dock" title="Save Camera">📷 Save</button>
-      <button id="btnRestoreCam" class="btn-dock" title="Restore Camera">📍 Load</button>
-      <div class="dock-divider"></div>
-      <div class="export-wrapper">
-        <button class="btn-dock">Export ▾</button>
-        <div class="export-menu">
-          <button class="export-item" id="btnExportPng">📸 PNG Screenshot</button>
-          <button class="export-item" id="btnExportJson">📄 JSON Data</button>
+  // =============================================
+  // 1. SURFACES
+  // =============================================
+  const SURFACES = {
+    bowl: {
+      id:'bowl', name:'Quadratic Bowl',
+      equation:'L(x,y) = x² + y²', insight:'A perfect convex landscape.',
+      challenge:'Demonstrates baseline convergence behavior.', minimaText:'Global Minimum: (0.0, 0.0) → L=0',
+      domain:{xmin:-4,xmax:4,ymin:-4,ymax:4}, maxDisplayHeight:3.5, lossClip:32,
+      defaultLR:0.1, startPoint:{x:-3.2,y:3.0}, minima:[{x:0,y:0,z:0}],
+      f:(x,y)=>x*x+y*y, grad:(x,y)=>({gx:2*x,gy:2*y}),
+      camPos:new THREE.Vector3(10,8,10), camTarget:new THREE.Vector3(0,1,0)
+    },
+    rosenbrock: {
+      id:'rosenbrock', name:'Rosenbrock Valley',
+      equation:'L(x,y) = (1-x)² + 100(y-x²)²', insight:'A narrow, curved, shallow valley.',
+      challenge:'Hard to navigate the flat valley floor.', minimaText:'Global Minimum: (1.0, 1.0) → L=0',
+      domain:{xmin:-2,xmax:2,ymin:-1,ymax:3}, maxDisplayHeight:3.5, lossClip:200,
+      defaultLR:0.001, startPoint:{x:-1.5,y:2.0}, minima:[{x:1,y:1,z:0}],
+      f:(x,y)=>Math.pow(1-x,2)+100*Math.pow(y-x*x,2),
+      grad:(x,y)=>({gx:-2*(1-x)-400*x*(y-x*x), gy:200*(y-x*x)}),
+      camPos:new THREE.Vector3(-6,5,8), camTarget:new THREE.Vector3(1,0,1)
+    },
+    himmelblau: {
+      id:'himmelblau', name:'Himmelblau Function',
+      equation:'L(x,y) = (x²+y-11)² + (x+y²-7)²', insight:'Multi-modal with four identical global minima.',
+      challenge:'Initialization determines which minimum is reached.', minimaText:'4 Global Minima → L=0',
+      domain:{xmin:-5,xmax:5,ymin:-5,ymax:5}, maxDisplayHeight:3.5, lossClip:200,
+      defaultLR:0.01, startPoint:{x:0,y:0},
+      minima:[{x:3,y:2},{x:-2.805118,y:3.131312},{x:-3.77931,y:-3.283186},{x:3.584428,y:-1.848126}],
+      f:(x,y)=>Math.pow(x*x+y-11,2)+Math.pow(x+y*y-7,2),
+      grad:(x,y)=>({gx:4*x*(x*x+y-11)+2*(x+y*y-7), gy:2*(x*x+y-11)+4*y*(x+y*y-7)}),
+      camPos:new THREE.Vector3(0,10,14), camTarget:new THREE.Vector3(0,0,0)
+    },
+    rastrigin: {
+      id:'rastrigin', name:'Rastrigin Function',
+      equation:'L(x,y) = 20 + x² - 10cos(2πx) + y² - 10cos(2πy)', insight:'Highly multimodal with dense local traps.',
+      challenge:'Vanilla GD gets trapped in local minima.', minimaText:'Global Minimum: (0.0, 0.0) → L=0',
+      domain:{xmin:-5.12,xmax:5.12,ymin:-5.12,ymax:5.12}, maxDisplayHeight:3.5, lossClip:80,
+      defaultLR:0.005, startPoint:{x:-4.5,y:-4.5}, minima:[{x:0,y:0}],
+      f:(x,y)=>20+x*x-10*Math.cos(2*Math.PI*x)+y*y-10*Math.cos(2*Math.PI*y),
+      grad:(x,y)=>({gx:2*x+20*Math.PI*Math.sin(2*Math.PI*x), gy:2*y+20*Math.PI*Math.sin(2*Math.PI*y)}),
+      camPos:new THREE.Vector3(8,6,11), camTarget:new THREE.Vector3(0,0,0)
+    }
+  };
+
+  let activeSurface = 'bowl';
+  let currentStart = {...SURFACES.bowl.startPoint};
+
+  function trueLoss(s,x,y){ return s.f(x,y); }
+  function getDisplayHeight(s,tl){ return (Math.min(Math.max(tl,0),s.lossClip)/s.lossClip)*s.maxDisplayHeight; }
+  function mathToWorld(s,x,y){ const h=getDisplayHeight(s,trueLoss(s,x,y)); return new THREE.Vector3(x,h,y); }
+  function worldToMath(s,p){ return {x:p.x,y:p.z}; }
+
+  // =============================================
+  // 2. OPTIMIZER STATE
+  // =============================================
+  let globalRunning=false, globalSpeed=10, globalLr=0.01;
+  const MAX_PATH=2000, MIN_PATH=400;
+
+  const OPT_PERSONALITY = {
+    gd:       {gradClip:4.0, lrMult:1.0, beta:0,   beta2:0},
+    momentum: {gradClip:0,   lrMult:1.0, beta:0.93, beta2:0},
+    rmsprop:  {gradClip:0,   lrMult:2.5, beta:0.95, eps:1e-7},
+    adam:     {gradClip:2.0, lrMult:3.0, beta1:0.9, beta2:0.999, eps:1e-8}
+  };
+
+  const optimizers = {
+    gd:       {id:'gd',      name:'Vanilla GD', colorHex:0xff3366, glowHex:0xff0033, uiColor:'#ff3366', enabled:true, status:'Ready', intelligenceState:'Ready', x:0,y:0,z:0, gradMag:0, iter:0, path:[], lossHistory:[], dirHistory:[], stepDist:0, convergePulse:0, flickerPhase:0, meshes:{}},
+    momentum: {id:'momentum',name:'Momentum',   colorHex:0x0ea5e9, glowHex:0x0284c7, uiColor:'#0ea5e9', enabled:true, status:'Ready', intelligenceState:'Ready', x:0,y:0,z:0, gradMag:0, iter:0, path:[], lossHistory:[], dirHistory:[], v_x:0,v_y:0, stepDist:0, convergePulse:0, flickerPhase:0, meshes:{}},
+    rmsprop:  {id:'rmsprop', name:'RMSProp',    colorHex:0xa855f7, glowHex:0x9333ea, uiColor:'#a855f7', enabled:true, status:'Ready', intelligenceState:'Ready', x:0,y:0,z:0, gradMag:0, iter:0, path:[], lossHistory:[], dirHistory:[], s_x:1e-8,s_y:1e-8, stepDist:0, convergePulse:0, flickerPhase:0, meshes:{}},
+    adam:     {id:'adam',    name:'Adam',        colorHex:0x10b981, glowHex:0x059669, uiColor:'#10b981', enabled:true, status:'Ready', intelligenceState:'Ready', x:0,y:0,z:0, gradMag:0, iter:0, path:[], lossHistory:[], dirHistory:[], m_x:0,m_y:0,v_x:0,v_y:0,t:0, stepDist:0, convergePulse:0, flickerPhase:0, meshes:{}}
+  };
+
+  let isVectorFieldVisible=true, currentVectorDensity=25, vectorFieldMesh=null;
+  let isCinematicMode=false;
+  const cinematicTarget=new THREE.Vector3();
+  let lastFrameTime=performance.now(), fpsSmoothed=60, dynamicMaxPath=MAX_PATH;
+  const rippleEvents=[];
+  let runCompleted=false;
+
+  // Convergence graph
+  const graphHistory={gd:[],momentum:[],rmsprop:[],adam:[]};
+  const GRAPH_MAX_SAMPLES=300;
+  let graphFrameCounter=0;
+
+  // Dead-code state kept for Three.js compat
+  let isGhostMode=false;
+  const ghostTrails=[], ghostMeshes=[], replayBuffer={};
+  let isReplaying=false;
+
+  // Viz mode
+  let currentVizMode='surface', heatmapPlaneMesh=null, contourLineMeshes=[];
+
+  // Intro camera
+  let introLerpT=0, introLerpActive=false;
+  const introTargetCamPos=new THREE.Vector3(), introTargetCamLook=new THREE.Vector3(), introStartCamPos=new THREE.Vector3();
+
+  const EDU_DATA = {
+    gd:       {title:'Vanilla GD',  text:'Raw gradient steps. Zigzags in narrow valleys, overshoots sharp curves.'},
+    momentum: {title:'Momentum',    text:'Accumulates velocity from past gradients. Overshoots but escapes plateaus.'},
+    rmsprop:  {title:'RMSProp',     text:'Scales LR per-dimension using gradient history. Tighter in narrow valleys.'},
+    adam:     {title:'Adam',        text:'Combines Momentum + RMSProp with bias correction. Fastest on most landscapes.'}
+  };
+
+  // =============================================
+  // INTELLIGENCE ENGINES
+  // =============================================
+  class ExplainabilityEngine {
+    static getAnalysis(opt) {
+      const s = SURFACES[activeSurface];
+      const st = opt.status, is = opt.intelligenceState;
+
+      if (st.includes('Reached')||st.includes('Minimum'))
+        return {status:'Success', sc:'success', why:`Reached minimum in ${opt.iter} iterations. Final loss: ${opt.z.toFixed(5)}.`, suggestion:null};
+      if (st.includes('Boundary'))
+        return {status:'Boundary Exit', sc:'error', why:`Exited valid domain — learning rate too large for this landscape.`, suggestion:opt.id!=='adam'?'Adam':'Reduce learning rate'};
+      if (st.includes('Instability'))
+        return {status:'Diverged', sc:'error', why:`Numerical instability. Gradient explosion caused divergence on ${s.name}.`, suggestion:'Adam (adaptive clipping)'};
+
+      const map = {
+        'Oscillation Detected': {status:'Oscillating',     sc:'warn',    why:`Direction reversals each step. LR too high for local curvature of ${s.name}.`,                           suggestion: opt.id==='gd'?'Adam':(opt.id==='momentum'?'RMSProp':'Reduce LR')},
+        'Valley Navigation':    {status:'Valley Stalling', sc:'warn',    why:`Gradients mostly perpendicular to descent direction. Valley geometry hindering progress.`,               suggestion:'Adam'},
+        'Local Trap':           {status:'Local Trap',      sc:'info',    why:`Gradient vanished far from global minimum. Optimizer trapped in a local basin.`,                          suggestion:'Adam or lower LR'},
+        'Exploding Gradient':   {status:'Gradient Blast',  sc:'error',   why:`Extreme terrain slope produced unbounded gradients — divergence risk.`,                                   suggestion:'Adam (adaptive clipping)'},
+        'Overshooting':         {status:'Overshooting',    sc:'warn',    why:`Step exceeded local curvature — loss increased repeatedly.`,                                              suggestion: opt.id==='momentum'?'RMSProp':'Reduce LR'},
+        'Momentum Slingshot':   {status:'Vel. Excess',     sc:'warn',    why:`Accumulated momentum outran the gradient signal. Kinetic carry overshooting minimum.`,                   suggestion:'RMSProp or reduce β'},
+        'Fast Convergence':     {status:'Converging Fast', sc:'success', why:`Strong gradient alignment and efficient step sizing — rapid loss reduction.`,                             suggestion:null},
+        'Stable Descent':       {status:'Stable Descent',  sc:'success', why:`Consistent, controlled loss reduction throughout the run.`,                                               suggestion:null},
+        'Converging':           {status:'Near Minimum',    sc:'success', why:`Fine-grained approach to minimum. Loss delta extremely small.`,                                           suggestion:null},
+        'Adaptive Rescue':      {status:'Adaptive',        sc:'success', why:`Adaptive scaling actively dampening steep gradients — preventing divergence.`,                            suggestion:null}
+      };
+
+      return map[is] || {
+        status: opt.iter>5 ? (opt.status==='Paused'?'Paused':'In Progress') : 'Ready',
+        sc:'neutral', why: opt.iter>5?'Paused before natural completion.':'Not yet started.', suggestion:null
+      };
+    }
+  }
+
+  class RecommendationEngineV2 {
+    static analyze() {
+      const active = Object.values(optimizers).filter(o=>o.enabled&&o.iter>2);
+      if (!active.length) return null;
+
+      const minLoss=Math.min(...active.map(o=>o.z));
+      const maxLoss=Math.max(...active.map(o=>o.z));
+      const minIter=Math.min(...active.map(o=>o.iter));
+      const maxIter=Math.max(...active.map(o=>o.iter));
+      const bad=new Set(['Oscillation Detected','Overshooting','Exploding Gradient','Momentum Slingshot']);
+      const good=new Set(['Fast Convergence','Stable Descent','Converging','Adaptive Rescue']);
+
+      const scored = active.map(opt=>{
+        const lossScore   = (maxLoss-minLoss)>1e-10 ? 1-(opt.z-minLoss)/(maxLoss-minLoss) : 1;
+        const iterScore   = (maxIter-minIter)>0     ? 1-(opt.iter-minIter)/(maxIter-minIter) : 1;
+        const stabScore   = bad.has(opt.intelligenceState)?0.15 : good.has(opt.intelligenceState)?1.0 : 0.6;
+        const conv        = opt.status.includes('Reached')||opt.status.includes('Minimum');
+        const trap        = opt.intelligenceState==='Local Trap'||opt.status.includes('Boundary')||opt.status.includes('Instability');
+        const convScore   = conv?1.0:trap?0.05:0.4;
+        const total       = Math.max(0,Math.min(1, lossScore*0.40+iterScore*0.30+stabScore*0.20+convScore*0.10));
+        return {opt,total,lossScore,iterScore,stabScore,convScore};
+      });
+      scored.sort((a,b)=>b.total-a.total);
+
+      const best=scored[0], worst=scored[scored.length-1];
+      const s=SURFACES[activeSurface];
+      const failures = active.map(o=>{const a=ExplainabilityEngine.getAnalysis(o);return{opt:o,a};})
+                            .filter(({a})=>a.sc==='warn'||a.sc==='error')
+                            .map(({opt,a})=>`${opt.name}: ${a.status}`);
+
+      return {scores:scored, best:best.opt, bestScore:best.total, worst:worst.opt, failures,
+              reason:this._reason(best.opt,s), recommendation:this._rec(best.opt,s)};
+    }
+
+    static _reason(opt,s) {
+      const conv=opt.status.includes('Reached')||opt.status.includes('Minimum');
+      const prefix=conv
+        ?`${opt.name} converged in ${opt.iter} iterations (final loss ${opt.z.toExponential(2)}).`
+        :`${opt.name} achieved the lowest loss (${opt.z.toExponential(2)}) among active optimizers.`;
+      const ctx={bowl:'Convex symmetry rewarded stable step sizes.',rosenbrock:'Adaptive scaling was critical for the narrow, curved Rosenbrock valley.',himmelblau:'Stable gradient estimates aided reliable basin selection from four minima.',rastrigin:'Adaptive step sizes reduced trap susceptibility across dense local minima.'};
+      return `${prefix} ${ctx[s.id]||''}`;
+    }
+
+    static _rec(opt,s) {
+      const r={
+        bowl:`For convex symmetric landscapes, ${opt.name} showed the best efficiency-stability balance.`,
+        rosenbrock:`For curved narrow valleys with anisotropic curvature, ${opt.name} is recommended — adaptive per-dimension scaling handles the valley geometry.`,
+        himmelblau:`For multi-modal landscapes, ${opt.name} is recommended — stable gradient estimates improve convergence to a valid basin.`,
+        rastrigin:`For highly multimodal landscapes, ${opt.name} performed best — adaptive step sizes reduce susceptibility to local traps.`
+      };
+      return r[s.id]||`${opt.name} is recommended for this landscape based on convergence quality and stability.`;
+    }
+  }
+
+  // =============================================
+  // 3. THREE.JS SETUP
+  // =============================================
+  const container=document.getElementById('threeCanvasHost');
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color('#030305');
+  scene.fog=new THREE.FogExp2('#030305',0.04);
+  const camera=new THREE.PerspectiveCamera(35,container.clientWidth/container.clientHeight,0.1,1000);
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(container.clientWidth,container.clientHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  container.appendChild(renderer.domElement);
+  const controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=0.05;
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.4));
+  const hemi=new THREE.HemisphereLight(0xffffff,0x444455,0.6); hemi.position.set(0,10,0); scene.add(hemi);
+  const dir=new THREE.DirectionalLight(0xffffff,1.2); dir.position.set(10,20,10); dir.castShadow=true; dir.shadow.mapSize.set(2048,2048); scene.add(dir);
+  const rim=new THREE.DirectionalLight(0xa5b4fc,0.8); rim.position.set(-15,5,-15); scene.add(rim);
+  const grid=new THREE.GridHelper(12,24,0x444455,0x222233); grid.position.y=-0.05; grid.material.transparent=true; grid.material.opacity=0.15; scene.add(grid);
+  const axes=new THREE.AxesHelper(4); axes.material.transparent=true; axes.material.opacity=0.4; scene.add(axes);
+
+  let surfaceMesh=null, startMarkerMesh=null;
+  const minimaMeshes=[];
+  const raycaster=new THREE.Raycaster(), mouse=new THREE.Vector2();
+  let isPickingStart=false, pointerDownCoord={x:0,y:0};
+
+  function getColorMap(t){ const c=new THREE.Color(); c.setHSL(0.6-t*0.45,0.8,0.3+t*0.4); return c; }
+
+  function buildSurfaceMesh(sKey){
+    if(surfaceMesh) scene.remove(surfaceMesh);
+    const s=SURFACES[sKey], res=100;
+    const geo=new THREE.PlaneGeometry(s.domain.xmax-s.domain.xmin,s.domain.ymax-s.domain.ymin,res,res);
+    geo.rotateX(-Math.PI/2);
+    const pos=geo.attributes.position, colors=[], heights=[];
+    let minH=Infinity, maxH=-Infinity;
+    for(let i=0;i<pos.count;i++){
+      const mx=pos.getX(i)+(s.domain.xmax+s.domain.xmin)/2;
+      const my=pos.getZ(i)+(s.domain.ymax+s.domain.ymin)/2;
+      const w=mathToWorld(s,mx,my);
+      pos.setX(i,w.x); pos.setY(i,w.y); pos.setZ(i,w.z);
+      heights.push(w.y); if(w.y<minH)minH=w.y; if(w.y>maxH)maxH=w.y;
+    }
+    geo.computeVertexNormals();
+    for(let i=0;i<pos.count;i++){const c=getColorMap((heights[i]-minH)/(maxH-minH+1e-6));colors.push(c.r,c.g,c.b);}
+    geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    surfaceMesh=new THREE.Mesh(geo,new THREE.MeshPhysicalMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:0.6,metalness:0.1,clearcoat:0.3,clearcoatRoughness:0.4,transparent:true,opacity:0.95}));
+    surfaceMesh.receiveShadow=true; surfaceMesh.castShadow=true; scene.add(surfaceMesh);
+    const wm=new THREE.LineSegments(new THREE.WireframeGeometry(geo),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.05}));
+    surfaceMesh.add(wm);
+  }
+
+  function generateHeatmapTexture(sKey){
+    if(heatmapPlaneMesh){scene.remove(heatmapPlaneMesh);heatmapPlaneMesh.geometry.dispose();heatmapPlaneMesh.material.dispose();heatmapPlaneMesh=null;}
+    const s=SURFACES[sKey], res=256, cvs=document.createElement('canvas');
+    cvs.width=res; cvs.height=res;
+    const ctx=cvs.getContext('2d'), img=ctx.createImageData(res,res);
+    const raw=new Float32Array(res*res); let minL=Infinity,maxL=-Infinity,idx=0;
+    for(let j=0;j<res;j++)for(let i=0;i<res;i++){const l=trueLoss(s,s.domain.xmin+(i/(res-1))*(s.domain.xmax-s.domain.xmin),s.domain.ymin+((res-1-j)/(res-1))*(s.domain.ymax-s.domain.ymin));raw[idx++]=l;if(l<minL)minL=l;if(l>maxL)maxL=l;}
+    idx=0;
+    for(let j=0;j<res;j++)for(let i=0;i<res;i++){const t=Math.min(1,Math.max(0,(raw[idx]-minL)/(Math.min(maxL,s.lossClip)-minL+1e-6)));const c=getColorMap(t);const px=(j*res+i)*4;img.data[px]=c.r*255;img.data[px+1]=c.g*255;img.data[px+2]=c.b*255;img.data[px+3]=200;idx++;}
+    ctx.putImageData(img,0,0);
+    const tex=new THREE.CanvasTexture(cvs); tex.colorSpace=THREE.SRGBColorSpace;
+    const pgeo=new THREE.PlaneGeometry(s.domain.xmax-s.domain.xmin,s.domain.ymax-s.domain.ymin);
+    heatmapPlaneMesh=new THREE.Mesh(pgeo,new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0.85,side:THREE.DoubleSide}));
+    heatmapPlaneMesh.rotation.x=-Math.PI/2; heatmapPlaneMesh.position.y=0.05;
+    heatmapPlaneMesh.visible=(currentVizMode==='heatmap'); scene.add(heatmapPlaneMesh);
+  }
+
+  function buildContourLines(sKey){
+    contourLineMeshes.forEach(m=>{scene.remove(m);m.geometry.dispose();m.material.dispose();}); contourLineMeshes=[];
+    const s=SURFACES[sKey], res=150, numC=20, pts=[];
+    for(let j=0;j<res;j++)for(let i=0;i<res;i++){
+      const x=s.domain.xmin+(i/(res-1))*(s.domain.xmax-s.domain.xmin);
+      const y=s.domain.ymin+(j/(res-1))*(s.domain.ymax-s.domain.ymin);
+      const h=getDisplayHeight(s,trueLoss(s,x,y)), lvl=h*(numC/s.maxDisplayHeight);
+      if(Math.abs(lvl-Math.round(lvl))<0.08) pts.push(x,0.05,y);
+    }
+    if(pts.length){
+      const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+      const m=new THREE.Points(g,new THREE.PointsMaterial({color:0x6366f1,size:0.03,transparent:true,opacity:0.6}));
+      m.visible=(currentVizMode==='contour'); scene.add(m); contourLineMeshes.push(m);
+    }
+  }
+
+  function initMarkers(sKey){
+    const s=SURFACES[sKey];
+    Object.values(optimizers).forEach(opt=>{if(opt.meshes.markerMesh)scene.remove(opt.meshes.markerMesh);if(opt.meshes.markerGlow)scene.remove(opt.meshes.markerGlow);});
+    if(startMarkerMesh)scene.remove(startMarkerMesh);
+    minimaMeshes.forEach(m=>scene.remove(m)); minimaMeshes.length=0;
+    Object.values(optimizers).forEach(opt=>{
+      opt.meshes.markerMesh=new THREE.Mesh(new THREE.SphereGeometry(opt.id==='gd'?0.1:0.12,32,32),new THREE.MeshPhysicalMaterial({color:opt.colorHex,emissive:opt.glowHex,emissiveIntensity:0.8,roughness:0.2,metalness:0.1,clearcoat:1.0}));
+      scene.add(opt.meshes.markerMesh);
+      opt.meshes.markerGlow=new THREE.Mesh(new THREE.SphereGeometry(0.25,32,32),new THREE.MeshBasicMaterial({color:opt.glowHex,transparent:true,opacity:0.3,blending:THREE.AdditiveBlending}));
+      scene.add(opt.meshes.markerGlow);
+      opt.meshes.markerMesh.visible=opt.enabled; opt.meshes.markerGlow.visible=opt.enabled;
+    });
+    startMarkerMesh=new THREE.Mesh(new THREE.OctahedronGeometry(0.15),new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:0.8}));
+    scene.add(startMarkerMesh);
+    const matMin=new THREE.MeshPhysicalMaterial({color:0x10b981,emissive:0x059669,emissiveIntensity:0.5,roughness:0.3,metalness:0.2,clearcoat:0.8});
+    for(const m of s.minima){
+      const mesh=new THREE.Mesh(new THREE.SphereGeometry(0.12,32,32),matMin);
+      const w=mathToWorld(s,m.x,m.y); mesh.position.set(w.x,w.y+0.1,w.z);
+      mesh.add(new THREE.Mesh(new THREE.SphereGeometry(0.2,16,16),new THREE.MeshBasicMaterial({color:0x10b981,transparent:true,opacity:0.2,blending:THREE.AdditiveBlending})));
+      scene.add(mesh); minimaMeshes.push(mesh);
+    }
+  }
+
+  function initPathTrace(){
+    Object.values(optimizers).forEach(opt=>{
+      if(opt.meshes.pathLine)scene.remove(opt.meshes.pathLine);
+      if(opt.meshes.pathLineUnderlay)scene.remove(opt.meshes.pathLineUnderlay);
+      const geo=new THREE.BufferGeometry();
+      geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(MAX_PATH*3),3));
+      geo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(MAX_PATH*3),3));
+      geo.setDrawRange(0,0);
+      let cw=2,uw=2,op=1;
+      if(opt.id==='gd'){cw=1.5;uw=1.5;op=0.8;}
+      else if(opt.id==='momentum'){cw=2;uw=3;op=0.9;}
+      else if(opt.id==='rmsprop'){cw=1.5;uw=2.5;op=0.7;}
+      else if(opt.id==='adam'){cw=2.5;uw=4;op=1;}
+      opt.meshes.pathLineUnderlay=new THREE.Line(geo,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,linewidth:uw,opacity:op*0.5}));
+      scene.add(opt.meshes.pathLineUnderlay);
+      const geo2=geo.clone();
+      opt.meshes.pathLine=new THREE.Line(geo2,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,linewidth:cw,opacity:op}));
+      scene.add(opt.meshes.pathLine);
+      opt.meshes.pathLine.visible=opt.enabled; opt.meshes.pathLineUnderlay.visible=opt.enabled;
+    });
+  }
+
+  function buildVectorField(sKey){
+    if(vectorFieldMesh){scene.remove(vectorFieldMesh);vectorFieldMesh.geometry.dispose();vectorFieldMesh.material.dispose();vectorFieldMesh=null;}
+    if(!isVectorFieldVisible)return;
+    const s=SURFACES[sKey];
+    let density=currentVectorDensity;
+    if(s.id==='rosenbrock')density=Math.min(density,20);
+    if(s.id==='rastrigin')density=Math.min(density,15);
+    const pts=[],colors=[];
+    const stepX=(s.domain.xmax-s.domain.xmin)/density, stepY=(s.domain.ymax-s.domain.ymin)/density;
+    const ss=Math.min(s.domain.xmax-s.domain.xmin,s.domain.ymax-s.domain.ymin)*0.025;
+    for(let i=0;i<=density;i++)for(let j=0;j<=density;j++){
+      const mx=s.domain.xmin+i*stepX, my=s.domain.ymin+j*stepY;
+      if(!isFinite(trueLoss(s,mx,my)))continue;
+      const g=s.grad(mx,my), gm=Math.sqrt(g.gx*g.gx+g.gy*g.gy);
+      if(gm<1e-6)continue;
+      const dx=-g.gx/gm, dy=-g.gy/gm;
+      const w1=mathToWorld(s,mx,my), w2=mathToWorld(s,mx+dx*ss,my+dy*ss);
+      pts.push(w1.x,w1.y+0.02,w1.z,w2.x,w2.y+0.02,w2.z);
+      colors.push(0,0,0,0.2,0.8,1.0);
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    vectorFieldMesh=new THREE.LineSegments(g,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,opacity:0.5}));
+    scene.add(vectorFieldMesh);
+  }
+
+  function setVizMode(mode){
+    currentVizMode=mode;
+    document.querySelectorAll('.viz-btn').forEach(b=>b.classList.toggle('active',b.dataset.viz===mode));
+    if(surfaceMesh){surfaceMesh.visible=(mode==='surface'||mode==='wireframe');if(surfaceMesh.children[0])surfaceMesh.children[0].visible=(mode==='wireframe');}
+    if(heatmapPlaneMesh)heatmapPlaneMesh.visible=(mode==='heatmap');
+    contourLineMeshes.forEach(m=>m.visible=(mode==='contour'));
+    if(mode==='heatmap'&&!heatmapPlaneMesh)generateHeatmapTexture(activeSurface);
+    if(mode==='contour'&&!contourLineMeshes.length)buildContourLines(activeSurface);
+  }
+
+  function resetCamera(sKey){const s=SURFACES[sKey];camera.position.copy(s.camPos);controls.target.copy(s.camTarget);controls.update();}
+
+  function loadSurface(sKey){
+    const s=SURFACES[sKey]; activeSurface=sKey; currentStart={...s.startPoint};
+    document.getElementById('infoEq').textContent=s.equation;
+    document.getElementById('infoInsight').textContent=s.insight;
+    document.getElementById('infoChallenge').textContent=s.challenge;
+    document.getElementById('infoMinima').textContent=s.minimaText;
+    ghostMeshes.forEach(m=>{scene.remove(m);m.geometry.dispose();m.material.dispose();}); ghostMeshes.length=0; ghostTrails.length=0;
+    Object.keys(graphHistory).forEach(k=>{graphHistory[k]=[];});
+    setVizMode('surface'); buildSurfaceMesh(sKey); initMarkers(sKey); initPathTrace(); buildVectorField(sKey); resetCamera(sKey);
+    introStartCamPos.copy(camera.position); introTargetCamPos.copy(s.camPos); introTargetCamLook.copy(s.camTarget); introLerpT=0; introLerpActive=true;
+    hideIntelligencePanel(); resetOptimizer();
+    const host=document.getElementById('threeCanvasHost');
+    host.classList.remove('stage-flash'); void host.offsetWidth; host.classList.add('stage-flash');
+  }
+
+  // =============================================
+  // 4. OPTIMIZER LOGIC
+  // =============================================
+  function checkConvergence(s,opt){
+    if(s.id==='bowl'||s.id==='rosenbrock'){
+      const m=s.minima[0], d=Math.sqrt((opt.x-m.x)**2+(opt.y-m.y)**2);
+      if(d<0.015||(opt.gradMag<0.001&&d<0.1))return 'Global Minimum Reached';
+    } else if(s.id==='himmelblau'){
+      for(const m of s.minima)if(Math.sqrt((opt.x-m.x)**2+(opt.y-m.y)**2)<0.02)return 'Valid Minimum Reached';
+    } else if(s.id==='rastrigin'){
+      const m=s.minima[0], d=Math.sqrt((opt.x-m.x)**2+(opt.y-m.y)**2);
+      if(d<0.02)return 'Global Minimum Reached';
+      if(opt.gradMag<0.01&&d>=0.02)return 'Local Minimum Trap Detected';
+    }
+    return null;
+  }
+
+  function resetOptimizer(){
+    const s=SURFACES[activeSurface];
+    globalRunning=false; isReplaying=false; runCompleted=false;
+    document.getElementById('btnRun').innerHTML='▶ Run';
+    hideIntelligencePanel();
+    globalLr=s.defaultLR;
+    document.getElementById('lrSlider').value=Math.log10(globalLr);
+    document.getElementById('lrVal').textContent=globalLr.toPrecision(2);
+    document.getElementById('startXInput').value=currentStart.x.toFixed(2);
+    document.getElementById('startYInput').value=currentStart.y.toFixed(2);
+    document.getElementById('txtStartX').textContent=currentStart.x.toFixed(2);
+    document.getElementById('txtStartY').textContent=currentStart.y.toFixed(2);
+    const startZ=trueLoss(s,currentStart.x,currentStart.y);
+    document.getElementById('txtStartZ').textContent=startZ.toFixed(2);
+    const wS=mathToWorld(s,currentStart.x,currentStart.y);
+    if(startMarkerMesh)startMarkerMesh.position.set(wS.x,wS.y+0.1,wS.z);
+    rippleEvents.length=0;
+    Object.values(optimizers).forEach(opt=>{
+      opt.status='Ready'; opt.intelligenceState='Ready';
+      opt.iter=0; opt.lossHistory=[]; opt.dirHistory=[];
+      opt.x=currentStart.x; opt.y=currentStart.y; opt.z=startZ;
+      opt.stepDist=0; opt.convergePulse=0; opt.flickerPhase=0;
+      const{gx,gy}=s.grad(opt.x,opt.y); opt.gradMag=Math.sqrt(gx*gx+gy*gy);
+      opt.path=[{x:opt.x,y:opt.y,z:opt.z}];
+      opt.v_x=0;opt.v_y=0;opt.s_x=1e-8;opt.s_y=1e-8;opt.m_x=0;opt.m_y=0;opt.t=0;
+      if(opt.meshes.markerMesh){opt.meshes.markerMesh.position.set(wS.x,wS.y+0.12,wS.z);opt.meshes.markerMesh.material.color.setHex(opt.colorHex);opt.meshes.markerMesh.material.emissive.setHex(opt.glowHex);opt.meshes.markerMesh.material.emissiveIntensity=0.8;}
+      if(opt.meshes.markerGlow){opt.meshes.markerGlow.position.set(wS.x,wS.y+0.12,wS.z);opt.meshes.markerGlow.material.opacity=0.3;}
+      ['pathLine','pathLineUnderlay'].forEach(k=>{if(opt.meshes[k]){const pa=opt.meshes[k].geometry.attributes.position.array;pa[0]=wS.x;pa[1]=wS.y+0.05;pa[2]=wS.z;opt.meshes[k].geometry.setDrawRange(0,1);opt.meshes[k].geometry.attributes.position.needsUpdate=true;}});
+    });
+    updateComparisonCards();
+  }
+
+  function stepOptimizer(){
+    const s=SURFACES[activeSurface];
+    for(let step=0;step<globalSpeed;step++){
+      Object.values(optimizers).forEach(opt=>{
+        if(!opt.enabled||opt.status!=='Running')return;
+        const p=OPT_PERSONALITY[opt.id];
+        let{gx,gy}=s.grad(opt.x,opt.y); opt.gradMag=Math.sqrt(gx*gx+gy*gy);
+        if(p.gradClip>0&&opt.gradMag>p.gradClip){const sc=p.gradClip/opt.gradMag;gx*=sc;gy*=sc;}
+        const lr=globalLr*p.lrMult;
+        let nx=opt.x, ny=opt.y;
+        const px=opt.x, py=opt.y;
+        if(opt.id==='gd'){nx-=lr*gx;ny-=lr*gy;}
+        else if(opt.id==='momentum'){opt.v_x=p.beta*opt.v_x+lr*gx;opt.v_y=p.beta*opt.v_y+lr*gy;nx-=opt.v_x;ny-=opt.v_y;}
+        else if(opt.id==='rmsprop'){opt.s_x=p.beta*opt.s_x+(1-p.beta)*gx*gx;opt.s_y=p.beta*opt.s_y+(1-p.beta)*gy*gy;nx-=(lr/(Math.sqrt(opt.s_x)+p.eps))*gx;ny-=(lr/(Math.sqrt(opt.s_y)+p.eps))*gy;}
+        else if(opt.id==='adam'){opt.t++;opt.m_x=p.beta1*opt.m_x+(1-p.beta1)*gx;opt.m_y=p.beta1*opt.m_y+(1-p.beta1)*gy;opt.v_x=p.beta2*opt.v_x+(1-p.beta2)*gx*gx;opt.v_y=p.beta2*opt.v_y+(1-p.beta2)*gy*gy;const bc1=1-Math.pow(p.beta1,opt.t),bc2=1-Math.pow(p.beta2,opt.t);nx-=(lr/(Math.sqrt(opt.v_x/bc2)+p.eps))*(opt.m_x/bc1);ny-=(lr/(Math.sqrt(opt.v_y/bc2)+p.eps))*(opt.m_y/bc1);}
+        if(!isFinite(nx)||!isFinite(ny)){opt.status='Numerical Instability';return;}
+        if(nx<s.domain.xmin||nx>s.domain.xmax||ny<s.domain.ymin||ny>s.domain.ymax){opt.status='Boundary Reached';return;}
+        const nz=trueLoss(s,nx,ny);
+        if(!isFinite(nz)){opt.status='Numerical Instability';return;}
+        opt.stepDist=Math.sqrt((nx-px)**2+(ny-py)**2);
+        opt.x=nx;opt.y=ny;opt.z=nz;opt.iter++;
+        opt.lossHistory.push(nz); if(opt.lossHistory.length>10)opt.lossHistory.shift();
+        opt.dirHistory.push({dx:-gx,dy:-gy}); if(opt.dirHistory.length>10)opt.dirHistory.shift();
+        // Intelligence state
+        let state='Stable Descent';
+        const hl=opt.lossHistory.length;
+        if(opt.gradMag>500){state='Exploding Gradient';}
+        else if(hl>=5){
+          const ld=opt.lossHistory[0]-opt.lossHistory[hl-1];
+          const li=(hl>1)&&(opt.lossHistory[hl-1]>opt.lossHistory[hl-2]+0.01);
+          if(li&&opt.iter>5){state='Overshooting';}
+          let ds=0,dc=0;
+          for(let i=1;i<opt.dirHistory.length;i++){const d1=opt.dirHistory[i-1],d2=opt.dirHistory[i];const m1=Math.sqrt(d1.dx*d1.dx+d1.dy*d1.dy),m2=Math.sqrt(d2.dx*d2.dx+d2.dy*d2.dy);if(m1>0&&m2>0){ds+=(d1.dx*d2.dx+d1.dy*d2.dy)/(m1*m2);dc++;}}
+          const ad=dc>0?ds/dc:1;
+          if(!li){
+            if(ad<-0.3){state='Oscillation Detected';}
+            else if(ld<1e-6&&opt.gradMag<0.05){const md=s.minima.reduce((b,m)=>Math.min(b,Math.sqrt((opt.x-m.x)**2+(opt.y-m.y)**2)),Infinity);state=md>0.5?'Local Trap':'Converging';}
+            else if(ld<1e-4&&opt.gradMag>0.1){state='Valley Navigation';}
+            else if(ld>5.0){state='Fast Convergence';}
+            if(opt.id==='momentum'){const vm=Math.sqrt(opt.v_x*opt.v_x+opt.v_y*opt.v_y);if(vm>opt.gradMag*1.4&&opt.iter>10)state='Momentum Slingshot';}
+            if((opt.id==='rmsprop'||opt.id==='adam')&&opt.gradMag>2.0&&opt.stepDist<globalLr)state='Adaptive Rescue';
+          }
+        }
+        opt.intelligenceState=state;
+        opt.path.push({x:opt.x,y:opt.y,z:opt.z}); if(opt.path.length>dynamicMaxPath)opt.path.shift();
+        const reached=checkConvergence(s,opt);
+        if(reached){if(opt.status==='Running'){const w=mathToWorld(s,opt.x,opt.y);rippleEvents.push({pos:w.clone().add(new THREE.Vector3(0,0.1,0)),color:opt.colorHex,age:0});}opt.status=reached;}
+      });
+    }
+    // Check completion
+    if(!runCompleted){
+      const active=Object.values(optimizers).filter(o=>o.enabled);
+      if(active.length&&active.some(o=>o.iter>5)&&active.every(o=>o.status!=='Running')){
+        runCompleted=true; globalRunning=false;
+        document.getElementById('btnRun').innerHTML='▶ Run';
+        setTimeout(showIntelligencePanel,450);
+      }
+    }
+  }
+
+  function updateVisuals(){
+    const s=SURFACES[activeSurface];
+    Object.values(optimizers).forEach(opt=>{
+      if(!opt.enabled)return;
+      const w=mathToWorld(s,opt.x,opt.y);
+      if(opt.meshes.markerMesh){
+        opt.meshes.markerMesh.position.set(w.x,w.y+0.12,w.z);
+        opt.meshes.markerGlow.position.set(w.x,w.y+0.12,w.z);
+        let mH=opt.colorHex,eH=opt.glowHex,gH=opt.glowHex;
+        const is=opt.intelligenceState;
+        if(opt.status.includes('Reached')||is==='Converging'||is==='Fast Convergence'){mH=0x10b981;eH=0x059669;gH=0x10b981;}
+        else if(opt.status.includes('Instability')||opt.status.includes('Boundary')||is==='Exploding Gradient'){mH=0xef4444;eH=0xdc2626;gH=0xef4444;}
+        else if(is==='Local Trap'){mH=0x3b82f6;eH=0x2563eb;gH=0x3b82f6;}
+        else if(is==='Overshooting'||is==='Oscillation Detected'){mH=0xf59e0b;eH=0xd97706;gH=0xf59e0b;}
+        else if(is==='Momentum Slingshot'||is==='Valley Navigation'){mH=0xe879f9;eH=0xc026d3;gH=0xe879f9;}
+        opt.meshes.markerMesh.material.color.setHex(mH);
+        opt.meshes.markerMesh.material.emissive.setHex(eH);
+        opt.meshes.markerGlow.material.color.setHex(gH);
+        const vf=Math.min(opt.stepDist*50,1.0);
+        if(is==='Oscillation Detected'||is==='Overshooting'){opt.flickerPhase+=0.35;opt.meshes.markerMesh.material.emissiveIntensity=0.3+0.9*Math.abs(Math.sin(opt.flickerPhase));}
+        else{opt.flickerPhase=0;opt.meshes.markerMesh.material.emissiveIntensity=0.8+vf*0.8;}
+        opt.meshes.markerGlow.material.opacity=0.15+vf*0.45;
+      }
+      ['pathLine','pathLineUnderlay'].forEach((k,ki)=>{
+        if(!opt.meshes[k])return;
+        const pa=opt.meshes[k].geometry.attributes.position.array;
+        const ca=opt.meshes[k].geometry.attributes.color.array;
+        const cnt=opt.path.length;
+        const bc=new THREE.Color(ki===0?opt.colorHex:opt.glowHex);
+        const vb=Math.min(opt.stepDist*60,1.0);
+        for(let i=0;i<cnt;i++){
+          const pt=opt.path[i];const pw=mathToWorld(s,pt.x,pt.y);
+          pa[i*3]=pw.x;pa[i*3+1]=pw.y+0.05;pa[i*3+2]=pw.z;
+          const rt=i/Math.max(1,cnt-1),al=rt*rt*(3-2*rt);
+          const fi=ki===1?al*(0.4+vb*0.5):al;
+          ca[i*3]=bc.r*fi;ca[i*3+1]=bc.g*fi;ca[i*3+2]=bc.b*fi;
+        }
+        opt.meshes[k].geometry.setDrawRange(0,cnt);
+        opt.meshes[k].geometry.attributes.position.needsUpdate=true;
+        opt.meshes[k].geometry.attributes.color.needsUpdate=true;
+      });
+    });
+    for(let i=rippleEvents.length-1;i>=0;i--){
+      const rip=rippleEvents[i]; rip.age+=0.022;
+      if(!rip.ring){rip.ring=new THREE.Mesh(new THREE.RingGeometry(0.01,0.1,32),new THREE.MeshBasicMaterial({color:rip.color,transparent:true,opacity:0.9,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));rip.ring.rotation.x=-Math.PI/2;rip.ring.position.copy(rip.pos);scene.add(rip.ring);}
+      rip.ring.scale.setScalar(1+rip.age*7); rip.ring.material.opacity=Math.max(0,0.9*(1-rip.age));
+      if(rip.age>1){scene.remove(rip.ring);rip.ring.geometry.dispose();rip.ring.material.dispose();rippleEvents.splice(i,1);}
+    }
+    updateComparisonCards();
+  }
+
+  // =============================================
+  // 5. COMPARISON CARDS
+  // =============================================
+  function getStatusDisplay(opt){
+    const is=opt.intelligenceState, st=opt.status;
+    if(st.includes('Global Minimum')||st.includes('Valid Minimum'))return{lbl:'Success',sc:'success'};
+    if(st.includes('Local Minimum'))return{lbl:'Local Trap',sc:'info'};
+    if(st.includes('Boundary'))return{lbl:'Boundary',sc:'error'};
+    if(st.includes('Instability'))return{lbl:'Diverged',sc:'error'};
+    if(st==='Paused')return{lbl:'Paused',sc:'neutral'};
+    if(st==='Ready'||opt.iter===0)return{lbl:'Ready',sc:'neutral'};
+    const m={'Oscillation Detected':'Oscillating','Valley Navigation':'Valley Stall','Momentum Slingshot':'Overshooting','Exploding Gradient':'Diverging','Fast Convergence':'Converging ↓','Stable Descent':'Stable ↓','Converging':'Near Min.','Adaptive Rescue':'Adaptive','Local Trap':'Local Trap','Overshooting':'Overshooting'};
+    const sc={'Oscillation Detected':'warn','Valley Navigation':'warn','Momentum Slingshot':'warn','Overshooting':'warn','Exploding Gradient':'error','Local Trap':'info','Fast Convergence':'success','Stable Descent':'success','Converging':'success','Adaptive Rescue':'success'};
+    return{lbl:m[is]||is||'Running', sc:sc[is]||'neutral'};
+  }
+
+  function updateComparisonCards(){
+    const cont=document.getElementById('comparisonOverlay');
+    if(!cont)return;
+    cont.innerHTML='';
+    Object.values(optimizers).forEach(opt=>{
+      if(!opt.enabled)return;
+      const{lbl,sc}=getStatusDisplay(opt);
+      const card=document.createElement('div');
+      card.className='comp-card';
+      card.style.setProperty('--cc',opt.uiColor);
+      card.innerHTML=`
+        <div class="comp-header">
+          <span class="comp-name">${opt.name}</span>
+          <span class="comp-status-badge st-${sc}">${lbl}</span>
         </div>
-      </div>
-    </div>
-
-    <div class="runtime-dock" id="scrubberDock" style="display: none;">
-      <button id="btnScrubPlay" class="btn-run">⏸ Pause</button>
-      <button id="btnScrubExit" class="btn-dock">Exit Replay</button>
-      <div class="dock-divider"></div>
-      <div class="timeline-container">
-        <input type="range" id="timelineSlider" min="0" max="100" value="0" step="1">
-        <div class="timeline-time"><span id="txtScrubIter">0</span></div>
-      </div>
-    </div>
-  </main>
-
-  <script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-    // ==========================================
-    // 1. MATHEMATICAL SURFACES & WORLD MAPPING
-    // ==========================================
-    const SURFACES = {
-      bowl: {
-        id: 'bowl', name: 'Quadratic Bowl',
-        equation: 'L(x,y) = x² + y²',
-        insight: 'A perfect convex landscape.',
-        challenge: 'Demonstrates baseline convergence.',
-        minimaText: 'Global Minimum: (0.0, 0.0) → L=0',
-        domain: { xmin: -4, xmax: 4, ymin: -4, ymax: 4 },
-        maxDisplayHeight: 3.5, lossClip: 32, // At 4^2 + 4^2 = 32
-        defaultLR: 0.1, startPoint: { x: -3.2, y: 3.0 },
-        minima: [{x: 0, y: 0, z: 0}],
-        f: (x, y) => x*x + y*y,
-        grad: (x, y) => ({ gx: 2*x, gy: 2*y }),
-        camPos: new THREE.Vector3(10, 8, 10),
-        camTarget: new THREE.Vector3(0, 1.0, 0)
-      },
-      rosenbrock: {
-        id: 'rosenbrock', name: 'Rosenbrock Valley',
-        equation: 'L(x,y) = (1-x)² + 100(y-x²)²',
-        insight: 'A narrow, curved, shallow valley.',
-        challenge: 'Hard to navigate the flat valley floor.',
-        minimaText: 'Global Minimum: (1.0, 1.0) → L=0',
-        domain: { xmin: -2, xmax: 2, ymin: -1, ymax: 3 },
-        maxDisplayHeight: 3.5, lossClip: 200, 
-        defaultLR: 0.001, startPoint: { x: -1.5, y: 2.0 },
-        minima: [{x: 1, y: 1, z: 0}],
-        f: (x, y) => Math.pow(1 - x, 2) + 100 * Math.pow(y - x*x, 2),
-        grad: (x, y) => ({
-          gx: -2*(1 - x) - 400*x*(y - x*x),
-          gy: 200*(y - x*x)
-        }),
-        camPos: new THREE.Vector3(-6, 5, 8),
-        camTarget: new THREE.Vector3(1, 0, 1)
-      },
-      himmelblau: {
-        id: 'himmelblau', name: 'Himmelblau Function',
-        equation: 'L(x,y) = (x²+y-11)² + (x+y²-7)²',
-        insight: 'Multi-modal with four identical global minima.',
-        challenge: 'Initialization determines final minimum.',
-        minimaText: '4 Global Minima → L=0',
-        domain: { xmin: -5, xmax: 5, ymin: -5, ymax: 5 },
-        maxDisplayHeight: 3.5, lossClip: 200,
-        defaultLR: 0.01, startPoint: { x: 0, y: 0 },
-        minima: [
-          {x: 3.0, y: 2.0, z: 0},
-          {x: -2.805118, y: 3.131312, z: 0},
-          {x: -3.779310, y: -3.283186, z: 0},
-          {x: 3.584428, y: -1.848126, z: 0}
-        ],
-        f: (x, y) => Math.pow(x*x + y - 11, 2) + Math.pow(x + y*y - 7, 2),
-        grad: (x, y) => ({
-          gx: 4*x*(x*x + y - 11) + 2*(x + y*y - 7),
-          gy: 2*(x*x + y - 11) + 4*y*(x + y*y - 7)
-        }),
-        camPos: new THREE.Vector3(0, 10, 14),
-        camTarget: new THREE.Vector3(0, 0, 0)
-      },
-      rastrigin: {
-        id: 'rastrigin', name: 'Rastrigin Function',
-        equation: 'L(x,y) = 20 + x² - 10cos(2πx) + y² - 10cos(2πy)',
-        insight: 'Highly multimodal with deep local traps.',
-        challenge: 'Vanilla GD gets stuck easily.',
-        minimaText: 'Global Minimum: (0.0, 0.0) → L=0',
-        domain: { xmin: -5.12, xmax: 5.12, ymin: -5.12, ymax: 5.12 },
-        maxDisplayHeight: 3.5, lossClip: 80,
-        defaultLR: 0.005, startPoint: { x: -4.5, y: -4.5 },
-        minima: [{x: 0, y: 0, z: 0}],
-        f: (x, y) => 20 + x*x - 10*Math.cos(2*Math.PI*x) + y*y - 10*Math.cos(2*Math.PI*y),
-        grad: (x, y) => ({
-          gx: 2*x + 20*Math.PI*Math.sin(2*Math.PI*x),
-          gy: 2*y + 20*Math.PI*Math.sin(2*Math.PI*y)
-        }),
-        camPos: new THREE.Vector3(8, 6, 11),
-        camTarget: new THREE.Vector3(0, 0, 0)
-      }
-    };
-
-    let activeSurface = 'bowl';
-    let currentStart = { ...SURFACES.bowl.startPoint };
-    
-    // Core Coordinate Mapping Functions
-    // ---------------------------------
-    // World X corresponds to mathematical x.
-    // World Z corresponds to mathematical y.
-    // World Y corresponds to readable display height.
-
-    function trueLoss(s, x, y) {
-      return s.f(x, y);
-    }
-
-    function getDisplayHeight(s, tl) {
-      // Normalize raw loss into an aesthetically pleasing height (maxDisplayHeight)
-      const clampedLoss = Math.min(Math.max(tl, 0), s.lossClip);
-      return (clampedLoss / s.lossClip) * s.maxDisplayHeight;
-    }
-
-    function mathToWorld(s, x, y) {
-      const tl = trueLoss(s, x, y);
-      const h = getDisplayHeight(s, tl);
-      return new THREE.Vector3(x, h, y); // x -> X, h -> Y, y -> Z
-    }
-
-    function worldToMath(s, worldPoint) {
-      return { x: worldPoint.x, y: worldPoint.z };
-    }
-
-    // ==========================================
-    // 2. OPTIMIZER STATE & INTELLIGENCE
-    // ==========================================
-    let globalRunning = false;
-    let globalSpeed = 10;
-    let globalLr = 0.01;
-    const MAX_PATH = 2000;
-    const MIN_PATH = 400;  // FPS-adaptive floor
-
-    // Per-optimizer personality hyperparameters (intentionally tuned for visual drama)
-    const OPT_PERSONALITY = {
-      gd:       { gradClip: 4.0,  lrMult: 1.0,  beta: 0,    beta2: 0 },   // raw, unstable
-      momentum: { gradClip: 0,    lrMult: 1.0,  beta: 0.93, beta2: 0 },   // aggressive carry
-      rmsprop:  { gradClip: 0,    lrMult: 2.5,  beta: 0.95, eps: 1e-7 },  // adaptive, tight
-      adam:     { gradClip: 2.0,  lrMult: 3.0,  beta1: 0.9, beta2: 0.999, eps: 1e-8 } // smart, smooth
-    };
-
-    const optimizers = {
-      gd: {
-        id: 'gd', name: 'Vanilla GD', colorHex: 0xff3366, glowHex: 0xff0033, uiColor: '#ff3366', enabled: true,
-        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
-        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
-        stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
-      },
-      momentum: {
-        id: 'momentum', name: 'Momentum', colorHex: 0x0ea5e9, glowHex: 0x0284c7, uiColor: '#0ea5e9', enabled: true,
-        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
-        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
-        v_x: 0, v_y: 0, stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
-      },
-      rmsprop: {
-        id: 'rmsprop', name: 'RMSProp', colorHex: 0xa855f7, glowHex: 0x9333ea, uiColor: '#a855f7', enabled: true,
-        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
-        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
-        s_x: 1e-8, s_y: 1e-8, stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
-      },
-      adam: {
-        id: 'adam', name: 'Adam', colorHex: 0x10b981, glowHex: 0x059669, uiColor: '#10b981', enabled: true,
-        status: 'Ready', intelligenceState: 'Ready', intelligenceContext: 'Waiting to start.',
-        x: 0, y: 0, z: 0, gradMag: 0, iter: 0, path: [], lossHistory: [], dirHistory: [],
-        m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, stepDist: 0, convergePulse: 0, flickerPhase: 0, meshes: {}
-      }
-    };
-
-    let isVectorFieldVisible = true;
-    let currentVectorDensity = 25;
-    let vectorFieldMesh = null;
-
-    // Cinematic camera
-    let isCinematicMode = false;
-    let cinematicLastInteract = 0;
-    const cinematicTarget = new THREE.Vector3();
-    const cinematicCamPos = new THREE.Vector3();
-    let cinematicReady = false;
-
-    // FPS tracking
-    let lastFrameTime = performance.now();
-    let fpsSmoothed = 60;
-    let dynamicMaxPath = MAX_PATH;
-
-    // Ripple event queue (convergence FX)
-    const rippleEvents = [];
-
-    // ==========================================
-    // PHASE 1F — STATE
-    // ==========================================
-
-    // Convergence Graph
-    const graphHistory = { gd: [], momentum: [], rmsprop: [], adam: [] };
-    const GRAPH_MAX_SAMPLES = 300;
-    let graphFrameCounter = 0;
-
-    // Ghost Trails
-    let isGhostMode = false;
-    const ghostTrails = []; // [{id, color, positions[]}] — max 3 sets
-    const ghostMeshes = []; // THREE.Line objects
-
-    // Replay
-    const replayBuffer = {}; // { id: [{x,y,z}] }
-    let isReplaying = false;
-    let replayFrame = 0;
-
-    // Visualization mode
-    let currentVizMode = 'surface'; // 'surface' | 'wireframe' | 'heatmap' | 'contour'
-    let wireframeMesh = null;
-    let heatmapPlaneMesh = null;
-    let contourLineMeshes = [];
-
-    // Intro camera animation
-    let introLerpT = 0;
-    let introLerpActive = false;
-    let introTargetCamPos = new THREE.Vector3();
-    let introTargetCamLook = new THREE.Vector3();
-    let introStartCamPos = new THREE.Vector3();
-
-    // Ranking throttle
-    let rankingCounter = 0;
-
-    // Educational tooltip data
-    const EDU_DATA = {
-      gd:       { title: 'Vanilla GD', text: 'Raw gradient steps. Zigzags in narrow valleys, overshoots sharp curves. Simple but unstable.' },
-      momentum: { title: 'Momentum', text: 'Accumulates velocity from past gradients. Overshoots minima but escapes flat plateaus with kinetic carry.' },
-      rmsprop:  { title: 'RMSProp', text: 'Scales LR per-dimension using gradient history. Tighter in narrow valleys, avoids oscillation naturally.' },
-      adam:     { title: 'Adam', text: 'Combines Momentum + RMSProp with bias correction. Fastest convergence on most loss landscapes.' },
-      'Oscillation Detected': { title: 'Oscillation', text: 'Direction reverses each step — LR is too high for local curvature. Optimizer is bouncing across the valley.' },
-      'Valley Navigation':    { title: 'Valley Navigation', text: 'Gradient is mostly perpendicular to the valley. Optimizer struggles to sense the descent direction.' },
-      'Momentum Slingshot':   { title: 'Momentum Slingshot', text: 'Accumulated velocity exceeds the current gradient signal — kinetic carry is actively overshooting.' },
-      'Local Trap':           { title: 'Local Trap', text: 'Gradient has vanished but we are far from the global minimum. Stuck in a local basin.' },
-      'Adaptive Rescue':      { title: 'Adaptive Rescue', text: 'Large gradient detected, but adaptive scaling keeps the step small — preventing divergence.' },
-      'Converging':           { title: 'Converging', text: 'Fine-grained approach to the minimum. Loss delta is now extremely small.' }
-    };
-
-    // ==========================================
-    // PHASE 2 — SYSTEM MANAGERS
-    // ==========================================
-
-    let isResearchMode = false;
-    let isVectorsVisible = false;
-
-    class PresetManager {
-      static apply(presetKey) {
-        if(presetKey === 'none') return;
-        const presets = {
-          rosenbrock_struggle: {
-            surface: 'rosenbrock', start: {x:-1.8, y:1.8},
-            opts: { gd:true, adam:true, momentum:false, rmsprop:false },
-            lr: 0.001, speed: 20, mode: 'contour', cine: true
-          },
-          rastrigin_trap: {
-            surface: 'rastrigin', start: {x:-4.0, y:-4.0},
-            opts: { gd:true, momentum:true, adam:true, rmsprop:true },
-            lr: 0.01, speed: 10, mode: 'surface', cine: true
-          },
-          momentum_overshoot: {
-            surface: 'bowl', start: {x:-3.5, y:-1.0},
-            opts: { gd:true, momentum:true, rmsprop:false, adam:false },
-            lr: 0.1, speed: 15, mode: 'surface', cine: false
-          },
-          adam_fast: {
-            surface: 'himmelblau', start: {x:-4.5, y:-4.5},
-            opts: { gd:true, rmsprop:true, adam:true, momentum:false },
-            lr: 0.02, speed: 10, mode: 'wireframe', cine: false
-          }
-        };
-        const p = presets[presetKey];
-        if(!p) return;
-        
-        document.getElementById('surfaceSelect').value = p.surface;
-        currentStart = p.start;
-        globalLr = p.lr;
-        globalSpeed = p.speed;
-        document.getElementById('lrSlider').value = Math.log10(p.lr);
-        document.getElementById('lrVal').textContent = p.lr;
-        document.getElementById('speedSlider').value = p.speed;
-        document.getElementById('speedVal').textContent = p.speed;
-        
-        Object.keys(optimizers).forEach(k => {
-          optimizers[k].enabled = p.opts[k];
-          const pill = document.querySelector(`.opt-pill[data-opt="${k}"]`);
-          if(pill) pill.classList.toggle('active', p.opts[k]);
-        });
-        
-        // This relies on the setVizMode function which handles cleanup
-        setVizMode(p.mode);
-        document.querySelectorAll('.viz-btn').forEach(b => {
-          b.classList.toggle('active', b.getAttribute('data-viz') === p.mode);
-        });
-
-        isCinematicMode = p.cine;
-        document.getElementById('btnCinematic').classList.toggle('active', p.cine);
-        
-        loadSurface(p.surface);
-      }
-    }
-
-    class ParameterManager {
-      static init() {
-        const bind = (id, obj, key) => {
-          const el = document.getElementById(id);
-          const val = document.getElementById(id.replace('p_','v_'));
-          if(!el || !val) return;
-          el.addEventListener('input', (e) => {
-            const v = parseFloat(e.target.value);
-            val.textContent = v;
-            OPT_PERSONALITY[obj][key] = v;
-          });
-        };
-        bind('p_mom_lr', 'momentum', 'lrMult');
-        bind('p_mom_b', 'momentum', 'beta');
-        bind('p_rms_lr', 'rmsprop', 'lrMult');
-        bind('p_rms_b', 'rmsprop', 'beta');
-        bind('p_adm_lr', 'adam', 'lrMult');
-        bind('p_adm_b1', 'adam', 'beta1');
-        bind('p_adm_b2', 'adam', 'beta2');
-      }
-    }
-
-    class TournamentManager {
-      static active = false;
-      static ranks = [];
-      static start() {
-        if(this.active) return;
-        this.active = true;
-        this.ranks = [];
-        resetOptimizer();
-        document.getElementById('btnTourney').innerHTML = '🏁 Racing...';
-        document.getElementById('tourneyModal').classList.remove('visible');
-        globalRunning = true;
-      }
-      static check() {
-        if(!this.active) return;
-        let allDone = true;
-        Object.values(optimizers).forEach(opt => {
-          if(!opt.enabled) return;
-          if(opt.status !== 'Reached Minimum' && opt.iter < 3000) {
-            allDone = false;
-          } else if(!this.ranks.find(r => r.id === opt.id)) {
-            this.ranks.push({
-              id: opt.id, name: opt.name, color: opt.uiColor, iter: opt.iter,
-              loss: opt.z, osc: opt.dirHistory.length > 5 ? 'High' : 'Low'
-            });
-          }
-        });
-        if(allDone) this.finish();
-      }
-      static finish() {
-        this.active = false;
-        globalRunning = false;
-        document.getElementById('btnRun').innerHTML = '▶ Run';
-        document.getElementById('btnTourney').innerHTML = '🏆 Race';
-        
-        const html = this.ranks.map((r, i) => `
-          <div class="tourney-row" style="border-left-color: ${r.color}">
-            <div class="tourney-rank">#${i+1}</div>
-            <div class="tourney-details">
-              <div class="tourney-name">${r.name}</div>
-              <div class="tourney-stats">Iter: ${r.iter} | Final Loss: ${r.loss.toExponential(2)}</div>
-            </div>
-          </div>
-        `).join('');
-        document.getElementById('tourneyResults').innerHTML = html;
-        document.getElementById('tourneyModal').classList.add('visible');
-      }
-    }
-
-    class ExportManager {
-      static downloadJSON() {
-        const payload = {
-          surface: activeSurface, lr: globalLr, speed: globalSpeed, hyperparams: OPT_PERSONALITY,
-          results: Object.keys(optimizers).map(k => {
-            const o = optimizers[k];
-            return { id: o.id, enabled: o.enabled, iterations: o.iter, finalLoss: o.z };
-          })
-        };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
-        const a = document.createElement('a'); a.href = dataStr; a.download = `opt_run_${Date.now()}.json`; a.click();
-      }
-      static downloadPNG() {
-        renderer.preserveDrawingBuffer = true;
-        renderer.render(scene, camera);
-        const dataURL = renderer.domElement.toDataURL('image/png');
-        renderer.preserveDrawingBuffer = false;
-        const a = document.createElement('a'); a.href = dataURL; a.download = `opt_snap_${Date.now()}.png`; a.click();
-      }
-    }
-
-    class CameraManager {
-      static savedPos = null;
-      static savedTarget = null;
-      static save() {
-        this.savedPos = camera.position.clone();
-        this.savedTarget = controls.target.clone();
-        const btn = document.getElementById('btnSaveCam');
-        if(btn) { btn.innerHTML = '✅ Saved'; setTimeout(() => btn.innerHTML = '📷 Save', 1000); }
-      }
-      static restore() {
-        if(!this.savedPos) return;
-        introStartCamPos.copy(camera.position);
-        introTargetCamPos.copy(this.savedPos);
-        introTargetCamLook.copy(this.savedTarget);
-        introLerpT = 0;
-        introLerpActive = true;
-      }
-    }
-
-    class ReplayTimelineManager {
-      static isDragging = false;
-      static maxFrames = 0;
-      
-      static init() {
-        const slider = document.getElementById('timelineSlider');
-        if(!slider) return;
-        slider.addEventListener('mousedown', () => this.isDragging = true);
-        slider.addEventListener('touchstart', () => this.isDragging = true);
-        slider.addEventListener('mouseup', () => this.isDragging = false);
-        slider.addEventListener('touchend', () => this.isDragging = false);
-        slider.addEventListener('input', (e) => {
-          this.setFrame(parseInt(e.target.value));
-        });
-      }
-      
-      static start() {
-        this.maxFrames = 0;
-        Object.keys(replayBuffer).forEach(id => {
-          if(replayBuffer[id] && replayBuffer[id].length > this.maxFrames) {
-            this.maxFrames = replayBuffer[id].length;
-          }
-        });
-        const slider = document.getElementById('timelineSlider');
-        if(slider) {
-          slider.max = Math.max(0, this.maxFrames - 1);
-          slider.value = 0;
-        }
-        document.getElementById('mainDock').style.display = 'none';
-        document.getElementById('scrubberDock').style.display = 'flex';
-        document.getElementById('btnScrubPlay').innerHTML = '⏸ Pause';
-        this.setFrame(0);
-      }
-      
-      static stop() {
-        isReplaying = false;
-        document.getElementById('mainDock').style.display = 'flex';
-        document.getElementById('scrubberDock').style.display = 'none';
-        document.getElementById('btnReplay').classList.remove('active');
-        document.getElementById('btnScrubPlay').innerHTML = '⏸ Pause';
-      }
-      
-      static advance(speed) {
-        if(replayFrame >= this.maxFrames - 1) {
-          document.getElementById('btnScrubPlay').innerHTML = '▶ Play';
-          return;
-        }
-        this.setFrame(replayFrame + speed);
-      }
-      
-      static setFrame(f) {
-        replayFrame = Math.min(Math.max(0, f), this.maxFrames - 1);
-        const slider = document.getElementById('timelineSlider');
-        if(slider && !this.isDragging) slider.value = replayFrame;
-        document.getElementById('txtScrubIter').textContent = replayFrame;
-        
-        const s = SURFACES[activeSurface];
-        Object.keys(replayBuffer).forEach(id => {
-          const opt = optimizers[id];
-          const buf = replayBuffer[id];
-          if (!opt.enabled || !buf) return;
-          
-          const bf = Math.min(replayFrame, buf.length - 1);
-          const p = buf[bf];
-          
-          const pw = mathToWorld(s, p.x, p.y);
-          if (opt.meshes.markerMesh) opt.meshes.markerMesh.position.set(pw.x, pw.y + 0.12, pw.z);
-          if (opt.meshes.markerGlow) opt.meshes.markerGlow.position.set(pw.x, pw.y + 0.12, pw.z);
-          if (opt.meshes.pathLine) opt.meshes.pathLine.geometry.setDrawRange(0, bf + 1);
-          if (opt.meshes.pathLineUnderlay) opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, bf + 1);
-        });
-      }
-    }
-
-    // ==========================================
-    // 3. THREE.JS SETUP
-    // ==========================================
-    const container = document.getElementById('threeCanvasHost');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#030305');
-    scene.fog = new THREE.FogExp2('#030305', 0.04);
-    
-    const camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    // Advanced Lighting Rig
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-    
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6);
-    hemiLight.position.set(0, 10, 0);
-    scene.add(hemiLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLight.position.set(10, 20, 10);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    scene.add(dirLight);
-
-    const rimLight = new THREE.DirectionalLight(0xa5b4fc, 0.8);
-    rimLight.position.set(-15, 5, -15);
-    scene.add(rimLight);
-
-    // Mathematical Stage Polish
-    const gridHelper = new THREE.GridHelper(12, 24, 0x444455, 0x222233);
-    gridHelper.position.y = -0.05;
-    gridHelper.material.transparent = true;
-    gridHelper.material.opacity = 0.15;
-    scene.add(gridHelper);
-
-    const axesHelper = new THREE.AxesHelper(4);
-    axesHelper.material.transparent = true;
-    axesHelper.material.opacity = 0.4;
-    scene.add(axesHelper);
-
-    let surfaceMesh = null;
-    let startMarkerMesh = null;
-    const minimaMeshes = [];
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    let isPickingStart = false;
-    let pointerDownCoord = { x: 0, y: 0 };
-
-    // Cool colormap (YlGnBu-ish)
-    function getColorMap(t) {
-      const c = new THREE.Color();
-      c.setHSL(0.6 - t * 0.45, 0.8, 0.3 + t * 0.4);
-      return c;
-    }
-
-    function buildSurfaceMesh(sKey) {
-      if (surfaceMesh) scene.remove(surfaceMesh);
-      const s = SURFACES[sKey];
-      
-      const res = 100;
-      const geometry = new THREE.PlaneGeometry(s.domain.xmax - s.domain.xmin, s.domain.ymax - s.domain.ymin, res, res);
-      geometry.rotateX(-Math.PI / 2); // default face up towards Y
-
-      const pos = geometry.attributes.position;
-      const colors = [];
-      
-      let minH = Infinity, maxH = -Infinity;
-      const heights = [];
-      
-      for (let i = 0; i < pos.count; i++) {
-        // Plane geometry is generated centered at (0,0) in XZ.
-        // We shift it to match domain center.
-        const mathX = pos.getX(i) + (s.domain.xmax + s.domain.xmin)/2;
-        const mathY = pos.getZ(i) + (s.domain.ymax + s.domain.ymin)/2;
-        
-        const wPos = mathToWorld(s, mathX, mathY);
-        pos.setX(i, wPos.x);
-        pos.setY(i, wPos.y);
-        pos.setZ(i, wPos.z);
-        
-        heights.push(wPos.y);
-        if (wPos.y < minH) minH = wPos.y;
-        if (wPos.y > maxH) maxH = wPos.y;
-      }
-      
-      geometry.computeVertexNormals();
-
-      for (let i = 0; i < pos.count; i++) {
-        const t = (heights[i] - minH) / (maxH - minH + 1e-6);
-        const col = getColorMap(t);
-        colors.push(col.r, col.g, col.b);
-      }
-      
-      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      
-      // Premium Material
-      const material = new THREE.MeshPhysicalMaterial({
-        vertexColors: true,
-        side: THREE.DoubleSide,
-        roughness: 0.6,
-        metalness: 0.1,
-        clearcoat: 0.3,
-        clearcoatRoughness: 0.4,
-        transparent: true,
-        opacity: 0.95
-      });
-      
-      surfaceMesh = new THREE.Mesh(geometry, material);
-      surfaceMesh.receiveShadow = true;
-      surfaceMesh.castShadow = true;
-      scene.add(surfaceMesh);
-
-      const wireMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05 });
-      const wireGeom = new THREE.WireframeGeometry(geometry);
-      const wireMesh = new THREE.LineSegments(wireGeom, wireMat);
-      surfaceMesh.add(wireMesh);
-    }
-
-    function generateHeatmapTexture(sKey) {
-      if (heatmapPlaneMesh) {
-        scene.remove(heatmapPlaneMesh);
-        heatmapPlaneMesh.geometry.dispose();
-        heatmapPlaneMesh.material.dispose();
-        if (heatmapPlaneMesh.material.map) heatmapPlaneMesh.material.map.dispose();
-        heatmapPlaneMesh = null;
-      }
-      const s = SURFACES[sKey];
-      
-      const res = 256;
-      const cvs = document.createElement('canvas');
-      cvs.width = res; cvs.height = res;
-      const ctx = cvs.getContext('2d');
-      const imgData = ctx.createImageData(res, res);
-      
-      let minL = Infinity, maxL = -Infinity;
-      const raw = new Float32Array(res * res);
-      let idx = 0;
-      for(let j = 0; j < res; j++) {
-        for(let i = 0; i < res; i++) {
-          const x = s.domain.xmin + (i / (res-1)) * (s.domain.xmax - s.domain.xmin);
-          const y = s.domain.ymin + ((res - 1 - j) / (res-1)) * (s.domain.ymax - s.domain.ymin);
-          const l = trueLoss(s, x, y);
-          raw[idx++] = l;
-          if(l < minL) minL = l;
-          if(l > maxL) maxL = l;
-        }
-      }
-      
-      idx = 0;
-      for(let j = 0; j < res; j++) {
-        for(let i = 0; i < res; i++) {
-          const l = raw[idx];
-          const t = Math.min(1, Math.max(0, (l - minL) / (Math.min(maxL, s.lossClip) - minL + 1e-6)));
-          const col = getColorMap(t);
-          const px = (j * res + i) * 4;
-          imgData.data[px] = col.r * 255;
-          imgData.data[px+1] = col.g * 255;
-          imgData.data[px+2] = col.b * 255;
-          imgData.data[px+3] = 200;
-          idx++;
-        }
-      }
-      ctx.putImageData(imgData, 0, 0);
-      
-      const tex = new THREE.CanvasTexture(cvs);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
-      const width = s.domain.xmax - s.domain.xmin;
-      const height = s.domain.ymax - s.domain.ymin;
-      const geo = new THREE.PlaneGeometry(width, height);
-      heatmapPlaneMesh = new THREE.Mesh(geo, mat);
-      heatmapPlaneMesh.rotation.x = -Math.PI / 2;
-      heatmapPlaneMesh.position.y = 0.05;
-      heatmapPlaneMesh.visible = (currentVizMode === 'heatmap');
-      scene.add(heatmapPlaneMesh);
-    }
-
-    function buildContourLines(sKey) {
-      contourLineMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-      contourLineMeshes = [];
-      const s = SURFACES[sKey];
-      
-      const res = 150;
-      const maxH = s.maxDisplayHeight;
-      const numContours = 20;
-      
-      const geo = new THREE.BufferGeometry();
-      const pos = [];
-      for(let j=0; j<res; j++) {
-        for(let i=0; i<res; i++) {
-          const x = s.domain.xmin + (i / (res-1)) * (s.domain.xmax - s.domain.xmin);
-          const y = s.domain.ymin + (j / (res-1)) * (s.domain.ymax - s.domain.ymin);
-          const h = getDisplayHeight(s, trueLoss(s, x, y));
-          const level = h * (numContours / maxH);
-          if (Math.abs(level - Math.round(level)) < 0.08) {
-            pos.push(x, 0.05, y);
-          }
-        }
-      }
-      if(pos.length > 0) {
-         geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-         const mat = new THREE.PointsMaterial({ color: 0x6366f1, size: 0.03, transparent: true, opacity: 0.6 });
-         const mesh = new THREE.Points(geo, mat);
-         mesh.visible = (currentVizMode === 'contour');
-         scene.add(mesh);
-         contourLineMeshes.push(mesh);
-      }
-    }
-
-    function initMarkers(sKey) {
-      const s = SURFACES[sKey];
-      
-      Object.values(optimizers).forEach(opt => {
-        if (opt.meshes.markerMesh) scene.remove(opt.meshes.markerMesh);
-        if (opt.meshes.markerGlow) scene.remove(opt.meshes.markerGlow);
-      });
-      if (startMarkerMesh) scene.remove(startMarkerMesh);
-      minimaMeshes.forEach(m => scene.remove(m));
-      minimaMeshes.length = 0;
-
-      // Current markers - Premium emissive
-      Object.values(optimizers).forEach(opt => {
-        const geomMarker = new THREE.SphereGeometry(opt.id === 'gd' ? 0.1 : 0.12, 32, 32);
-        const matMarker = new THREE.MeshPhysicalMaterial({
-          color: opt.colorHex, emissive: opt.glowHex, emissiveIntensity: 0.8,
-          roughness: 0.2, metalness: 0.1, clearcoat: 1.0
-        });
-        opt.meshes.markerMesh = new THREE.Mesh(geomMarker, matMarker);
-        scene.add(opt.meshes.markerMesh);
-        
-        // Marker Glow
-        const geomGlow = new THREE.SphereGeometry(0.25, 32, 32);
-        const matGlow = new THREE.MeshBasicMaterial({ color: opt.glowHex, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
-        opt.meshes.markerGlow = new THREE.Mesh(geomGlow, matGlow);
-        scene.add(opt.meshes.markerGlow);
-
-        opt.meshes.markerMesh.visible = opt.enabled;
-        opt.meshes.markerGlow.visible = opt.enabled;
-
-        // Velocity Vectors
-        if (opt.meshes.arrowMesh) { scene.remove(opt.meshes.arrowMesh); opt.meshes.arrowMesh.dispose?.(); }
-        if (opt.id === 'momentum' || opt.id === 'adam') {
-          const dir = new THREE.Vector3(1, 0, 0);
-          opt.meshes.arrowMesh = new THREE.ArrowHelper(dir, new THREE.Vector3(0,0,0), 0.5, opt.colorHex, 0.15, 0.1);
-          scene.add(opt.meshes.arrowMesh);
-          opt.meshes.arrowMesh.visible = false;
-        }
-      });
-
-      // Start marker - Elegant
-      const geomStart = new THREE.OctahedronGeometry(0.15);
-      const matStart = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.8 });
-      startMarkerMesh = new THREE.Mesh(geomStart, matStart);
-      scene.add(startMarkerMesh);
-
-      // Minima - Premium mint
-      const geomMin = new THREE.SphereGeometry(0.12, 32, 32);
-      const matMin = new THREE.MeshPhysicalMaterial({
-        color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.5,
-        roughness: 0.3, metalness: 0.2, clearcoat: 0.8
-      });
-      for (const m of s.minima) {
-        const mesh = new THREE.Mesh(geomMin, matMin);
-        const wPos = mathToWorld(s, m.x, m.y);
-        mesh.position.set(wPos.x, wPos.y + 0.1, wPos.z);
-        scene.add(mesh);
-        
-        // Minima glow
-        const mGlow = new THREE.Mesh(
-          new THREE.SphereGeometry(0.2, 16, 16),
-          new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending })
-        );
-        mesh.add(mGlow);
-        minimaMeshes.push(mesh);
-      }
-    }
-
-    function initPathTrace() {
-      Object.values(optimizers).forEach(opt => {
-        if (opt.meshes.pathLine) scene.remove(opt.meshes.pathLine);
-        if (opt.meshes.pathLineUnderlay) scene.remove(opt.meshes.pathLineUnderlay);
-
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(MAX_PATH * 3);
-        const colors = new Float32Array(MAX_PATH * 3);
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        geometry.setDrawRange(0, 0);
-
-        // Path personality styling
-        let coreWidth = 2, underWidth = 2, opacity = 1.0;
-        if (opt.id === 'gd') { coreWidth = 1.5; underWidth = 1.5; opacity = 0.8; }
-        if (opt.id === 'momentum') { coreWidth = 2; underWidth = 3; opacity = 0.9; }
-        if (opt.id === 'rmsprop') { coreWidth = 1.5; underWidth = 2.5; opacity = 0.7; } // Dashed feel is tricky in BasicLine, so we use opacity
-        if (opt.id === 'adam') { coreWidth = 2.5; underWidth = 4; opacity = 1.0; }
-
-        const matUnder = new THREE.LineBasicMaterial({ 
-          vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: underWidth, opacity: opacity * 0.5 
-        });
-        opt.meshes.pathLineUnderlay = new THREE.Line(geometry, matUnder);
-        scene.add(opt.meshes.pathLineUnderlay);
-
-        const geometry2 = geometry.clone();
-        const matCore = new THREE.LineBasicMaterial({ 
-          vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, linewidth: coreWidth, opacity: opacity 
-        });
-        opt.meshes.pathLine = new THREE.Line(geometry2, matCore);
-        scene.add(opt.meshes.pathLine);
-
-        opt.meshes.pathLine.visible = opt.enabled;
-        opt.meshes.pathLineUnderlay.visible = opt.enabled;
-      });
-    }
-
-    function resetCamera(sKey) {
-      const s = SURFACES[sKey];
-      camera.position.copy(s.camPos);
-      controls.target.copy(s.camTarget);
-      controls.update();
-    }
-
-    function loadSurface(sKey) {
-      const s = SURFACES[sKey];
-      activeSurface = sKey;
-      currentStart = { ...s.startPoint };
-      
-      document.getElementById('infoEq').textContent = s.equation;
-      document.getElementById('infoInsight').textContent = s.insight;
-      document.getElementById('infoChallenge').textContent = s.challenge;
-      document.getElementById('infoMinima').textContent = s.minimaText;
-
-      // Clear ghost trails on surface change
-      clearGhostMeshes();
-
-      // Reset graph history
-      Object.keys(graphHistory).forEach(k => { graphHistory[k] = []; });
-
-      // Reset viz mode to surface
-      setVizMode('surface');
-
-      buildSurfaceMesh(sKey);
-      initMarkers(sKey);
-      initPathTrace();
-      buildVectorField(sKey);
-      resetCamera(sKey);
-
-      // Trigger intro camera animation (lerp from current pos)
-      introStartCamPos.copy(camera.position);
-      introTargetCamPos.copy(s.camPos);
-      introTargetCamLook.copy(s.camTarget);
-      introLerpT = 0;
-      introLerpActive = true;
-
-      resetOptimizer();
-
-      // Flash the stage for reset feedback
-      const host = document.getElementById('threeCanvasHost');
-      host.classList.remove('stage-flash');
-      void host.offsetWidth; // reflow
-      host.classList.add('stage-flash');
-    }
-
-    function buildVectorField(sKey) {
-      if (vectorFieldMesh) {
-         scene.remove(vectorFieldMesh);
-         vectorFieldMesh.geometry.dispose();
-         vectorFieldMesh.material.dispose();
-         vectorFieldMesh = null;
-      }
-      if (!isVectorFieldVisible) return;
-      
-      const s = SURFACES[sKey];
-      let density = currentVectorDensity;
-      if (s.id === 'rosenbrock') density = Math.min(density, 20); // readability
-      if (s.id === 'rastrigin') density = Math.min(density, 15); // avoid chaos
-      
-      const pts = [];
-      const colors = [];
-      
-      const xRange = s.domain.xmax - s.domain.xmin;
-      const yRange = s.domain.ymax - s.domain.ymin;
-      
-      const stepX = xRange / density;
-      const stepY = yRange / density;
-      
-      for(let i=0; i<=density; i++) {
-        for(let j=0; j<=density; j++) {
-           const mx = s.domain.xmin + i * stepX;
-           const my = s.domain.ymin + j * stepY;
-           
-           const mz = trueLoss(s, mx, my);
-           if (!isFinite(mz)) continue;
-           
-           const g = s.grad(mx, my);
-           const gradMag = Math.sqrt(g.gx*g.gx + g.gy*g.gy);
-           if (gradMag < 1e-6) continue;
-           
-           const dx = -g.gx / gradMag;
-           const dy = -g.gy / gradMag;
-           
-           const stepSize = Math.min(xRange, yRange) * 0.025; 
-           
-           const mx2 = mx + dx * stepSize;
-           const my2 = my + dy * stepSize;
-           
-           const w1 = mathToWorld(s, mx, my);
-           const w2 = mathToWorld(s, mx2, my2);
-           
-           pts.push(w1.x, w1.y + 0.02, w1.z); 
-           pts.push(w2.x, w2.y + 0.02, w2.z); 
-           
-           colors.push(0, 0, 0); 
-           colors.push(0.2, 0.8, 1.0); 
-        }
-      }
-      
-      const geom = new THREE.BufferGeometry();
-      geom.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-      geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      
-      const mat = new THREE.LineBasicMaterial({
-         vertexColors: true,
-         transparent: true,
-         blending: THREE.AdditiveBlending,
-         opacity: 0.5
-      });
-      
-      vectorFieldMesh = new THREE.LineSegments(geom, mat);
-      scene.add(vectorFieldMesh);
-    }
-
-    // ==========================================
-    // 4. OPTIMIZER LOGIC
-    // ==========================================
-    function checkConvergence(s, opt) {
-      if (s.id === 'bowl' || s.id === 'rosenbrock') {
-        const m = s.minima[0];
-        const dist = Math.sqrt(Math.pow(opt.x - m.x, 2) + Math.pow(opt.y - m.y, 2));
-        if (dist < 0.015 || (opt.gradMag < 0.001 && dist < 0.1)) return 'Global Minimum Reached';
-      } else if (s.id === 'himmelblau') {
-        for (let m of s.minima) {
-          const dist = Math.sqrt(Math.pow(opt.x - m.x, 2) + Math.pow(opt.y - m.y, 2));
-          if (dist < 0.02) return 'Valid Minimum Reached';
-        }
-      } else if (s.id === 'rastrigin') {
-        const m = s.minima[0]; // (0,0)
-        const dist = Math.sqrt(Math.pow(opt.x - m.x, 2) + Math.pow(opt.y - m.y, 2));
-        if (dist < 0.02) return 'Global Minimum Reached';
-        if (opt.gradMag < 0.01 && dist >= 0.02) return 'Local Minimum Trap Detected';
-      }
-      return null;
-    }
-
-    function clearGhostMeshes() {
-      ghostMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-      ghostMeshes.length = 0;
-      ghostTrails.length = 0;
-    }
-
-    function snapshotGhostTrails() {
-      const s = SURFACES[activeSurface];
-      Object.values(optimizers).forEach(opt => {
-        if (!opt.enabled || opt.path.length < 5) return;
-        const pts = opt.path.map(p => {
-          const w = mathToWorld(s, p.x, p.y);
-          return new THREE.Vector3(w.x, w.y + 0.05, w.z);
-        });
-        ghostTrails.push({ id: opt.id, color: opt.glowHex, positions: pts });
-      });
-      
-      // Max 12 trails (3 runs * 4 optimizers)
-      while (ghostTrails.length > 12) ghostTrails.shift();
-      
-      ghostMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
-      ghostMeshes.length = 0;
-      
-      ghostTrails.forEach(trail => {
-        const geo = new THREE.BufferGeometry().setFromPoints(trail.positions);
-        const mat = new THREE.LineBasicMaterial({ color: trail.color, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending });
-        const mesh = new THREE.Line(geo, mat);
-        mesh.visible = isGhostMode;
-        scene.add(mesh);
-        ghostMeshes.push(mesh);
-      });
-    }
-
-    function snapshotReplayBuffer() {
-      Object.values(optimizers).forEach(opt => {
-        if (opt.enabled && opt.path.length > 5) {
-          replayBuffer[opt.id] = [...opt.path];
-        }
-      });
-    }
-
-    function setVizMode(mode) {
-      currentVizMode = mode;
-      document.querySelectorAll('.viz-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-viz') === mode);
-      });
-      
-      if (surfaceMesh) {
-        surfaceMesh.visible = (mode === 'surface' || mode === 'wireframe');
-        if (surfaceMesh.children.length > 0) { // wireframe child
-          surfaceMesh.children[0].visible = (mode === 'wireframe');
-        }
-      }
-      
-      if (heatmapPlaneMesh) heatmapPlaneMesh.visible = (mode === 'heatmap');
-      contourLineMeshes.forEach(m => m.visible = (mode === 'contour'));
-
-      if (mode === 'heatmap' && !heatmapPlaneMesh) generateHeatmapTexture(activeSurface);
-      if (mode === 'contour' && contourLineMeshes.length === 0) buildContourLines(activeSurface);
-    }
-
-    function resetOptimizer() {
-      const s = SURFACES[activeSurface];
-      
-      // Snapshot ghost trails and replay buffer if we actually ran
-      let ran = false;
-      Object.values(optimizers).forEach(o => { if(o.iter > 5) ran = true; });
-      if (ran && !isReplaying) {
-        snapshotGhostTrails();
-        snapshotReplayBuffer();
-      }
-
-      globalRunning = false;
-      isReplaying = false;
-      document.getElementById('btnRun').innerHTML = '▶ Run';
-      
-      globalLr = s.defaultLR;
-      document.getElementById('lrSlider').value = Math.log10(globalLr);
-      document.getElementById('lrVal').textContent = globalLr.toPrecision(2);
-      
-      // Update Shared UI Coordinates
-      document.getElementById('startXInput').value = currentStart.x.toFixed(2);
-      document.getElementById('startYInput').value = currentStart.y.toFixed(2);
-      document.getElementById('txtStartX').textContent = currentStart.x.toFixed(2);
-      document.getElementById('txtStartY').textContent = currentStart.y.toFixed(2);
-      const startZ = trueLoss(s, currentStart.x, currentStart.y);
-      document.getElementById('txtStartZ').textContent = startZ.toFixed(2);
-      
-      const wPosStart = mathToWorld(s, currentStart.x, currentStart.y);
-      if (startMarkerMesh) startMarkerMesh.position.set(wPosStart.x, wPosStart.y + 0.1, wPosStart.z);
-
-      rippleEvents.length = 0;
-      Object.values(optimizers).forEach(opt => {
-        opt.status = 'Ready';
-        opt.intelligenceState = 'Ready';
-        opt.intelligenceContext = 'Waiting to start.';
-        opt.iter = 0;
-        opt.lossHistory = [];
-        opt.dirHistory = [];
-        opt.x = currentStart.x;
-        opt.y = currentStart.y;
-        opt.z = startZ;
-        opt.stepDist = 0;
-        opt.convergePulse = 0;
-        opt.flickerPhase = 0;
-        
-        const { gx, gy } = s.grad(opt.x, opt.y);
-        opt.gradMag = Math.sqrt(gx*gx + gy*gy);
-        
-        opt.path = [{ x: opt.x, y: opt.y, z: opt.z }];
-        
-        opt.v_x = 0; opt.v_y = 0;
-        opt.s_x = 1e-8; opt.s_y = 1e-8;
-        opt.m_x = 0; opt.m_y = 0; opt.t = 0;
-        
-        if (opt.meshes.markerMesh) {
-          opt.meshes.markerMesh.position.set(wPosStart.x, wPosStart.y + 0.12, wPosStart.z);
-          opt.meshes.markerMesh.material.color.setHex(opt.colorHex);
-          opt.meshes.markerMesh.material.emissive.setHex(opt.glowHex);
-          opt.meshes.markerMesh.material.emissiveIntensity = 0.8;
-        }
-        if (opt.meshes.markerGlow) {
-          opt.meshes.markerGlow.position.set(wPosStart.x, wPosStart.y + 0.12, wPosStart.z);
-          opt.meshes.markerGlow.material.color.setHex(opt.glowHex);
-          opt.meshes.markerGlow.material.opacity = 0.3;
-        }
-        
-        if (opt.meshes.pathLine) {
-          const positions = opt.meshes.pathLine.geometry.attributes.position.array;
-          positions[0] = wPosStart.x; positions[1] = wPosStart.y + 0.05; positions[2] = wPosStart.z;
-          opt.meshes.pathLine.geometry.setDrawRange(0, 1);
-          opt.meshes.pathLine.geometry.attributes.position.needsUpdate = true;
-        }
-        
-        if (opt.meshes.pathLineUnderlay) {
-          const positions2 = opt.meshes.pathLineUnderlay.geometry.attributes.position.array;
-          positions2[0] = wPosStart.x; positions2[1] = wPosStart.y + 0.05; positions2[2] = wPosStart.z;
-          opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, 1);
-          opt.meshes.pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
-        }
-      });
-      
-      updateTelemetry();
-    }
-
-    function stepOptimizer() {
-      const s = SURFACES[activeSurface];
-      for (let step = 0; step < globalSpeed; step++) {
-        Object.values(optimizers).forEach(opt => {
-          if (!opt.enabled || opt.status !== 'Running') return;
-          
-          const p = OPT_PERSONALITY[opt.id];
-          let { gx, gy } = s.grad(opt.x, opt.y);
-          opt.gradMag = Math.sqrt(gx*gx + gy*gy);
-          
-          if (p.gradClip > 0 && opt.gradMag > p.gradClip) {
-            const scale = p.gradClip / opt.gradMag;
-            gx *= scale; gy *= scale;
-          }
-          
-          const lr = globalLr * p.lrMult;
-          let nextX = opt.x, nextY = opt.y;
-          const prevX = opt.x, prevY = opt.y;
-          
-          if (opt.id === 'gd') {
-            nextX -= lr * gx;
-            nextY -= lr * gy;
-          } else if (opt.id === 'momentum') {
-            const beta = p.beta;
-            opt.v_x = beta * opt.v_x + lr * gx;
-            opt.v_y = beta * opt.v_y + lr * gy;
-            nextX -= opt.v_x;
-            nextY -= opt.v_y;
-          } else if (opt.id === 'rmsprop') {
-            const beta = p.beta, eps = p.eps;
-            opt.s_x = beta * opt.s_x + (1 - beta) * gx * gx;
-            opt.s_y = beta * opt.s_y + (1 - beta) * gy * gy;
-            nextX -= (lr / (Math.sqrt(opt.s_x) + eps)) * gx;
-            nextY -= (lr / (Math.sqrt(opt.s_y) + eps)) * gy;
-          } else if (opt.id === 'adam') {
-            const beta1 = p.beta1, beta2 = p.beta2, eps = p.eps;
-            opt.t += 1;
-            opt.m_x = beta1 * opt.m_x + (1 - beta1) * gx;
-            opt.m_y = beta1 * opt.m_y + (1 - beta1) * gy;
-            opt.v_x = beta2 * opt.v_x + (1 - beta2) * gx * gx;
-            opt.v_y = beta2 * opt.v_y + (1 - beta2) * gy * gy;
-            const bc1 = 1 - Math.pow(beta1, opt.t);
-            const bc2 = 1 - Math.pow(beta2, opt.t);
-            const mhx = opt.m_x / bc1, mhy = opt.m_y / bc1;
-            const vhx = opt.v_x / bc2, vhy = opt.v_y / bc2;
-            nextX -= (lr / (Math.sqrt(vhx) + eps)) * mhx;
-            nextY -= (lr / (Math.sqrt(vhy) + eps)) * mhy;
-          }
-          
-          if (!isFinite(nextX) || !isFinite(nextY)) { opt.status = 'Numerical Instability'; return; }
-          if (nextX < s.domain.xmin || nextX > s.domain.xmax || nextY < s.domain.ymin || nextY > s.domain.ymax) { opt.status = 'Boundary Reached'; return; }
-          const nextZ = trueLoss(s, nextX, nextY);
-          if (!isFinite(nextZ)) { opt.status = 'Numerical Instability'; return; }
-          
-          opt.stepDist = Math.sqrt((nextX-prevX)**2 + (nextY-prevY)**2);
-          opt.x = nextX; opt.y = nextY; opt.z = nextZ;
-          opt.iter++;
-          
-          opt.lossHistory.push(nextZ);
-          if (opt.lossHistory.length > 10) opt.lossHistory.shift();
-          opt.dirHistory.push({ dx: -gx, dy: -gy });
-          if (opt.dirHistory.length > 10) opt.dirHistory.shift();
-
-          // EXPANDED INTELLIGENCE ENGINE
-          let state = 'Stable Descent';
-          let context = 'Loss is decreasing consistently.';
-          const histLen = opt.lossHistory.length;
-          
-          if (opt.gradMag > 500) {
-            state = 'Exploding Gradient';
-            context = 'Extreme terrain slopes. Risk of diverging.';
-          } else if (histLen >= 5) {
-            const lossDiff = opt.lossHistory[0] - opt.lossHistory[histLen - 1];
-            const lossIncreased = (histLen > 1) && (opt.lossHistory[histLen-1] > opt.lossHistory[histLen-2] + 0.01);
-            
-            if (lossIncreased && opt.iter > 5) {
-              state = 'Overshooting';
-              context = 'Loss increased. Step size too large for this curvature.';
-            }
-            
-            let dotSum = 0, dotCount = 0;
-            for (let i = 1; i < opt.dirHistory.length; i++) {
-              const d1 = opt.dirHistory[i-1], d2 = opt.dirHistory[i];
-              const m1 = Math.sqrt(d1.dx*d1.dx + d1.dy*d1.dy);
-              const m2 = Math.sqrt(d2.dx*d2.dx + d2.dy*d2.dy);
-              if (m1 > 0 && m2 > 0) { dotSum += (d1.dx*d2.dx + d1.dy*d2.dy)/(m1*m2); dotCount++; }
-            }
-            const avgDot = dotCount > 0 ? dotSum / dotCount : 1;
-            
-            if (!lossIncreased) {
-              if (avgDot < -0.3) {
-                state = 'Oscillation Detected';
-                context = 'Repeated direction reversals. Zigzagging terrain.';
-              } else if (lossDiff < 1e-6 && opt.gradMag < 0.05) {
-                const minDist = s.minima.reduce((best, m) => {
-                  return Math.min(best, Math.sqrt((opt.x-m.x)**2 + (opt.y-m.y)**2));
-                }, Infinity);
-                if (minDist > 0.5) {
-                  state = 'Local Trap';
-                  context = 'Gradient vanished far from global minimum.';
-                } else {
-                  state = 'Converging';
-                  context = 'Fine-grained approach to minimum.';
-                }
-              } else if (lossDiff < 1e-4 && opt.gradMag > 0.1) {
-                state = 'Valley Navigation';
-                context = 'Narrow valley. Gradient mostly cross-valley.';
-              } else if (lossDiff > 5.0) {
-                state = 'Fast Convergence';
-                context = 'Rapid descent — strong gradient alignment.';
-              }
-              
-              if (opt.id === 'momentum') {
-                const velMag = Math.sqrt(opt.v_x*opt.v_x + opt.v_y*opt.v_y);
-                if (velMag > opt.gradMag * 1.4 && opt.iter > 10) {
-                  state = 'Momentum Slingshot';
-                  context = 'Velocity outrunning gradient — kinetic carry active.';
-                }
-              }
-              
-              if ((opt.id === 'rmsprop' || opt.id === 'adam') && opt.gradMag > 2.0 && opt.stepDist < globalLr) {
-                state = 'Adaptive Rescue';
-                context = 'Adaptive scaling dampening steep gradients.';
-              }
-            }
-          }
-          
-          opt.intelligenceState = state;
-          opt.intelligenceContext = context;
-          
-          opt.path.push({ x: opt.x, y: opt.y, z: opt.z });
-          if (opt.path.length > dynamicMaxPath) opt.path.shift();
-          
-          const reached = checkConvergence(s, opt);
-          if (reached) {
-            if (opt.status === 'Running') {
-              const wPos = mathToWorld(s, opt.x, opt.y);
-              rippleEvents.push({ pos: wPos.clone().add(new THREE.Vector3(0, 0.1, 0)), color: opt.colorHex, age: 0 });
-            }
-            opt.status = reached;
-          }
-        });
-      }
-    }
-
-    function updateVisuals() {
-      const s = SURFACES[activeSurface];
-      const time = performance.now() * 0.001;
-      Object.values(optimizers).forEach(opt => {
-        if (!opt.enabled) return;
-        
-        const wPos = mathToWorld(s, opt.x, opt.y);
-        if (opt.meshes.markerMesh) {
-          opt.meshes.markerMesh.position.set(wPos.x, wPos.y + 0.12, wPos.z);
-          opt.meshes.markerGlow.position.set(wPos.x, wPos.y + 0.12, wPos.z);
-          
-          // Marker color based on intelligence state
-          let mHex = opt.colorHex, eHex = opt.glowHex, gHex = opt.glowHex;
-          const iState = opt.intelligenceState;
-          if (opt.status.includes('Reached') || iState === 'Converging') {
-            mHex = 0x10b981; eHex = 0x059669; gHex = 0x10b981;
-          } else if (opt.status.includes('Instability') || opt.status.includes('Boundary') || iState === 'Exploding Gradient') {
-            mHex = 0xef4444; eHex = 0xdc2626; gHex = 0xef4444;
-          } else if (iState === 'Local Trap') {
-            mHex = 0x3b82f6; eHex = 0x2563eb; gHex = 0x3b82f6;
-          } else if (iState === 'Overshooting' || iState === 'Oscillation Detected') {
-            mHex = 0xf59e0b; eHex = 0xd97706; gHex = 0xf59e0b;
-          } else if (iState === 'Momentum Slingshot' || iState === 'Valley Navigation') {
-            mHex = 0xe879f9; eHex = 0xc026d3; gHex = 0xe879f9;
-          }
-          opt.meshes.markerMesh.material.color.setHex(mHex);
-          opt.meshes.markerMesh.material.emissive.setHex(eHex);
-          opt.meshes.markerGlow.material.color.setHex(gHex);
-          
-          // Velocity-reactive emissive intensity
-          const velFactor = Math.min(opt.stepDist * 50, 1.0);
-          
-          // Oscillation flicker
-          if (iState === 'Oscillation Detected' || iState === 'Overshooting') {
-            opt.flickerPhase += 0.35;
-            opt.meshes.markerMesh.material.emissiveIntensity = 0.3 + 0.9 * Math.abs(Math.sin(opt.flickerPhase));
-            opt.meshes.markerMesh.visible = true;
-          } else {
-            opt.flickerPhase = 0;
-            opt.meshes.markerMesh.material.emissiveIntensity = 0.8 + velFactor * 0.8;
-            opt.meshes.markerMesh.visible = true;
-          }
-          
-          // Velocity-reactive glow opacity
-          opt.meshes.markerGlow.material.opacity = 0.15 + velFactor * 0.45;
-          
-          if (opt.meshes.arrowMesh) {
-            opt.meshes.arrowMesh.visible = isVectorsVisible && opt.enabled;
-            if (isVectorsVisible) {
-              const vx = opt.id === 'adam' ? opt.m_x : opt.v_x;
-              const vy = opt.id === 'adam' ? opt.m_y : opt.v_y;
-              const vMag = Math.sqrt(vx*vx + vy*vy);
-              if (vMag > 0.0001) {
-                const dir = new THREE.Vector3(-vx/vMag, 0, -vy/vMag);
-                opt.meshes.arrowMesh.setDirection(dir);
-                opt.meshes.arrowMesh.position.set(wPos.x, wPos.y + 0.15, wPos.z);
-                const aLen = Math.min(0.8, 0.1 + vMag * (opt.id === 'adam' ? 0.3 : 2.0));
-                opt.meshes.arrowMesh.setLength(aLen, aLen*0.3, aLen*0.2);
-              } else {
-                opt.meshes.arrowMesh.visible = false;
-              }
-            }
-          }
-        }
-
-        if (opt.meshes.pathLine) {
-          const positions = opt.meshes.pathLine.geometry.attributes.position.array;
-          const colorsCore = opt.meshes.pathLine.geometry.attributes.color.array;
-          const count = opt.path.length;
-          const baseColor = new THREE.Color(opt.colorHex);
-          const velBoost = Math.min(opt.stepDist * 60, 1.0);
-          
-          for (let i = 0; i < count; i++) {
-            const pt = opt.path[i];
-            const pw = mathToWorld(s, pt.x, pt.y);
-            positions[i*3] = pw.x; positions[i*3+1] = pw.y + 0.05; positions[i*3+2] = pw.z;
-            // Smoothstep fade — recent segments stay bright longer
-            const rawT = i / Math.max(1, count - 1);
-            const alpha = rawT * rawT * (3 - 2 * rawT);
-            colorsCore[i*3]   = baseColor.r * alpha;
-            colorsCore[i*3+1] = baseColor.g * alpha;
-            colorsCore[i*3+2] = baseColor.b * alpha;
-          }
-          opt.meshes.pathLine.geometry.setDrawRange(0, count);
-          opt.meshes.pathLine.geometry.attributes.position.needsUpdate = true;
-          opt.meshes.pathLine.geometry.attributes.color.needsUpdate = true;
-        }
-        
-        if (opt.meshes.pathLineUnderlay) {
-          const positions2 = opt.meshes.pathLineUnderlay.geometry.attributes.position.array;
-          const colorsUnder = opt.meshes.pathLineUnderlay.geometry.attributes.color.array;
-          const count = opt.path.length;
-          const underColor = new THREE.Color(opt.glowHex);
-          const velBoost = Math.min(opt.stepDist * 60, 1.0);
-          
-          for (let i = 0; i < count; i++) {
-            const pt = opt.path[i];
-            const pw = mathToWorld(s, pt.x, pt.y);
-            positions2[i*3] = pw.x; positions2[i*3+1] = pw.y + 0.05; positions2[i*3+2] = pw.z;
-            const rawT = i / Math.max(1, count - 1);
-            const alpha = rawT * rawT * (3 - 2 * rawT);
-            const underlayIntensity = alpha * (0.4 + velBoost * 0.5);
-            colorsUnder[i*3]   = underColor.r * underlayIntensity;
-            colorsUnder[i*3+1] = underColor.g * underlayIntensity;
-            colorsUnder[i*3+2] = underColor.b * underlayIntensity;
-          }
-          opt.meshes.pathLineUnderlay.geometry.setDrawRange(0, count);
-          opt.meshes.pathLineUnderlay.geometry.attributes.position.needsUpdate = true;
-          opt.meshes.pathLineUnderlay.geometry.attributes.color.needsUpdate = true;
-        }
-      });
-
-      // Ripple events (convergence FX)
-      for (let i = rippleEvents.length - 1; i >= 0; i--) {
-        const rip = rippleEvents[i];
-        rip.age += 0.022;
-        if (!rip.ring) {
-          const geo = new THREE.RingGeometry(0.01, 0.1, 32);
-          const mat = new THREE.MeshBasicMaterial({
-            color: rip.color, transparent: true, opacity: 0.9,
-            side: THREE.DoubleSide, blending: THREE.AdditiveBlending
-          });
-          rip.ring = new THREE.Mesh(geo, mat);
-          rip.ring.rotation.x = -Math.PI / 2;
-          rip.ring.position.copy(rip.pos);
-          scene.add(rip.ring);
-        }
-        rip.ring.scale.setScalar(1 + rip.age * 7);
-        rip.ring.material.opacity = Math.max(0, 0.9 * (1 - rip.age));
-        if (rip.age > 1) {
-          scene.remove(rip.ring);
-          rip.ring.geometry.dispose(); rip.ring.material.dispose();
-          rippleEvents.splice(i, 1);
-        }
-      }
-
-      updateTelemetry();
-    }
-
-    function updateTelemetry() {
-      const cont = document.getElementById('telemetryContainer');
-      cont.innerHTML = '';
-      Object.values(optimizers).forEach(opt => {
-        if (!opt.enabled) return;
-        const card = document.createElement('div');
-        card.className = 'telemetry-card';
-        card.style.setProperty('--card-color', opt.uiColor);
-        
-        let statusText = opt.status === 'Running' ? opt.intelligenceState.toUpperCase() : opt.status.toUpperCase();
-        if (statusText.length > 16) statusText = statusText.slice(0, 15) + '…';
-        
-        let statusColor = opt.uiColor;
-        const iState = opt.intelligenceState;
-        if (opt.status.includes('Numerical') || opt.status.includes('Boundary') || iState === 'Exploding Gradient') {
-          statusColor = '#ef4444';
-        } else if (opt.status.includes('Reached') || iState === 'Converging' || iState === 'Stable Descent') {
-          statusColor = '#10b981';
-        } else if (iState === 'Oscillation Detected' || iState === 'Overshooting' || iState === 'Valley Navigation') {
-          statusColor = '#f59e0b';
-        } else if (iState === 'Local Trap') {
-          statusColor = '#3b82f6';
-        } else if (iState === 'Momentum Slingshot' || iState === 'Adaptive Rescue') {
-          statusColor = '#e879f9';
-        }
-        
-        let pStr = '';
-        if (isResearchMode) {
-          const p = OPT_PERSONALITY[opt.id];
-          if (opt.id === 'momentum') pStr = `| β:${p.beta}`;
-          if (opt.id === 'rmsprop') pStr = `| β:${p.beta}`;
-          if (opt.id === 'adam') pStr = `| β₁:${p.beta1} β₂:${p.beta2}`;
-        }
-        
-        card.innerHTML = `
-          <div class="tel-header">
-            <span style="color:${opt.uiColor};font-weight:700">${opt.name}</span>
-            <span class="tel-badge" style="color:${statusColor};border-color:${statusColor}40">${statusText}</span>
-          </div>
-          <div class="tel-row"><span>Loss</span><span>${opt.z.toFixed(5)}</span></div>
-          <div class="tel-row"><span>|∇L| ${pStr}</span><span>${opt.gradMag.toFixed(4)}</span></div>
-          <div class="tel-row"><span>Iter</span><span>${opt.iter}</span></div>
-        `;
-        cont.appendChild(card);
-      });
-
-      // Update Phase 1F panels
-      graphFrameCounter++;
-      if (globalRunning && graphFrameCounter % 3 === 0) {
-        Object.values(optimizers).forEach(opt => {
-          if (opt.enabled) {
-            graphHistory[opt.id].push(opt.z);
-            if (graphHistory[opt.id].length > GRAPH_MAX_SAMPLES) graphHistory[opt.id].shift();
-          }
-        });
-      }
-      updateConvergenceGraph();
-      
-      rankingCounter++;
-      if (rankingCounter >= 10) {
-        updateRankingBoard();
-        rankingCounter = 0;
-      }
-    }
-
-    function updateConvergenceGraph() {
-      const cvs = document.getElementById('convCanvas');
-      if (!cvs) return;
-      const ctx = cvs.getContext('2d');
-      const w = cvs.width, h = cvs.height;
-      
-      ctx.clearRect(0, 0, w, h);
-      
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let i = 1; i <= 4; i++) {
-        const y = h - (i * h / 5);
-        ctx.moveTo(0, y); ctx.lineTo(w, y);
-      }
+        <div class="comp-metrics">
+          <div class="comp-metric"><span class="comp-label">Loss</span><span class="comp-value">${opt.z<0.001?opt.z.toExponential(1):opt.z.toFixed(4)}</span></div>
+          <div class="comp-metric"><span class="comp-label">Iter</span><span class="comp-value">${opt.iter}</span></div>
+          <div class="comp-metric"><span class="comp-label">|∇L|</span><span class="comp-value">${opt.gradMag.toFixed(3)}</span></div>
+        </div>`;
+      cont.appendChild(card);
+    });
+  }
+
+  function updateConvergenceGraph(){
+    const cvs=document.getElementById('convCanvas'); if(!cvs)return;
+    const ctx=cvs.getContext('2d'), w=cvs.width, h=cvs.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1; ctx.beginPath();
+    for(let i=1;i<=4;i++){const y=h-(i*h/5);ctx.moveTo(0,y);ctx.lineTo(w,y);} ctx.stroke();
+    let maxL=0.0001;
+    Object.keys(graphHistory).forEach(k=>{if(!optimizers[k].enabled)return;graphHistory[k].forEach(v=>{if(v>maxL)maxL=v;});});
+    Object.keys(graphHistory).forEach(k=>{
+      const opt=optimizers[k]; if(!opt.enabled)return;
+      const hist=graphHistory[k]; if(hist.length<2)return;
+      ctx.beginPath(); ctx.strokeStyle=opt.uiColor; ctx.lineWidth=1.5;
+      const sx=w/Math.max(1,hist.length-1);
+      hist.forEach((v,i)=>{const sy=h-(Math.log10(v+1)/Math.log10(maxL+1))*h;const cy=Math.max(0,Math.min(h,sy));if(i===0)ctx.moveTo(0,cy);else ctx.lineTo(i*sx,cy);});
       ctx.stroke();
+    });
+  }
 
-      let maxL = 0.0001;
-      Object.keys(graphHistory).forEach(k => {
-        if (!optimizers[k].enabled) return;
-        graphHistory[k].forEach(val => { if (val > maxL) maxL = val; });
-      });
+  function updateCinematicCamera(){
+    if(!isCinematicMode||!globalRunning)return;
+    const ro=Object.values(optimizers).filter(o=>o.enabled&&o.status==='Running');
+    if(!ro.length)return;
+    const s=SURFACES[activeSurface]; let cx=0,cy=0;
+    ro.forEach(o=>{cx+=o.x;cy+=o.y;}); cx/=ro.length; cy/=ro.length;
+    const wc=mathToWorld(s,cx,cy);
+    let ho=0.5,zo=0;
+    if(s.id==='rosenbrock'){ho=-0.3;zo=-1.5;} if(s.id==='himmelblau')ho=1.5; if(s.id==='rastrigin')ho=2.0;
+    cinematicTarget.lerp(new THREE.Vector3(wc.x,wc.y+ho,wc.z+zo),0.015);
+    controls.target.lerp(cinematicTarget,0.012);
+  }
 
-      Object.keys(graphHistory).forEach(k => {
-        const opt = optimizers[k];
-        if (!opt.enabled) return;
-        const history = graphHistory[k];
-        if (history.length < 2) return;
-        
-        ctx.beginPath();
-        ctx.strokeStyle = opt.uiColor;
-        ctx.lineWidth = 1.5;
-        
-        const stepX = w / Math.max(1, history.length - 1);
-        history.forEach((val, idx) => {
-          const scaledY = h - (Math.log10(val + 1) / Math.log10(maxL + 1)) * h;
-          const clampY = Math.max(0, Math.min(h, scaledY));
-          if (idx === 0) ctx.moveTo(idx * stepX, clampY);
-          else ctx.lineTo(idx * stepX, clampY);
-        });
-        ctx.stroke();
-      });
+  // =============================================
+  // INTELLIGENCE PANEL
+  // =============================================
+  function showIntelligencePanel(){
+    const result=RecommendationEngineV2.analyze(); if(!result)return;
+    const s=SURFACES[activeSurface];
+    document.getElementById('intelSurfaceChip').innerHTML=`Surface: <strong>${s.name}</strong>`;
+    const active=Object.values(optimizers).filter(o=>o.enabled&&o.iter>2);
+
+    const fcHTML=active.map(opt=>{
+      const a=ExplainabilityEngine.getAnalysis(opt);
+      return `<div class="fc" style="--fc-color:${opt.uiColor}">
+        <div class="fc-top">
+          <div class="fc-dot" style="background:${opt.uiColor};box-shadow:0 0 5px ${opt.uiColor}50"></div>
+          <span class="fc-name">${opt.name}</span>
+          <span class="fc-status st-${a.sc}">${a.status}</span>
+        </div>
+        <div><span class="fc-lbl">Why</span><div class="fc-txt">${a.why}</div></div>
+        ${a.suggestion?`<div><span class="fc-lbl">Try Instead</span><div class="fc-suggest">${a.suggestion}</div></div>`:`<div class="fc-ok">✓ Performed well</div>`}
+      </div>`;
+    }).join('');
+
+    const sbHTML=result.scores.map(sc=>`
+      <div class="score-row">
+        <span class="score-name" style="color:${sc.opt.uiColor}">${sc.opt.id.toUpperCase()}</span>
+        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${Math.round(sc.total*100)}%;background:${sc.opt.uiColor}"></div></div>
+        <span class="score-val">${sc.total.toFixed(2)}</span>
+      </div>`).join('');
+
+    const fiHTML=result.failures.length
+      ?result.failures.map(f=>`<div class="ec-fail-item"><span class="ec-fail-dot">▸</span>${f}</div>`).join('')
+      :`<div class="ec-fail-item" style="color:#2d3748"><span class="ec-fail-dot" style="color:#1f2937">▸</span>No critical failures detected.</div>`;
+
+    document.getElementById('intelBody').innerHTML=`
+      <div class="failure-section">
+        <div class="intel-section-label">Failure Analysis</div>
+        <div class="failure-cards-row">${fcHTML}</div>
+      </div>
+      <div class="conclusion-section">
+        <div class="intel-section-label">Experiment Conclusion</div>
+        <div class="ec-best-row">
+          <span class="ec-best-tag">Best</span>
+          <span class="ec-best-name" style="color:${result.best.uiColor}">${result.best.name}</span>
+          <span class="ec-score-chip">score ${result.bestScore.toFixed(2)}</span>
+        </div>
+        <div class="ec-divider"></div>
+        <div class="score-bars">${sbHTML}</div>
+        <div class="ec-divider"></div>
+        <div class="ec-reason">${result.reason}</div>
+        <div class="ec-fail-block">
+          <div class="intel-section-label" style="margin-bottom:3px">Observed Failures</div>
+          ${fiHTML}
+        </div>
+        <div class="ec-rec-box">
+          <div class="ec-rec-label">Recommendation</div>
+          <div class="ec-rec-text">${result.recommendation}</div>
+        </div>
+      </div>`;
+
+    document.getElementById('mainDock').classList.add('hidden');
+    document.getElementById('intelligencePanel').classList.add('open');
+  }
+
+  function hideIntelligencePanel(){
+    document.getElementById('intelligencePanel').classList.remove('open');
+    document.getElementById('mainDock').classList.remove('hidden');
+  }
+
+  // =============================================
+  // 6. ANIMATION LOOP
+  // =============================================
+  function animate(){
+    requestAnimationFrame(animate);
+    const now=performance.now(), delta=now-lastFrameTime; lastFrameTime=now;
+    fpsSmoothed=fpsSmoothed*0.92+(1000/Math.max(delta,1))*0.08;
+    if(fpsSmoothed<40)dynamicMaxPath=Math.max(MIN_PATH,dynamicMaxPath-50);
+    else if(fpsSmoothed>55)dynamicMaxPath=Math.min(MAX_PATH,dynamicMaxPath+20);
+    if(introLerpActive){introLerpT+=0.012;if(introLerpT>=1){introLerpT=1;introLerpActive=false;}const t=1-Math.pow(1-introLerpT,3);camera.position.lerpVectors(introStartCamPos,introTargetCamPos,t);controls.target.lerpVectors(controls.target,introTargetCamLook,t);}
+    if(globalRunning){
+      stepOptimizer(); updateVisuals();
+      graphFrameCounter++;
+      if(graphFrameCounter%3===0)Object.values(optimizers).forEach(opt=>{if(opt.enabled){graphHistory[opt.id].push(opt.z);if(graphHistory[opt.id].length>GRAPH_MAX_SAMPLES)graphHistory[opt.id].shift();}});
     }
+    updateConvergenceGraph(); updateCinematicCamera();
+    const t=now*0.005;
+    Object.values(optimizers).forEach(opt=>{
+      if(!opt.enabled||!opt.meshes.markerMesh)return;
+      let pf=1,pa=0.05;
+      if(opt.intelligenceState==='Momentum Slingshot'){pf=2.4;pa=0.13;}
+      else if(opt.intelligenceState==='Fast Convergence'){pf=1.8;pa=0.08;}
+      else if(opt.status.includes('Reached')||opt.intelligenceState==='Converging'){pf=0.5;pa=0.18;}
+      const pulse=1+pa*Math.sin(t*pf);
+      opt.meshes.markerMesh.scale.setScalar(pulse);
+      if(opt.meshes.markerGlow)opt.meshes.markerGlow.scale.setScalar(pulse+0.12*Math.sin(t*pf*1.3));
+    });
+    if(vectorFieldMesh)vectorFieldMesh.material.opacity=0.4+0.12*Math.sin(now*0.003);
+    controls.update(); renderer.render(scene,camera);
+  }
 
-    function updateRankingBoard() {
-      const rankList = document.getElementById('rankList');
-      if (!rankList) return;
-      
-      const activeOpts = Object.values(optimizers).filter(o => o.enabled);
-      if (activeOpts.length === 0) {
-        document.getElementById('rankingBoard').style.display = 'none';
-        return;
+  // =============================================
+  // 7. EVENT LISTENERS
+  // =============================================
+  function S(id,ev,fn){const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);}
+
+  window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();});
+
+  S('surfaceSelect','change',e=>loadSurface(e.target.value));
+
+  S('presetSelect','change',e=>{
+    const pk=e.target.value; if(pk==='none')return;
+    const presets={
+      rosenbrock_struggle:{surface:'rosenbrock',start:{x:-1.8,y:1.8},opts:{gd:true,adam:true,momentum:false,rmsprop:false},lr:0.001,speed:20,mode:'contour',cine:true},
+      rastrigin_trap:{surface:'rastrigin',start:{x:-4,y:-4},opts:{gd:true,momentum:true,adam:true,rmsprop:true},lr:0.01,speed:10,mode:'surface',cine:true},
+      momentum_overshoot:{surface:'bowl',start:{x:-3.5,y:-1},opts:{gd:true,momentum:true,rmsprop:false,adam:false},lr:0.1,speed:15,mode:'surface',cine:false},
+      adam_fast:{surface:'himmelblau',start:{x:-4.5,y:-4.5},opts:{gd:true,rmsprop:true,adam:true,momentum:false},lr:0.02,speed:10,mode:'wireframe',cine:false}
+    };
+    const p=presets[pk]; if(!p)return;
+    document.getElementById('surfaceSelect').value=p.surface;
+    currentStart=p.start; globalLr=p.lr; globalSpeed=p.speed;
+    document.getElementById('lrSlider').value=Math.log10(p.lr); document.getElementById('lrVal').textContent=p.lr;
+    document.getElementById('speedSlider').value=p.speed; document.getElementById('speedVal').textContent=p.speed;
+    Object.keys(optimizers).forEach(k=>{optimizers[k].enabled=p.opts[k];const pill=document.querySelector(`.opt-pill[data-opt="${k}"]`);if(pill)pill.classList.toggle('active',p.opts[k]);});
+    setVizMode(p.mode);
+    isCinematicMode=p.cine; const bc=document.getElementById('btnCinematic'); if(bc)bc.classList.toggle('active',p.cine);
+    loadSurface(p.surface);
+  });
+
+  S('chkVectorField','change',e=>{isVectorFieldVisible=e.target.checked;buildVectorField(activeSurface);});
+  S('densitySlider','input',e=>{currentVectorDensity=parseInt(e.target.value);const v=document.getElementById('densityVal');if(v)v.textContent=currentVectorDensity;buildVectorField(activeSurface);});
+  document.querySelectorAll('.viz-btn').forEach(b=>b.addEventListener('click',e=>setVizMode(e.target.dataset.viz)));
+
+  document.querySelectorAll('.opt-pill').forEach(pill=>pill.addEventListener('click',e=>{
+    const id=e.target.dataset.opt, opt=optimizers[id];
+    opt.enabled=!opt.enabled; e.target.classList.toggle('active',opt.enabled);
+    ['markerMesh','markerGlow','pathLine','pathLineUnderlay'].forEach(k=>{if(opt.meshes[k])opt.meshes[k].visible=opt.enabled;});
+    updateComparisonCards();
+  }));
+
+  // Optimizer pill tooltips
+  const tooltip=document.getElementById('eduTooltip');
+  let ttTimeout;
+  document.querySelectorAll('.opt-pill').forEach(pill=>{
+    pill.addEventListener('mouseenter',e=>{const d=EDU_DATA[e.target.dataset.eduId];if(d&&tooltip){tooltip.innerHTML=`<strong>${d.title}</strong>${d.text}`;tooltip.classList.add('visible');const r=e.target.getBoundingClientRect();tooltip.style.left=(r.right+12)+'px';tooltip.style.top=r.top+'px';}});
+    pill.addEventListener('mouseleave',()=>{if(tooltip)tooltip.classList.remove('visible');});
+  });
+
+  S('btnRun','click',()=>{
+    globalRunning=!globalRunning;
+    document.getElementById('btnRun').innerHTML=globalRunning?'⏸ Pause':'▶ Run';
+    let nr=false;
+    Object.values(optimizers).forEach(opt=>{if(opt.enabled&&opt.status!=='Ready'&&opt.status!=='Running'&&opt.status!=='Paused')nr=true;});
+    if(globalRunning&&nr){resetOptimizer();globalRunning=true;document.getElementById('btnRun').innerHTML='⏸ Pause';}
+    Object.values(optimizers).forEach(opt=>{
+      if(globalRunning){if(opt.status==='Ready'||opt.status==='Paused')opt.status='Running';}
+      else{if(opt.status==='Running')opt.status='Paused';}
+    });
+    updateComparisonCards();
+  });
+
+  S('btnReset','click',resetOptimizer);
+  S('btnCinematic','click',()=>{isCinematicMode=!isCinematicMode;const b=document.getElementById('btnCinematic');if(b)b.classList.toggle('active',isCinematicMode);if(isCinematicMode)cinematicTarget.copy(controls.target);});
+  S('lrSlider','input',e=>{globalLr=Math.pow(10,parseFloat(e.target.value));const v=document.getElementById('lrVal');if(v)v.textContent=globalLr.toPrecision(2);});
+  S('speedSlider','input',e=>{globalSpeed=parseInt(e.target.value);const v=document.getElementById('speedVal');if(v)v.textContent=globalSpeed;});
+  S('btnCollapseRail','click',()=>{const r=document.getElementById('experimentRail');if(r)r.classList.add('rail-collapsed');setTimeout(()=>window.dispatchEvent(new Event('resize')),300);});
+  S('btnRestoreRail','click',()=>{const r=document.getElementById('experimentRail');if(r)r.classList.remove('rail-collapsed');setTimeout(()=>window.dispatchEvent(new Event('resize')),300);});
+  S('btnCloseIntel','click',hideIntelligencePanel);
+  S('btnIntelReset','click',resetOptimizer);
+  S('convGraphHeader','click',()=>{const p=document.getElementById('convGraphPanel');if(p)p.classList.toggle('collapsed');});
+
+  const btnPick=document.getElementById('btnPickStart'), modeInd=document.getElementById('modeIndicator');
+  if(btnPick)btnPick.addEventListener('click',()=>{
+    isPickingStart=!isPickingStart;
+    btnPick.classList.toggle('active',isPickingStart);
+    btnPick.textContent=isPickingStart?'Cancel Pick Mode':'🎯 Pick Point on Surface';
+    if(modeInd)modeInd.style.display=isPickingStart?'block':'none';
+    container.style.cursor=isPickingStart?'crosshair':'default';
+  });
+
+  S('btnApplyStart','click',()=>{
+    const s=SURFACES[activeSurface];
+    let nx=parseFloat(document.getElementById('startXInput').value), ny=parseFloat(document.getElementById('startYInput').value);
+    if(isNaN(nx)||isNaN(ny))return;
+    nx=Math.max(s.domain.xmin,Math.min(s.domain.xmax,nx)); ny=Math.max(s.domain.ymin,Math.min(s.domain.ymax,ny));
+    currentStart={x:nx,y:ny}; resetOptimizer();
+  });
+  S('btnDefaultStart','click',()=>{currentStart={...SURFACES[activeSurface].startPoint};resetOptimizer();});
+
+  container.addEventListener('pointerdown',e=>{pointerDownCoord.x=e.clientX;pointerDownCoord.y=e.clientY;});
+  container.addEventListener('pointerup',e=>{
+    if(!isPickingStart||!surfaceMesh)return;
+    if(Math.abs(e.clientX-pointerDownCoord.x)>5||Math.abs(e.clientY-pointerDownCoord.y)>5)return;
+    const rect=container.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObject(surfaceMesh,false);
+    if(hits.length){
+      const s=SURFACES[activeSurface], mp=worldToMath(s,hits[0].point);
+      if(mp.x>=s.domain.xmin&&mp.x<=s.domain.xmax&&mp.y>=s.domain.ymin&&mp.y<=s.domain.ymax){
+        currentStart={x:mp.x,y:mp.y}; resetOptimizer();
+        isPickingStart=false; if(btnPick){btnPick.classList.remove('active');btnPick.textContent='🎯 Pick Point on Surface';}
+        if(modeInd)modeInd.style.display='none'; container.style.cursor='default';
+        const toast=document.createElement('div');
+        toast.textContent='Start point updated.';
+        Object.assign(toast.style,{position:'absolute',top:'16px',left:'50%',transform:'translateX(-50%)',background:'rgba(16,185,129,0.9)',color:'#fff',padding:'6px 14px',borderRadius:'20px',fontFamily:'var(--sans)',fontSize:'11px',pointerEvents:'none',zIndex:'100',fontWeight:'500'});
+        document.getElementById('graphStage').appendChild(toast);
+        setTimeout(()=>toast.remove(),2000);
       }
-      
-      activeOpts.sort((a, b) => a.z - b.z);
-      
-      rankList.innerHTML = '';
-      activeOpts.forEach((opt, idx) => {
-        let badge = '';
-        if (opt.intelligenceState === 'Momentum Slingshot') badge = '🚀';
-        else if (opt.intelligenceState === 'Oscillation Detected') badge = '⚠️';
-        else if (opt.intelligenceState === 'Local Trap') badge = '🔵';
-        else if (opt.intelligenceState === 'Converging') badge = '✨';
-
-        rankList.innerHTML += `
-          <div class="rank-row">
-            <span class="rank-num">#${idx+1}</span>
-            <div class="rank-dot" style="background:${opt.uiColor};box-shadow:0 0 6px ${opt.glowHex}"></div>
-            <span class="rank-name">${opt.name}</span>
-            <span class="rank-badge">${badge}</span>
-            <span class="rank-loss">${opt.z.toFixed(4)}</span>
-          </div>
-        `;
-      });
-      document.getElementById('rankingBoard').style.display = 'block';
     }
+  });
 
-    function updateCinematicCamera() {
-      if (!isCinematicMode || !globalRunning) return;
-      const runningOpts = Object.values(optimizers).filter(o => o.enabled && o.status === 'Running');
-      if (runningOpts.length === 0) return;
-      const s = SURFACES[activeSurface];
-      let cx = 0, cy = 0;
-      runningOpts.forEach(o => { cx += o.x; cy += o.y; });
-      cx /= runningOpts.length; cy /= runningOpts.length;
-      const wCentroid = mathToWorld(s, cx, cy);
-      let heightOffset = 0.5, camZOffset = 0;
-      if (s.id === 'rosenbrock') { heightOffset = -0.3; camZOffset = -1.5; }
-      if (s.id === 'himmelblau') { heightOffset = 1.5; }
-      if (s.id === 'rastrigin') { heightOffset = 2.0; }
-      const targetPos = new THREE.Vector3(wCentroid.x, wCentroid.y + heightOffset, wCentroid.z + camZOffset);
-      cinematicTarget.lerp(targetPos, 0.015);
-      controls.target.lerp(cinematicTarget, 0.012);
-    }
-
-    // ==========================================
-    // 5. ANIMATION LOOP
-    // ==========================================
-    function animate() {
-      requestAnimationFrame(animate);
-
-      // FPS tracking for adaptive trail pruning
-      const nowPerf = performance.now();
-      const delta = nowPerf - lastFrameTime;
-      lastFrameTime = nowPerf;
-      fpsSmoothed = fpsSmoothed * 0.92 + (1000 / Math.max(delta, 1)) * 0.08;
-      if (fpsSmoothed < 40) dynamicMaxPath = Math.max(MIN_PATH, dynamicMaxPath - 50);
-      else if (fpsSmoothed > 55) dynamicMaxPath = Math.min(MAX_PATH, dynamicMaxPath + 20);
-      
-      if (introLerpActive) {
-        introLerpT += 0.012;
-        if (introLerpT >= 1.0) {
-          introLerpT = 1.0;
-          introLerpActive = false;
-        }
-        const t = 1 - Math.pow(1 - introLerpT, 3); // ease out cubic
-        camera.position.lerpVectors(introStartCamPos, introTargetCamPos, t);
-        controls.target.lerpVectors(controls.target, introTargetCamLook, t);
+  container.addEventListener('mousemove',e=>{
+    if(e.buttons>0)return;
+    const rect=container.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,camera);
+    const meshes=Object.values(optimizers).filter(o=>o.enabled&&o.meshes.markerMesh).map(o=>o.meshes.markerMesh);
+    const hits=raycaster.intersectObjects(meshes);
+    if(hits.length){
+      const opt=Object.values(optimizers).find(o=>o.meshes.markerMesh===hits[0].object);
+      if(opt&&opt.intelligenceState!=='Ready'){
+        const a=ExplainabilityEngine.getAnalysis(opt);
+        if(tooltip){tooltip.innerHTML=`<strong>${opt.name}: ${a.status}</strong>${a.why}`;tooltip.classList.add('visible');tooltip.style.left=(e.clientX+15)+'px';tooltip.style.top=(e.clientY+15)+'px';clearTimeout(ttTimeout);ttTimeout=setTimeout(()=>tooltip.classList.remove('visible'),3000);}
       }
+    } else if(tooltip&&!document.querySelector('.opt-pill:hover'))tooltip.classList.remove('visible');
+  });
 
-      if (isReplaying && !ReplayTimelineManager.isDragging) {
-        const speed = Math.max(1, Math.floor(globalSpeed / 3));
-        ReplayTimelineManager.advance(speed);
-      } else if (globalRunning && !isReplaying) {
-        stepOptimizer();
-        updateVisuals();
-        if (TournamentManager.active) TournamentManager.check();
-      }
-      
-      updateCinematicCamera();
-      
-      // Personality-driven marker pulse
-      const time = nowPerf * 0.005;
-      Object.values(optimizers).forEach(opt => {
-        if (!opt.enabled || !opt.meshes.markerMesh || !opt.meshes.markerGlow) return;
-        let pulseFreq = 1, pulseAmp = 0.05;
-        if (opt.intelligenceState === 'Momentum Slingshot') { pulseFreq = 2.4; pulseAmp = 0.13; }
-        else if (opt.intelligenceState === 'Fast Convergence') { pulseFreq = 1.8; pulseAmp = 0.08; }
-        else if (opt.status.includes('Reached') || opt.intelligenceState === 'Converging') { pulseFreq = 0.5; pulseAmp = 0.18; }
-        const pulse = 1 + pulseAmp * Math.sin(time * pulseFreq);
-        opt.meshes.markerMesh.scale.setScalar(pulse);
-        opt.meshes.markerGlow.scale.setScalar(pulse + 0.12 * Math.sin(time * pulseFreq * 1.3));
-      });
+  // Init param bindings (hidden UI, kept for OPT_PERSONALITY compat)
+  [['p_mom_lr','v_mom_lr','momentum','lrMult'],['p_mom_b','v_mom_b','momentum','beta'],['p_rms_lr','v_rms_lr','rmsprop','lrMult'],['p_rms_b','v_rms_b','rmsprop','beta'],['p_adm_lr','v_adm_lr','adam','lrMult'],['p_adm_b1','v_adm_b1','adam','beta1'],['p_adm_b2','v_adm_b2','adam','beta2']].forEach(([iid,vid,obj,key])=>{
+    const el=document.getElementById(iid); if(!el)return;
+    el.addEventListener('input',e=>{const v=parseFloat(e.target.value);const vEl=document.getElementById(vid);if(vEl)vEl.textContent=v;OPT_PERSONALITY[obj][key]=v;});
+  });
 
-      if (vectorFieldMesh) {
-        vectorFieldMesh.material.opacity = 0.4 + 0.12 * Math.sin(performance.now() * 0.003);
-      }
-      
-      controls.update();
-      renderer.render(scene, camera);
-    }
-
-    // ==========================================
-    // 6. UI EVENT LISTENERS
-    // ==========================================
-    
-    function safeBind(id, event, handler) {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener(event, handler);
-      else console.warn(`Element '${id}' not found for event '${event}'`);
-    }
-
-    window.addEventListener('resize', () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    });
-
-    safeBind('surfaceSelect', 'change', (e) => {
-      loadSurface(e.target.value);
-    });
-
-    safeBind('chkVectorField', 'change', (e) => {
-      isVectorFieldVisible = e.target.checked;
-      buildVectorField(activeSurface);
-    });
-
-    document.querySelectorAll('.viz-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        setVizMode(e.target.getAttribute('data-viz'));
-      });
-    });
-
-    safeBind('btnGhost', 'click', (e) => {
-      isGhostMode = !isGhostMode;
-      e.target.classList.toggle('active', isGhostMode);
-      ghostMeshes.forEach(m => m.visible = isGhostMode);
-    });
-
-    safeBind('presetSelect', 'change', (e) => {
-      PresetManager.apply(e.target.value);
-    });
-
-    safeBind('btnOpenParams', 'click', () => {
-      const p = document.getElementById('paramDrawer');
-      if(p) p.classList.add('visible');
-    });
-    safeBind('btnCloseParams', 'click', () => {
-      const p = document.getElementById('paramDrawer');
-      if(p) p.classList.remove('visible');
-    });
-
-    safeBind('chkResearch', 'change', (e) => {
-      isResearchMode = e.target.checked;
-      updateTelemetry();
-    });
-
-    safeBind('chkVectors', 'change', (e) => {
-      isVectorsVisible = e.target.checked;
-      updateVisuals();
-    });
-
-    safeBind('btnTourney', 'click', () => {
-      TournamentManager.start();
-    });
-    safeBind('btnTourneyClose', 'click', () => {
-      const t = document.getElementById('tourneyModal');
-      if(t) t.classList.remove('visible');
-    });
-
-    safeBind('btnExportJson', 'click', () => ExportManager.downloadJSON());
-    safeBind('btnExportPng', 'click', () => ExportManager.downloadPNG());
-
-    safeBind('btnSaveCam', 'click', () => CameraManager.save());
-    safeBind('btnRestoreCam', 'click', () => CameraManager.restore());
-
-    safeBind('btnScrubExit', 'click', () => ReplayTimelineManager.stop());
-    safeBind('btnScrubPlay', 'click', (e) => {
-      const isPaused = e.target.innerHTML.includes('▶');
-      e.target.innerHTML = isPaused ? '⏸ Pause' : '▶ Play';
-      ReplayTimelineManager.isDragging = !isPaused; 
-    });
-
-    safeBind('btnReplay', 'click', (e) => {
-      if (Object.keys(replayBuffer).length === 0) return; // no buffer
-      
-      if (globalRunning) {
-        globalRunning = false;
-        const btnRun = document.getElementById('btnRun');
-        if(btnRun) btnRun.innerHTML = '▶ Run';
-      }
-      
-      isReplaying = true;
-      e.target.classList.add('active');
-      ReplayTimelineManager.start();
-      updateTelemetry();
-    });
-
-    safeBind('convGraphHeader', 'click', () => {
-      const p = document.getElementById('convGraphPanel');
-      if(p) p.classList.toggle('collapsed');
-    });
-
-    // Tooltips
-    const tooltip = document.getElementById('eduTooltip');
-    let tooltipTimeout;
-
-    document.querySelectorAll('.opt-pill').forEach(pill => {
-      pill.addEventListener('mouseenter', (e) => {
-        const eduId = e.target.getAttribute('data-edu-id');
-        const data = EDU_DATA[eduId];
-        if(data && tooltip) {
-          tooltip.innerHTML = `<strong>${data.title}</strong>${data.text}`;
-          tooltip.classList.add('visible');
-          const rect = e.target.getBoundingClientRect();
-          tooltip.style.left = (rect.right + 15) + 'px';
-          tooltip.style.top = rect.top + 'px';
-        }
-      });
-      pill.addEventListener('mouseleave', () => {
-        if(tooltip) tooltip.classList.remove('visible');
-      });
-    });
-
-    safeBind('densitySlider', 'input', (e) => {
-      currentVectorDensity = parseInt(e.target.value);
-      const v = document.getElementById('densityVal');
-      if(v) v.textContent = currentVectorDensity;
-      buildVectorField(activeSurface);
-    });
-
-    document.querySelectorAll('.opt-pill').forEach(pill => {
-      pill.addEventListener('click', (e) => {
-        const id = e.target.getAttribute('data-opt');
-        const opt = optimizers[id];
-        opt.enabled = !opt.enabled;
-        e.target.classList.toggle('active', opt.enabled);
-        
-        if (opt.meshes.markerMesh) opt.meshes.markerMesh.visible = opt.enabled;
-        if (opt.meshes.markerGlow) opt.meshes.markerGlow.visible = opt.enabled;
-        if (opt.meshes.pathLine) opt.meshes.pathLine.visible = opt.enabled;
-        if (opt.meshes.pathLineUnderlay) opt.meshes.pathLineUnderlay.visible = opt.enabled;
-        
-        updateTelemetry();
-      });
-    });
-
-    safeBind('btnRun', 'click', () => {
-      globalRunning = !globalRunning;
-      const btn = document.getElementById('btnRun');
-      if(btn) btn.innerHTML = globalRunning ? '⏸ Pause' : '▶ Run';
-      
-      let needsReset = false;
-      Object.values(optimizers).forEach(opt => {
-        if (opt.enabled && opt.status !== 'Ready' && opt.status !== 'Running' && opt.status !== 'Paused') {
-          needsReset = true;
-        }
-      });
-      
-      if (globalRunning && needsReset) {
-        resetOptimizer();
-        globalRunning = true;
-        if(btn) btn.innerHTML = '⏸ Pause';
-      }
-      
-      Object.values(optimizers).forEach(opt => {
-        if (globalRunning) {
-          if (opt.status === 'Ready' || opt.status === 'Paused') opt.status = 'Running';
-        } else {
-          if (opt.status === 'Running') opt.status = 'Paused';
-        }
-      });
-      
-      updateTelemetry();
-    });
-
-    safeBind('btnReset', 'click', resetOptimizer);
-    
-    // NOTE: Removed btnResetCam since it is replaced by Restore/Save Camera
-    
-    safeBind('btnCinematic', 'click', () => {
-      isCinematicMode = !isCinematicMode;
-      const btn = document.getElementById('btnCinematic');
-      if(btn) btn.classList.toggle('active', isCinematicMode);
-      if (isCinematicMode) {
-        cinematicTarget.copy(controls.target);
-      }
-    });
-
-    // Disable cinematic on manual orbit
-    renderer.domElement.addEventListener('pointerdown', () => {
-      if (isCinematicMode) {
-        cinematicLastInteract = performance.now();
-      }
-    });
-
-    safeBind('lrSlider', 'input', (e) => {
-      globalLr = Math.pow(10, parseFloat(e.target.value));
-      const v = document.getElementById('lrVal');
-      if(v) v.textContent = globalLr.toPrecision(2);
-    });
-    
-    safeBind('speedSlider', 'input', (e) => {
-      globalSpeed = parseInt(e.target.value);
-      const v = document.getElementById('speedVal');
-      if(v) v.textContent = globalSpeed;
-    });
-
-    safeBind('btnCollapseRail', 'click', () => {
-      const rail = document.getElementById('experimentRail');
-      if(rail) rail.classList.add('rail-collapsed');
-      setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
-    });
-    safeBind('btnRestoreRail', 'click', () => {
-      const rail = document.getElementById('experimentRail');
-      if(rail) rail.classList.remove('rail-collapsed');
-      setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
-    });
-
-    const btnPick = document.getElementById('btnPickStart');
-    const modeIndicator = document.getElementById('modeIndicator');
-    if (btnPick) {
-      btnPick.addEventListener('click', () => {
-        isPickingStart = !isPickingStart;
-        btnPick.classList.toggle('active', isPickingStart);
-        btnPick.textContent = isPickingStart ? 'Cancel Pick Mode' : '🎯 Pick Point on Surface';
-        if(modeIndicator) modeIndicator.style.display = isPickingStart ? 'block' : 'none';
-        container.style.cursor = isPickingStart ? 'crosshair' : 'default';
-      });
-    }
-
-    safeBind('btnApplyStart', 'click', () => {
-      const s = SURFACES[activeSurface];
-      const xInput = document.getElementById('startXInput');
-      const yInput = document.getElementById('startYInput');
-      if(!xInput || !yInput) return;
-      let nx = parseFloat(xInput.value);
-      let ny = parseFloat(yInput.value);
-      if (isNaN(nx) || isNaN(ny)) return;
-      nx = Math.max(s.domain.xmin, Math.min(s.domain.xmax, nx));
-      ny = Math.max(s.domain.ymin, Math.min(s.domain.ymax, ny));
-      currentStart = { x: nx, y: ny };
-      resetOptimizer();
-    });
-
-    safeBind('btnDefaultStart', 'click', () => {
-      const s = SURFACES[activeSurface];
-      currentStart = { ...s.startPoint };
-      resetOptimizer();
-    });
-
-    // Accurate Raycaster Logic (click vs drag)
-    container.addEventListener('pointerdown', (e) => {
-      pointerDownCoord.x = e.clientX;
-      pointerDownCoord.y = e.clientY;
-    });
-
-    container.addEventListener('pointerup', (e) => {
-      if (!isPickingStart || !surfaceMesh) return;
-      
-      const dx = e.clientX - pointerDownCoord.x;
-      const dy = e.clientY - pointerDownCoord.y;
-      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) return; // Ignore drag/rotation
-      
-      const rect = container.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      
-      raycaster.setFromCamera(mouse, camera);
-      // Raycast ONLY against primary mathematical mesh, not the wireframe overlay
-      const intersects = raycaster.intersectObject(surfaceMesh, false);
-      
-      if (intersects.length > 0) {
-        const pt = intersects[0].point;
-        
-        const s = SURFACES[activeSurface];
-        const mathPt = worldToMath(s, pt);
-        const nx = mathPt.x;
-        const ny = mathPt.y;
-        
-        if (nx >= s.domain.xmin && nx <= s.domain.xmax && ny >= s.domain.ymin && ny <= s.domain.ymax) {
-          currentStart = { x: nx, y: ny };
-          resetOptimizer();
-          
-          isPickingStart = false;
-          if(btnPick) {
-            btnPick.classList.remove('active');
-            btnPick.textContent = '🎯 Pick Point on Surface';
-          }
-          if(modeIndicator) modeIndicator.style.display = 'none';
-          container.style.cursor = 'default';
-          
-          const toast = document.createElement('div');
-          toast.textContent = 'Initialization point set.';
-          toast.style.position = 'absolute';
-          toast.style.top = '20px';
-          toast.style.left = '50%';
-          toast.style.transform = 'translateX(-50%)';
-          toast.style.background = 'rgba(16, 185, 129, 0.9)';
-          toast.style.color = '#fff';
-          toast.style.padding = '8px 16px';
-          toast.style.borderRadius = '20px';
-          toast.style.fontFamily = 'var(--sans)';
-          toast.style.fontSize = '12px';
-          toast.style.pointerEvents = 'none';
-          toast.style.zIndex = '100';
-          document.body.appendChild(toast);
-          setTimeout(() => toast.remove(), 2000);
-        }
-      }
-    });
-
-    // Tooltip Raycasting (Hover)
-    container.addEventListener('mousemove', (e) => {
-      if (e.buttons > 0) return; // don't trigger while orbiting
-      const rect = container.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      
-      raycaster.setFromCamera(mouse, camera);
-      const meshesToTest = Object.values(optimizers).filter(o => o.enabled && o.meshes.markerMesh).map(o => o.meshes.markerMesh);
-      const intersects = raycaster.intersectObjects(meshesToTest);
-      
-      if (intersects.length > 0) {
-        const hitMesh = intersects[0].object;
-        const opt = Object.values(optimizers).find(o => o.meshes.markerMesh === hitMesh);
-        if (opt && opt.intelligenceState !== 'Ready') {
-          const stateData = EDU_DATA[opt.intelligenceState];
-          if (stateData && tooltip) {
-            tooltip.innerHTML = `<strong>${stateData.title}</strong>${stateData.text}`;
-            tooltip.classList.add('visible');
-            tooltip.style.left = (e.clientX + 15) + 'px';
-            tooltip.style.top = (e.clientY + 15) + 'px';
-            
-            clearTimeout(tooltipTimeout);
-            tooltipTimeout = setTimeout(() => { tooltip.classList.remove('visible'); }, 3000);
-          }
-        }
-      } else {
-        if(tooltip && tooltip.classList.contains('visible') && !tooltip.matches(':hover') && !document.querySelector('.opt-pill:hover')) {
-          tooltip.classList.remove('visible');
-        }
-      }
-    });
-
-    // INIT
-    ParameterManager.init();
-    ReplayTimelineManager.init();
-    loadSurface('bowl');
-    animate();
-  </script>
+  // =============================================
+  // INIT
+  // =============================================
+  loadSurface('bowl');
+  animate();
+</script>
 </body>
 </html>
