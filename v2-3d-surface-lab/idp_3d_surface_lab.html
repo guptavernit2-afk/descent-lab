@@ -921,7 +921,7 @@
       opt.status='Ready'; opt.intelligenceState='Ready';
       opt.iter=0; opt.lossHistory=[]; opt.dirHistory=[];
       opt.x=currentStart.x; opt.y=currentStart.y; opt.z=startZ;
-      opt.stepDist=0; opt.convergePulse=0; opt.flickerPhase=0;
+      opt.stepDist=0; opt.convergePulse=0; opt.flickerPhase=0; opt.stuckCounter=0;
       const{gx,gy}=s.grad(opt.x,opt.y); opt.gradMag=Math.sqrt(gx*gx+gy*gy);
       opt.path=[{x:opt.x,y:opt.y,z:opt.z}];
       opt.v_x=0;opt.v_y=0;opt.s_x=1e-8;opt.s_y=1e-8;opt.m_x=0;opt.m_y=0;opt.t=0;
@@ -984,11 +984,20 @@
           opt.status='SUCCESS';
           opt.intelligenceState=reached;
         } else {
-          const maxIterMap = { bowl: 500, rosenbrock: 1500, himmelblau: 1500, rastrigin: 2500 };
-          const mx = maxIterMap[s.id] || 1500;
+          const maxIterMap = { bowl: 1000, rosenbrock: 5000, himmelblau: 5000, rastrigin: 8000 };
+          const mx = maxIterMap[s.id] || 5000;
           if (opt.iter >= mx) { opt.status='TIMEOUT'; opt.intelligenceState='Took too long'; }
           else if (!isFinite(nz) || nz > 1e4 || (hl >= 20 && nz > opt.lossHistory[0] + 50)) { opt.status='DIVERGED'; opt.intelligenceState='Diverging'; }
-          else if (opt.iter > 50 && hl >= 10 && Math.abs(opt.lossHistory[0] - nz) < 1e-7 && opt.gradMag < 0.05) { opt.status='STUCK'; opt.intelligenceState='Local Trap'; }
+          else {
+            if (hl >= 10 && Math.abs(opt.lossHistory[0] - nz) < 1e-9 && opt.gradMag < 0.05) {
+              opt.stuckCounter = (opt.stuckCounter || 0) + 1;
+              if (opt.stuckCounter > 250 && nz > 1e-3) {
+                opt.status='STUCK'; opt.intelligenceState='Local Trap';
+              }
+            } else {
+              opt.stuckCounter = 0;
+            }
+          }
         }
       });
     }
@@ -998,7 +1007,7 @@
       if(active.length&&active.some(o=>o.iter>5)&&active.every(o=>o.status!=='Running')){
         runCompleted=true; globalRunning=false;
         document.getElementById('btnRun').innerHTML='▶ Run';
-        setTimeout(showIntelligencePanel,450);
+        setTimeout(showIntelligencePanel,1800);
       }
     }
   }
@@ -1220,7 +1229,7 @@
             <span class="rec-winner-name" style="color:${result.best.uiColor}; font-size:32px;">${result.best.name}</span>
             <span class="conf-badge" style="color:${conf.color};border-color:${conf.color}40;background:${conf.color}10; padding:6px 12px; font-size:10px;">
               ${conf.level} CONFIDENCE
-            </span>
+            </span> 
           </div>
           <div style="font-size:11px; color:#cbd5e1; margin-bottom:16px; font-weight:500;">${conf.desc}</div>
           
