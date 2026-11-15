@@ -11,6 +11,7 @@ test-results/
 .playwright/
 .cache/
 .vite/
+.vercel/
 
 # Local configuration and credentials
 .env

@@ -4,17 +4,28 @@ The lab studies unconstrained optimization of a scalar objective `f(x, y)` using
 
 ## Loss surfaces
 
-| Surface        | Objective                        | Analytic gradient `(∂f/∂x, ∂f/∂y)`               | Known global minima                  |
-| -------------- | -------------------------------- | ------------------------------------------------ | ------------------------------------ |
-| Quadratic      | `½(x² + 6y²)`                    | `(x, 6y)`                                        | `(0, 0)`, loss `0`                   |
-| Quartic saddle | `x² − y² + 0.15y⁴`               | `(2x, −2y + 0.6y³)`                              | `(0, ±√(10/3))`, loss `−5/3`         |
-| Rosenbrock     | `(1−x)² + 100(y−x²)²`            | `(2(x−1) − 400x(y−x²), 200(y−x²))`               | `(1, 1)`, loss `0`                   |
-| Himmelblau     | `(x²+y−11)² + (x+y²−7)²`         | `(4x(x²+y−11)+2(x+y²−7), 2(x²+y−11)+4y(x+y²−7))` | Four points with loss `0`; see below |
-| Rastrigin      | `20+x²+y²−10[cos(2πx)+cos(2πy)]` | `(2x+20πsin(2πx), 2y+20πsin(2πy))`               | `(0, 0)`, loss `0`                   |
+| Surface           | Objective                        | Analytic gradient `(∂f/∂x, ∂f/∂y)`               | Known global minima                                          |
+| ----------------- | -------------------------------- | ------------------------------------------------ | ------------------------------------------------------------ |
+| Quadratic         | `½(x² + 6y²)`                    | `(x, 6y)`                                        | `(0, 0)`, loss `0`                                           |
+| Quartic saddle    | `x² − y² + 0.15y⁴`               | `(2x, −2y + 0.6y³)`                              | `(0, ±√(10/3))`, loss `−5/3`                                 |
+| Rosenbrock        | `(1−x)² + 100(y−x²)²`            | `(2(x−1) − 400x(y−x²), 200(y−x²))`               | `(1, 1)`, loss `0`                                           |
+| Himmelblau        | `(x²+y−11)² + (x+y²−7)²`         | `(4x(x²+y−11)+2(x+y²−7), 2(x²+y−11)+4y(x+y²−7))` | Four points with loss `0`; see below                         |
+| Rastrigin         | `20+x²+y²−10[cos(2πx)+cos(2πy)]` | `(2x+20πsin(2πx), 2y+20πsin(2πy))`               | `(0, 0)`, loss `0`                                           |
+| Linear regression | `L(w,b) = Σ(wuᵢ+b−tᵢ)²/(2n)`     | `(Σrᵢuᵢ/n, Σrᵢ/n)`, where `rᵢ = wuᵢ+b−tᵢ`        | Training-data least-squares solution; generally nonzero loss |
 
 Himmelblau's stored minima are `(3, 2)`, `(-2.805118, 3.131312)`, `(-3.779310, -3.283186)`, and `(3.584428, -1.848126)`. Three are rounded coordinates, so their computed loss need not be exactly zero.
 
 The quartic saddle is bounded below and has a stationary saddle at `(0, 0)`. It is deliberately different from the unbounded surface `x² − y²`. With zero gradient, zero velocity, and no noise, all six methods can remain at the exact saddle; momentum is not a guaranteed escape mechanism.
+
+### From a surface to a fitted model
+
+For **Fit a Line**, the surface coordinates are parameters: `x = w` is slope and `y = b` is intercept. They are different from the plotted observation feature `u` and target `t`. A point on the loss surface therefore specifies the entire prediction rule `t̂ = wu + b`.
+
+[`src/lib/regression.ts`](../src/lib/regression.ts) supplies a fixed synthetic dataset: 25 training observations and 12 separate held-out observations, generated around `t = 1.4u + 0.65` with deterministic sinusoidal residuals. The data are reproducible teaching examples, not real measurements, and do not change with the experiment seed. The reference minimum is computed by closed-form least squares using **training data only**. Residual variation means even the optimal training line has nonzero error.
+
+The surface objective is **half the training mean squared error**. Its derivative is simpler because the factor of two from differentiating the square cancels the one-half. The model panel reports ordinary MSE for both splits, so `training MSE = 2L`. [Google's regression-loss lesson](https://developers.google.com/machine-learning/crash-course/linear-regression/loss) explains the prediction-to-squared-error connection.
+
+Every optimizer update uses all 25 training observations: this is full-batch optimization. The 12 held-out observations are used only to display evaluation error, never to calculate an update or the reference minimum. Their small, synthetic split cannot establish real-world generalization. Repeatedly choosing settings while watching held-out error also makes it a tuning signal, not an untouched final test. The noise control perturbs gradients; it does not resample observations or form minibatches.
 
 ## Update rules
 
@@ -57,6 +68,26 @@ An initial point can meet these conditions at step `0`. The rule deliberately di
 
 The engine never clips an optimizer's position to the displayed domain. Trajectories may leave the plot, and hiding an off-screen point does not change its computation. `bestLoss` is the smallest loss among recorded valid points, which can differ from the final loss.
 
+### Inspecting the actual update
+
+Each accepted non-initial point can include a `StepUpdateDetails` snapshot: the previous position, gradient-evaluation position, true gradient there, sampled noise, gradient used by the optimizer, displacement, coordinate multipliers, and memory before and after the step. AdaGrad/RMSProp/Adam record their denominators; Adam also records bias corrections and corrected moments. Snapshots are copied from the computation rather than reconstructed from the drawn path.
+
+Nesterov's evaluation position can differ from its previous position. The inspector's true gradient is evaluated there, while the comparison table's gradient norm is evaluated at the **new** position. These are different quantities. Adam's coordinate multiplier acts on its corrected first moment; it should not be read as a scalar multiplier of the current raw gradient. Step zero has no update, and an unsafe rejected step produces no accepted snapshot.
+
+`runExperiment(config, { captureUpdates: false })` omits those detailed snapshots for batch studies. It leaves positions, losses, stopping behavior, and random-number generation unchanged.
+
+## Learning-rate studies
+
+[`src/lib/study.ts`](../src/lib/study.ts) evaluates all six optimizers over 3–7 logarithmically spaced rates and 1–5 seeds, at most 210 trials. Rates have equal ratios rather than equal differences. Each trial uses the same surface, starting point, momentum setting, noise amplitude, and maximum budget; only its optimizer, rate, and seed vary. Seeds are consecutive unsigned 32-bit integers, wrapping at the integer limit. Study budgets are 200–1000 iterations and noise is bounded to `0–2`.
+
+With zero noise, changing the seed changes nothing; repeats are identical. With noise enabled, shared seeds give each method the same perturbation sequence at each iteration, while its own position still determines the gradient. These studies demonstrate sensitivity to a small sampled range, not statistically conclusive rankings. Log-scale exploration follows the practical tuning guidance in [Stanford CS231n](https://cs231n.github.io/neural-networks-3/#hyperparameter-optimization) and [Bengio's recommendations](https://arxiv.org/abs/1206.5533); this one-dimensional grid is not claimed to be an optimal search strategy for many hyperparameters.
+
+For each optimizer/rate cell, the median and minimum–maximum range include **only non-divergent terminal losses**. The valid-count denominator and divergent count are explicit. If every trial diverges, the median is absent. A divergent trial retains its last finite loss and best recorded loss separately; neither is substituted for a completed result. Read the failure counts before comparing a favorable survivor median. A run reaching its budget is valid for aggregation even if it has not met convergence criteria.
+
+The reported range describes these samples, not a confidence interval. A lowest fully valid median at the edge of the tested rate range is a reason to investigate the boundary, not evidence that the optimum was found. Heatmap coloring uses an `asinh` transform across the displayed medians; text and exported values remain unscaled.
+
+Study CSV and `optimizer-lab/study-v1` JSON reports retain every trial summary. They are distinct from single-experiment JSON imports. **Replay seed** reconstructs one exact experiment for the full laboratory. Cancellation discards a partial study so it cannot be mistaken for the planned complete sample.
+
 ## Input limits
 
 Imported configurations are validated as data; formulas are not evaluated from input text.
@@ -71,12 +102,14 @@ Imported configurations are validated as data; formulas are not evaluated from i
 | Start            | Finite x and y within the selected surface's display domain |
 | Optimizers       | One to six distinct recognized identifiers                  |
 
-The display domains are `[-4, 4]` for the quadratic bowl, `[-3, 3]` for the saddle, `[-2.5, 2.5]` for Rosenbrock, `[-5, 5]` for Himmelblau, and `[-5.12, 5.12]` for Rastrigin. Omitted settings use defaults; a selected surface supplies its own default start and learning rate.
+The display domains are `[-4, 4]` for the quadratic bowl, `[-3, 3]` for the saddle and linear-regression parameters, `[-2.5, 2.5]` for Rosenbrock, `[-5, 5]` for Himmelblau, and `[-5.12, 5.12]` for Rastrigin. Omitted settings use defaults; a selected surface supplies its own default start and learning rate.
 
 ## Visualization and comparison limits
 
 Surface height is transformed with `asinh` and normalized to the sampled surface range to make steep functions readable. Mesh resolution, perspective, and height compression are display choices. Use the numerical readouts and exported data for actual objective values, not apparent vertical distances in the 3D view.
 
-The common learning rate is useful for showing mechanisms under a controlled setup. It is not a per-method hyperparameter search. A learning rate well suited to Gradient Descent may be poor for Adam, and the reverse can also occur. Results on these five smooth, two-dimensional functions do not establish an optimizer's performance on high-dimensional models or unseen objectives.
+The common learning rate in the laboratory is useful for showing mechanisms under a controlled setup. It is not a per-method hyperparameter search. A learning rate well suited to Gradient Descent may be poor for Adam, and the reverse can also occur. The rate study broadens that one control but does not tune all other hyperparameters. Results on these six smooth, two-dimensional objectives do not establish an optimizer's performance on high-dimensional models or unseen data.
 
 Tests in [`src/lib/engine.test.ts`](../src/lib/engine.test.ts) check analytic gradients against finite differences, independently calculated updates, repeatability, stopping rules, invalid configuration handling, and divergence. They verify these implementation contracts rather than proving general convergence.
+
+Regression tests verify the least-squares reference and split isolation. Lesson tests verify the numerical comparisons used in the teaching content. Study tests cover logarithmic spacing, aggregation, reproducibility, cancellation, and report exports. See [learning design](learning-design.md) for the educational objectives and a classroom sequence.

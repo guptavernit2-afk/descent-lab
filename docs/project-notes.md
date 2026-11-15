@@ -30,3 +30,14 @@ The application at the repository root develops that idea into a modular workspa
 The quartic saddle was selected instead of the unbounded function `x² − y²`, so the lab can show a saddle and meaningful finite minima in one experiment. The educational narrative avoids declaring a universally best optimizer: performance depends on the landscape, starting point, tuning, noise, and stopping rule.
 
 For the current mathematics and implementation decisions, use [methodology](methodology.md) and [architecture](architecture.md). These notes describe provenance rather than an unfinished feature roadmap.
+
+## Educational platform: questions, evidence, and explanation
+
+The next refinement focuses on the project's original purpose: helping a student understand an optimizer rather than only watching a path.
+
+- Five guided lessons connect a prediction to measured behavior and a concept check. Their completion records stay in the learner's browser.
+- The step inspector exposes the update actually computed, including look-ahead gradients, retained velocity, accumulators, and Adam's bias correction.
+- A fixed synthetic linear-regression example connects parameter-space motion to a fitted line, residuals, and training versus held-out error.
+- A bounded learning-rate study repeats methods across log-spaced rates and shared seeds. It reports failures explicitly rather than hiding them behind averages.
+
+These additions use the same numerical engine and include tests for the claims they demonstrate. Their teaching flow is informed by primary learning and optimization resources; no study has established this application's learning effectiveness. The [learning-design guide](learning-design.md) explains that distinction and provides a suggested classroom activity.

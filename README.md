@@ -1,12 +1,12 @@
 # IDP Optimizer Visual Lab
 
-**See how optimizers think. Build an experiment. Follow every step.**
+**Predict the next step. Inspect the mathematics. Test your explanation.**
 
-[Launch the laboratory](https://guptavernit2-afk.github.io/idp-optimizer-visual-lab/) · [How the math works](docs/methodology.md) · [Development guide](CONTRIBUTING.md)
+[Open the platform](https://guptavernit2-afk.github.io/idp-optimizer-visual-lab/) · [Start learning](https://guptavernit2-afk.github.io/idp-optimizer-visual-lab/?page=learn) · [Teaching guide](docs/learning-design.md) · [Development guide](CONTRIBUTING.md)
 
 [![CI](https://github.com/guptavernit2-afk/idp-optimizer-visual-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/guptavernit2-afk/idp-optimizer-visual-lab/actions/workflows/ci.yml)
 
-A browser-based optimization laboratory that turns mathematical loss landscapes into interactive experiments. Compare six gradient-based methods on five benchmark surfaces, inspect their trajectories, and keep reproducible results for your next demonstration or report.
+A browser-based educational platform for understanding gradient-based optimization. Learn through guided experiments, inspect the arithmetic and memory behind an update, fit a model to synthetic observations, and test learning-rate sensitivity across repeated trials.
 
 Originally a first-year project, the lab now brings the original 1D exploration into a modular React and TypeScript application. The original simulator remains intact in [`v1-1d-diagnostics/`](v1-1d-diagnostics/).
 
@@ -14,6 +14,10 @@ Originally a first-year project, the lab now brings the original 1D exploration 
 
 ## What you can do
 
+- **Learn by testing predictions.** Five guided lessons connect gradient direction, stability, momentum, adaptive scaling, and stationary points to measured evidence. Knowledge checks explain the answer, and completed lessons persist in this browser.
+- **Inspect a real update.** Scrub to a step and inspect its actual gradient, shared noise, parameter change, velocity, accumulator, or Adam bias-corrected moments. The inspector reads snapshots from the same numerical engine as the visualization.
+- **Connect a loss to a model.** Fit a line to 25 synthetic observations. Watch slope and intercept move on the loss surface, inspect individual residuals, and compare training MSE with error on 12 held-out observations.
+- **Investigate sensitivity.** Compare all six algorithms over 3–7 logarithmic learning rates and 1–5 shared seeds. Inspect median terminal loss, observed spread, convergence, and failures. Replay an exact trial or export the complete study report.
 - **Explore the landscape.** Orbit and zoom a projected 3D surface, switch to a contour view, and choose a starting point.
 - **Compare six methods.** Gradient Descent, Momentum, Nesterov, AdaGrad, RMSProp, and Adam use the same surface, start, and experiment budget.
 - **Control the experiment.** Change learning rate, momentum, gradient noise, random seed, and step budget. Use presets to investigate common optimization behaviors.
@@ -59,17 +63,30 @@ For visual captures, start `npm run preview -- --port 4173`, then run `npm run s
 4. Try Rosenbrock's curved valley or Rastrigin's local minima. Adjust the learning rate for each surface.
 5. Save the setup or export the trace. Repeat with a fixed seed before changing one parameter at a time.
 
+## A learning session
+
+1. Open **Learning path** and predict which coordinate moves farther in “Turn a slope into a step.” Run the example and explain the measured update before checking your understanding.
+2. Choose **Open in lab** and advance one iteration. Use **Inside this update** to connect the formula to the actual vectors.
+3. Select **Linear regression** in the laboratory. The point on the surface now represents a slope and intercept; its motion changes the fitted line.
+4. Open **Parameter studies**. Compare a logarithmic range of rates, then add gradient noise and repeat across seeds. Include divergence counts when interpreting the median.
+5. Export your measurements and record the settings, prediction, observation, and remaining question.
+
+The [learning-design guide](docs/learning-design.md) maps each feature to a learning objective and provides a 40-minute classroom sequence. It cites teaching guidance and primary optimization sources; the platform itself has not been evaluated in a learning-outcomes study.
+
+![Learning-rate sensitivity with explicit failure counts and reproducible trials](screenshots/parameter-studies.png)
+
 ## Benchmarks and interpretation
 
-| Landscape           | What it illustrates                               |
-| ------------------- | ------------------------------------------------- |
-| Quadratic bowl      | Curvature, stable descent, and momentum overshoot |
-| Quartic saddle      | A saddle at the origin and two finite minima      |
-| Rosenbrock valley   | A narrow curved valley with steep walls           |
-| Himmelblau function | Four equal global minima and different basins     |
-| Rastrigin function  | Many local minima surrounding a global minimum    |
+| Landscape           | What it illustrates                                                           |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Quadratic bowl      | Curvature, stable descent, and momentum overshoot                             |
+| Quartic saddle      | A saddle at the origin and two finite minima                                  |
+| Rosenbrock valley   | A narrow curved valley with steep walls                                       |
+| Himmelblau function | Four equal global minima and different basins                                 |
+| Rastrigin function  | Many local minima surrounding a global minimum                                |
+| Linear regression   | Parameters, predictions, residuals, and half-MSE on a fixed synthetic dataset |
 
-These are educational two-parameter experiments, not a benchmark of neural-network training. One shared learning rate makes mechanisms easy to compare, but does not give every optimizer its best tuning. A small gradient alone does not prove that a global minimum was reached. Surface height is compressed for readability; exported losses and gradients retain their actual numerical values. See [methodology and equations](docs/methodology.md) for the exact conventions.
+These are educational two-parameter experiments. They do not benchmark neural-network training. One shared learning rate makes mechanisms easy to compare, but does not give every optimizer its best tuning. The rate-study grid helps explore this sensitivity; it does not establish a universal optimizer ranking. With zero noise, different seeds produce identical trajectories. A small gradient alone does not prove that a global minimum was reached. Surface height is compressed for readability; exported losses and gradients retain their actual numerical values. See [methodology and equations](docs/methodology.md) for the exact conventions.
 
 ## Project structure
 
@@ -94,6 +111,8 @@ The numerical engine is independent of React and rendering. This makes optimizer
 ## Deployment
 
 The production output is static and can be hosted on GitHub Pages or any static file host. Relative asset paths are used by default. `VITE_BASE_PATH` can override the deployment base when needed.
+
+**Vercel is the recommended host for this build.** Its Vite integration fits the static application, and Git integration can provide deployment previews without adding an application server. The repository includes `vercel.json` and an explicit upload exclusion list. No hosting credentials belong in the repository. See [deployment instructions](docs/deployment.md) for permanent account deployment and the limitations of an unclaimed temporary deployment.
 
 GitHub Actions checks the project on pushes and pull requests. After a successful `CI` run on `main`, the Pages workflow builds and publishes `dist/`; it can also be run manually. This repository is configured to use **GitHub Actions** as its Pages source. See [deployment notes](docs/deployment.md) for setup and troubleshooting.
 

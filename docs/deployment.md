@@ -2,6 +2,23 @@
 
 The current laboratory builds to a static `dist/` directory. It requires no server runtime, database, secrets, or API keys.
 
+## Recommended: Vercel
+
+Vercel and Render both support static frontends. Vercel is a direct fit for this Vite project, with framework detection and Git-linked previews. The application does not need a continuously running Render web service; if deploying there, use a Static Site. See [Vercel's Vite documentation](https://vercel.com/docs/frameworks/frontend/vite) and [Render's static-site documentation](https://render.com/docs/static-sites).
+
+For a permanent deployment, connect the GitHub repository to your Vercel account and import it with the Vite framework preset. Use `npm ci`, `npm run build`, and output directory `dist`. The committed `vercel.json` specifies these settings, security response headers, and immutable caching for hashed assets. Browser workspaces use the `page` query parameter, so no catch-all rewrite is required; the original `legacy/` directory remains a real static route.
+
+An authenticated CLI can also deploy the project:
+
+```bash
+npx vercel login
+npx vercel deploy --prod
+```
+
+Vercel also supports `npx vercel deploy --temporary` without an account. That command builds locally and returns a production URL, a private claim link, and a server-set expiry. **The deployment must be claimed before that expiry to remain available.** A temporary deployment is not a substitute for account ownership or ongoing Git integration. Claim links control the project and must never be put in Git, a README, or a public issue. After claiming, connect the repository for future deployments. [Official temporary-deployment documentation](https://vercel.com/docs/deployments/deploy-without-logging-in).
+
+The `.vercelignore` file excludes local caches, credentials, dependency folders, and test artifacts. `.vercel/` is also Git-ignored. The GitHub Pages URL remains an independently deployed, durable fallback.
+
 ## GitHub Pages
 
 The repository includes two workflows:
