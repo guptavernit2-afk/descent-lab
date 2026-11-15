@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+test-results
+playwright-report
+package-lock.json
+v1-1d-diagnostics
+screenshots

@@ -1,15 +1,31 @@
-# Editor settings
+# Dependencies and generated builds
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+public/legacy/
+
+# Browser test output and local tooling
+playwright-report/
+test-results/
+.playwright/
+.cache/
+.vite/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Editor and operating system files
 .vscode/
 .idea/
-
-# Operating system files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Temporary files
+# Temporary files and local backups
 *.tmp
 *.log
-
-# Local backup folders
 backup/
 backups/

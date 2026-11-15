@@ -1,0 +1,28 @@
+name: Bug report
+description: Report an interface issue or an unexpected numerical result.
+title: '[Bug]: '
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Explain the observed behavior and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps or experiment configuration
+      description: Include steps to reproduce, or paste an exported JSON configuration. Remove personal information from share links.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: Chrome on Windows, Safari on iPhone, etc.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Screenshots, console errors, or an independently calculated expected update.
