@@ -11,6 +11,8 @@ A browser-based educational platform for understanding gradient-based optimizati
 
 Originally a first-year project, the lab now brings the original 1D exploration into a modular React and TypeScript application. The original simulator remains intact in [`v1-1d-diagnostics/`](v1-1d-diagnostics/).
 
+**Want to understand how the project works?** Start with the [project workflow walkthrough](docs/workflow.md), from app startup and one optimizer update to saving results and deployment.
+
 ![The optimizer laboratory with an interactive loss surface, experiment controls, and convergence diagnostics](screenshots/lab-desktop.png)
 
 ## What you can do
