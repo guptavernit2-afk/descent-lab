@@ -105,14 +105,10 @@ button:not(:disabled):active {
   white-space: nowrap;
 }
 .brand-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  flex-shrink: 0;
   width: 35px;
   height: 35px;
-  border-radius: 10px;
-  color: #e2edc5;
-  background: var(--green);
 }
 .brand-light {
   font-weight: 400;
@@ -1809,6 +1805,7 @@ kbd {
   top: 15px;
 }
 .mobile-menu,
+.mobile-brand-mark,
 .sidebar-backdrop {
   display: none;
 }
@@ -2171,6 +2168,13 @@ kbd {
   .mobile-menu {
     display: flex;
     margin-left: -7px;
+  }
+  .mobile-brand-mark {
+    display: block;
+    flex-shrink: 0;
+  }
+  .workspace-breadcrumb {
+    display: none;
   }
   .breadcrumb {
     gap: 9px;

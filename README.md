@@ -1,8 +1,9 @@
-# DescentLab
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/brand/descentlab-logo-dark.svg" />
+  <img src="public/brand/descentlab-logo-light.svg" alt="DescentLab — See every step. Understand every optimizer." width="430" height="112" />
+</picture>
 
-**See every step. Understand every optimizer.**
-
-[Open the platform](https://descent-lab.vercel.app/) · [Start learning](https://descent-lab.vercel.app/?page=learn) · [Teaching guide](docs/learning-design.md) · [Development guide](CONTRIBUTING.md)
+[Open the platform](https://descent-lab.vercel.app/) · [Start learning](https://descent-lab.vercel.app/?page=learn) · [Teaching guide](docs/learning-design.md) · [Brand assets](docs/brand.md) · [Development guide](CONTRIBUTING.md)
 
 [![CI](https://github.com/guptavernit2-afk/descent-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/guptavernit2-afk/descent-lab/actions/workflows/ci.yml)
 

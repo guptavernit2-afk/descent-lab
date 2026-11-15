@@ -466,9 +466,14 @@ export default function App() {
             navigate('lab');
           }}
         >
-          <span className="brand-mark">
-            <Mountain size={25} strokeWidth={1.5} />
-          </span>
+          <img
+            className="brand-mark"
+            src={`${import.meta.env.BASE_URL}brand/descentlab-mark.svg`}
+            width="35"
+            height="35"
+            alt=""
+            aria-hidden="true"
+          />
           <span>
             Descent
             <span className="brand-light">
@@ -573,7 +578,15 @@ export default function App() {
             >
               <Menu size={20} />
             </IconButton>
-            <span>Workspace</span>
+            <img
+              className="mobile-brand-mark"
+              src={`${import.meta.env.BASE_URL}brand/descentlab-mark.svg`}
+              width="26"
+              height="26"
+              alt=""
+              aria-hidden="true"
+            />
+            <span className="workspace-breadcrumb">Workspace</span>
             <ChevronRight size={13} />
             <strong>{PAGE_META[page].label}</strong>
           </div>
