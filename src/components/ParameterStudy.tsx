@@ -374,12 +374,21 @@ export default function ParameterStudy({
             seeds. All computation stays in this browser.
           </p>
           {running ? (
-            <button className="button secondary" type="button" onClick={cancelStudy}>
+            <button
+              key="cancel-study"
+              className="button secondary"
+              type="button"
+              onClick={(event) => {
+                // React may replace the form action during this click. Prevent its native submit.
+                event.preventDefault();
+                cancelStudy();
+              }}
+            >
               <Square size={13} />
               Cancel study
             </button>
           ) : (
-            <button className="button primary" type="submit">
+            <button key="run-study" className="button primary" type="submit">
               <Play size={14} />
               Run parameter study
             </button>

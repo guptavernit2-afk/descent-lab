@@ -87,7 +87,9 @@ test('switches all five landscapes and protects the final selected optimizer', a
   for (const name of ['GD', 'Momentum', 'Nesterov', 'AdaGrad', 'RMSProp']) {
     await page.getByRole('checkbox', { name, exact: true }).uncheck();
   }
-  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await expect(
+    page.getByRole('region', { name: 'Optimizer measurements' }).locator('tbody tr'),
+  ).toHaveCount(1);
   await page.getByRole('checkbox', { name: 'Adam', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'Adam', exact: true })).toBeChecked();
   await expect(page.getByRole('status')).toContainText('Keep at least one optimizer');
@@ -144,7 +146,10 @@ test('saves, persists, restores, and deletes a named experiment', async ({ page 
 test('exports JSON traces and imports the same reproducible checkpoint', async ({ page }) => {
   await page.getByRole('button', { name: 'Advance one iteration' }).click();
   await page.getByRole('button', { name: 'Advance one iteration' }).click();
-  const tableBefore = await page.locator('tbody').innerText();
+  const tableBefore = await page
+    .getByRole('region', { name: 'Optimizer measurements' })
+    .locator('tbody')
+    .innerText();
   await page.getByRole('button', { name: 'Export', exact: true }).click();
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: /Experiment as JSON/ }).click();
@@ -163,7 +168,9 @@ test('exports JSON traces and imports the same reproducible checkpoint', async (
   await expect(page.getByRole('status')).toContainText('Experiment imported');
   await expect(page.getByRole('heading', { name: /^Quadratic Bowl/ })).toBeVisible();
   await expect(page.getByTestId('iteration-value')).toHaveText('002');
-  await expect(page.locator('tbody')).toHaveText(tableBefore, { useInnerText: true });
+  await expect(
+    page.getByRole('region', { name: 'Optimizer measurements' }).locator('tbody'),
+  ).toHaveText(tableBefore, { useInnerText: true });
 });
 
 test('rejects unsupported and malformed imports without losing the current setup', async ({
@@ -199,7 +206,10 @@ test('share links reproduce settings, iteration, and measurements after reload',
   await enterNumber(page, 'Gradient noise', '0.3');
   await enterNumber(page, 'Random seed', '123');
   await page.getByRole('button', { name: 'Advance one iteration' }).click();
-  const tableBefore = await page.locator('tbody').innerText();
+  const tableBefore = await page
+    .getByRole('region', { name: 'Optimizer measurements' })
+    .locator('tbody')
+    .innerText();
   await page.getByRole('button', { name: 'Share', exact: true }).click();
   const url = await page.getByRole('textbox', { name: 'Experiment link' }).inputValue();
   expect(url).toContain('#experiment=');
@@ -210,7 +220,9 @@ test('share links reproduce settings, iteration, and measurements after reload',
     '0.004',
   );
   await expect(page.getByTestId('iteration-value')).toHaveText('001');
-  await expect(page.locator('tbody')).toHaveText(tableBefore, { useInnerText: true });
+  await expect(
+    page.getByRole('region', { name: 'Optimizer measurements' }).locator('tbody'),
+  ).toHaveText(tableBefore, { useInnerText: true });
   await page.getByRole('button', { name: 'Noise, seed & starting point' }).click();
   await expect(page.getByRole('spinbutton', { name: 'Gradient noise' })).toHaveValue('0.3');
   await expect(page.getByRole('spinbutton', { name: 'Random seed' })).toHaveValue('123');
@@ -278,10 +290,16 @@ test('a single unstable optimizer reaches an honest divergence state', async ({ 
   }
   await enterNumber(page, 'Learning rate', '2');
   await page.getByRole('button', { name: 'Run experiment', exact: true }).click();
-  await expect(page.locator('tbody').getByText('Diverged', { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole('region', { name: 'Optimizer measurements' })
+      .getByText('Diverged', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Run again', exact: true })).toBeVisible();
   await expect(page.getByText(/table shows the last finite state/)).toBeVisible();
-  await expect(page.locator('tbody')).not.toContainText(/NaN|Infinity/);
+  await expect(
+    page.getByRole('region', { name: 'Optimizer measurements' }).locator('tbody'),
+  ).not.toContainText(/NaN|Infinity/);
 });
 
 test('a zero starting loss has no fabricated percentage reduction', async ({ page }) => {

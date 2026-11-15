@@ -18,6 +18,8 @@ import {
   FlaskConical,
   FolderOpen,
   Grid2X2,
+  GraduationCap,
+  SlidersHorizontal,
   Layers3,
   Menu,
   Mountain,
@@ -40,6 +42,10 @@ import NumberInput from './components/NumberInput';
 import LandscapeGlyph from './components/LandscapeGlyph';
 import FieldGuide from './components/FieldGuide';
 import ExperimentNotebook from './components/ExperimentNotebook';
+import LearningPath from './components/LearningPath';
+import ParameterStudy from './components/ParameterStudy';
+import StepInspector from './components/StepInspector';
+import RegressionPanel from './components/RegressionPanel';
 import { PRESETS, type ExperimentPreset } from './lib/presets';
 import { exportLandscapePng } from './lib/figure';
 import {
@@ -65,9 +71,43 @@ import {
   storeExperiments,
 } from './lib/persistence';
 
-type Page = 'lab' | 'experiments' | 'guide';
+type Page = 'lab' | 'learn' | 'study' | 'experiments' | 'guide';
 type Modal = 'export' | 'share' | 'save' | 'help' | null;
 const REPO_URL = 'https://github.com/guptavernit2-afk/idp-optimizer-visual-lab';
+const PAGE_META = {
+  lab: {
+    label: 'Laboratory',
+    title: 'Every step tells a story.',
+    description: 'Explore the landscape. Compare the paths. Understand the descent.',
+  },
+  learn: {
+    label: 'Learning path',
+    title: 'Turn a prediction into understanding.',
+    description:
+      'Five guided experiments. Predict, observe, explain—and take the idea into the lab.',
+  },
+  study: {
+    label: 'Parameter studies',
+    title: 'One run is a starting point.',
+    description:
+      'Investigate learning-rate sensitivity and repeat across seeds before drawing conclusions.',
+  },
+  experiments: {
+    label: 'Experiments',
+    title: 'Good questions. Saved.',
+    description: 'Keep your discoveries close. Revisit, reproduce, and keep exploring.',
+  },
+  guide: {
+    label: 'Field guide',
+    title: 'A little theory. A lot of intuition.',
+    description: 'Get to know the ideas behind the trajectories.',
+  },
+};
+function pageFromUrl(): Page {
+  if (window.location.hash.startsWith('#experiment=')) return 'lab';
+  const requested = new URL(window.location.href).searchParams.get('page');
+  return requested && Object.hasOwn(PAGE_META, requested) ? (requested as Page) : 'lab';
+}
 function initialState() {
   try {
     return {
@@ -163,7 +203,7 @@ export default function App() {
   const [config, setConfig] = useState<ExperimentConfig>(initial.config);
   const [step, setStep] = useState(initial.iteration);
   const [running, setRunning] = useState(false);
-  const [page, setPage] = useState<Page>('lab');
+  const [page, setPage] = useState<Page>(pageFromUrl);
   const [mode, setMode] = useState<'surface' | 'contour'>('surface');
   const [showTrails, setShowTrails] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
@@ -211,6 +251,15 @@ export default function App() {
   useEffect(() => {
     if (modal) setRunning(false);
   }, [modal]);
+  useEffect(() => {
+    const handler = () => {
+      setPage(pageFromUrl());
+      setRunning(false);
+      setMenuOpen(false);
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
   useEffect(() => {
     if (!running) return;
     let id = 0,
@@ -296,9 +345,20 @@ export default function App() {
     setStep(0);
   }
   function navigate(next: Page) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', next);
+    if (url.hash.startsWith('#experiment=')) url.hash = '';
+    if (url.href !== window.location.href) window.history.pushState({}, '', url);
     setPage(next);
     setRunning(false);
     setMenuOpen(false);
+  }
+  function openInLab(nextConfig: ExperimentConfig) {
+    setConfig(normalizeConfig(nextConfig));
+    setStep(0);
+    setCameraKey((value) => value + 1);
+    navigate('lab');
+    setToast('Experiment loaded. Inspect each update or run the full trajectory.');
   }
   function applyPreset(preset: ExperimentPreset) {
     const selected = getSurface(preset.surfaceId);
@@ -314,8 +374,7 @@ export default function App() {
     );
     setStep(0);
     setRunning(false);
-    setPage('lab');
-    setMenuOpen(false);
+    navigate('lab');
     setCameraKey((v) => v + 1);
     setToast(`“${preset.name}” is ready. Press Run experiment to begin.`);
   }
@@ -370,7 +429,7 @@ export default function App() {
       setConfig(imported.config);
       setStep(imported.iteration);
       setRunning(false);
-      setPage('lab');
+      navigate('lab');
       setToast('Experiment imported. Results reproduced from its settings.');
     } catch (error) {
       setToast(error instanceof Error ? error.message : 'Unable to read this experiment.');
@@ -426,6 +485,22 @@ export default function App() {
           >
             <FlaskConical size={18} />
             Laboratory
+            <span className="nav-dot" />
+          </button>
+          <button
+            className={page === 'learn' ? 'nav-item active' : 'nav-item'}
+            onClick={() => navigate('learn')}
+          >
+            <GraduationCap size={18} />
+            Learning path
+            <span className="nav-dot" />
+          </button>
+          <button
+            className={page === 'study' ? 'nav-item active' : 'nav-item'}
+            onClick={() => navigate('study')}
+          >
+            <SlidersHorizontal size={18} />
+            Parameter studies
             <span className="nav-dot" />
           </button>
           <button
@@ -496,16 +571,10 @@ export default function App() {
             </IconButton>
             <span>Workspace</span>
             <ChevronRight size={13} />
-            <strong>
-              {page === 'lab'
-                ? 'Laboratory'
-                : page === 'experiments'
-                  ? 'Experiments'
-                  : 'Field guide'}
-            </strong>
+            <strong>{PAGE_META[page].label}</strong>
           </div>
           <div className="topbar-right">
-            <span className="version-pill">VERSION 2.0</span>
+            <span className="version-pill">VERSION 2.1</span>
             <IconButton label="Open help" onClick={() => setModal('help')}>
               <CircleHelp size={19} />
             </IconButton>
@@ -526,20 +595,8 @@ export default function App() {
               <div className="eyebrow">
                 <span /> A VISUAL STUDY OF OPTIMIZATION
               </div>
-              <h1>
-                {page === 'lab'
-                  ? 'Every step tells a story.'
-                  : page === 'experiments'
-                    ? 'Good questions. Saved.'
-                    : 'A little theory. A lot of intuition.'}
-              </h1>
-              <p>
-                {page === 'lab'
-                  ? 'Explore the landscape. Compare the paths. Understand the descent.'
-                  : page === 'experiments'
-                    ? 'Keep your discoveries close. Revisit, reproduce, and keep exploring.'
-                    : 'Get to know the ideas behind the trajectories.'}
-              </p>
+              <h1>{PAGE_META[page].title}</h1>
+              <p>{PAGE_META[page].description}</p>
             </div>
             {page === 'lab' ? (
               <div className="heading-actions">
@@ -568,6 +625,19 @@ export default function App() {
           </div>
           {page === 'lab' && (
             <>
+              <div className="learning-invitation">
+                <GraduationCap size={20} />
+                <div>
+                  <strong>Start with a question.</strong>
+                  <span>Predict a step, test it, then explain the result.</span>
+                </div>
+                <button className="text-button" onClick={() => navigate('learn')}>
+                  Guided lessons <ArrowRight size={14} />
+                </button>
+                <button className="text-button" onClick={() => changeSurface('regression')}>
+                  Fit a model <ArrowRight size={14} />
+                </button>
+              </div>
               <div className="lab-layout">
                 <div className="visualization-column">
                   <section className="surface-panel" aria-labelledby="surface-heading">
@@ -577,7 +647,9 @@ export default function App() {
                         <h2 id="surface-heading">
                           {surface.name}
                           <span className="surface-tag">
-                            {surface.id === 'quadratic' ? 'CONVEX' : 'NON-CONVEX'}
+                            {surface.id === 'quadratic' || surface.id === 'regression'
+                              ? 'CONVEX'
+                              : 'NON-CONVEX'}
                           </span>
                         </h2>
                       </div>
@@ -1018,7 +1090,12 @@ export default function App() {
                     {running ? 'LIVE COMPARISON' : 'EXPERIMENT SNAPSHOT'}
                   </span>
                 </div>
-                <div className="table-scroll">
+                <div
+                  className="table-scroll"
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Optimizer measurements"
+                >
                   <table>
                     <thead>
                       <tr>
@@ -1071,6 +1148,8 @@ export default function App() {
                   </div>
                 )}
               </section>
+              <StepInspector result={result} step={step} />
+              {surface.id === 'regression' && <RegressionPanel result={result} step={step} />}
               <div className="lab-footnote">
                 <span>
                   <CheckCheck size={14} />
@@ -1081,6 +1160,10 @@ export default function App() {
                 </button>
               </div>
             </>
+          )}
+          {page === 'learn' && <LearningPath onOpenExperiment={openInLab} />}
+          {page === 'study' && (
+            <ParameterStudy initialConfig={config} onOpenExperiment={openInLab} />
           )}
           {page === 'experiments' && (
             <ExperimentNotebook

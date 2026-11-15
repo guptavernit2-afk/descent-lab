@@ -92,6 +92,8 @@ button:not(:disabled):active {
   display: flex;
   flex-direction: column;
   z-index: 30;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .brand {
   display: flex;
@@ -2808,6 +2810,52 @@ kbd {
   }
   .help-steps p {
     font-size: 12px;
+  }
+}
+.learning-invitation {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 20px;
+  background: #edf2e4;
+  border: 1px solid #dfe6d5;
+  border-radius: 9px;
+  margin-bottom: 20px;
+  color: #526b42;
+}
+.learning-invitation > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
+}
+.learning-invitation strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.learning-invitation span {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.learning-invitation .text-button {
+  white-space: nowrap;
+  font-size: 11px;
+}
+@media (max-width: 600px) {
+  .learning-invitation {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px;
+  }
+  .learning-invitation > div {
+    flex-basis: calc(100% - 36px);
+  }
+  .learning-invitation .text-button {
+    margin-left: 34px;
+  }
+  .learning-invitation .text-button:last-child {
+    margin-left: 4px;
   }
 }
 /* Give the plot room on tablets; arrange controls as a compact two-column form. */
