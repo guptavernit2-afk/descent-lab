@@ -2,20 +2,32 @@
 
 The current laboratory builds to a static `dist/` directory. It requires no server runtime, database, secrets, or API keys.
 
-## Recommended: Vercel
+## Production: Vercel
+
+The permanent application is [idp-optimizer-visual-lab.vercel.app](https://idp-optimizer-visual-lab.vercel.app/). It belongs to the repository owner's Vercel account and has no temporary-deployment expiry. The production domain is public; learners do not need a Vercel account.
+
+The `idp-optimizer-visual-lab` Vercel project is connected to this GitHub repository. Pushes to `main` trigger production builds; other branches can produce protected previews. GitHub CI runs independently, and the separate GitHub Pages workflow publishes only after CI succeeds. A successful Vercel build alone does not mean the test suite passed.
 
 Vercel and Render both support static frontends. Vercel is a direct fit for this Vite project, with framework detection and Git-linked previews. The application does not need a continuously running Render web service; if deploying there, use a Static Site. See [Vercel's Vite documentation](https://vercel.com/docs/frameworks/frontend/vite) and [Render's static-site documentation](https://render.com/docs/static-sites).
 
-For a permanent deployment, connect the GitHub repository to your Vercel account and import it with the Vite framework preset. Use `npm ci`, `npm run build`, and output directory `dist`. The committed `vercel.json` specifies these settings, security response headers, and immutable caching for hashed assets. Browser workspaces use the `page` query parameter, so no catch-all rewrite is required; the original `legacy/` directory remains a real static route.
+For another deployment, connect the GitHub repository to your Vercel account and import it with the Vite framework preset. Use Node.js `24.x`, `npm ci`, `npm run build`, and output directory `dist`. The package engine and `.nvmrc` keep the Node major aligned with CI. The committed `vercel.json` specifies build settings, security response headers, and immutable caching for hashed assets. Browser workspaces use the `page` query parameter, so no catch-all rewrite is required; the original `legacy/` directory remains a real static route.
 
 An authenticated CLI can also deploy the project:
 
 ```bash
 npx vercel login
+npx vercel link
+npx vercel project inspect --non-interactive
 npx vercel deploy --prod
 ```
 
-Vercel also supports `npx vercel deploy --temporary` without an account. That command builds locally and returns a production URL, a private claim link, and a server-set expiry. **The deployment must be claimed before that expiry to remain available.** A temporary deployment is not a substitute for account ownership or ongoing Git integration. Claim links control the project and must never be put in Git, a README, or a public issue. After claiming, connect the repository for future deployments. [Official temporary-deployment documentation](https://vercel.com/docs/deployments/deploy-without-logging-in).
+Confirm that project inspection reports the intended owner and project before deploying. Native Git builds run on Vercel, so they do not depend on Windows symlink support in the local Vercel builder.
+
+Verify the public production domain in a fresh browser without authentication. Check lesson completion, one optimizer update, regression fitting, an 18-trial parameter study, and `/legacy/`. The account-owned production deployment passed these checks with HTTP 200 and no browser or network errors on 15 November 2026.
+
+Deployment-specific and branch-preview URLs may require Vercel authentication even when the production domain is public. Use `vercel curl <deployment-url>` with an authorized account to inspect protected previews. Keep preview protection enabled; do not treat an authenticated check as proof of public visitor access.
+
+Vercel also supports `npx vercel deploy --temporary` without an account. Such deployments expire unless claimed and are separate from the permanent production project above. Claim links control the project and must never be put in Git, a README, or a public issue. [Official temporary-deployment documentation](https://vercel.com/docs/deployments/deploy-without-logging-in).
 
 The `.vercelignore` file excludes local caches, credentials, dependency folders, and test artifacts. `.vercel/` is also Git-ignored. The GitHub Pages URL remains an independently deployed, durable fallback.
 
