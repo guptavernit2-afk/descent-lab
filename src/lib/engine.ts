@@ -1,6 +1,9 @@
 /** Pure, deterministic optimization math. Rendering never changes these results. */
+import { REGRESSION_SURFACE } from './regression';
+
 export type Point = { x: number; y: number };
-export type SurfaceId = 'quadratic' | 'saddle' | 'rosenbrock' | 'himmelblau' | 'rastrigin';
+export type SurfaceId =
+  'quadratic' | 'saddle' | 'rosenbrock' | 'himmelblau' | 'rastrigin' | 'regression';
 export type OptimizerId = 'gd' | 'momentum' | 'nesterov' | 'adagrad' | 'rmsprop' | 'adam';
 
 export interface SurfaceDefinition {
@@ -118,6 +121,7 @@ export const SURFACES: SurfaceDefinition[] = [
       y: 2 * y + 20 * Math.PI * Math.sin(2 * Math.PI * y),
     }),
   },
+  REGRESSION_SURFACE,
 ];
 
 export const OPTIMIZERS: OptimizerDefinition[] = [
@@ -189,12 +193,41 @@ export interface ExperimentConfig {
   optimizerIds: OptimizerId[];
 }
 
+export interface OptimizerMemory {
+  /** Displacement convention: v ← βv − ηg. */
+  velocity?: Point;
+  firstMoment?: Point;
+  /** Sum of squares for AdaGrad; moving average for RMSProp and Adam. */
+  secondMoment?: Point;
+}
+
+/** Numerical evidence for the accepted update that produced a trajectory point. */
+export interface StepUpdateDetails {
+  before: Point;
+  /** Nesterov uses its look-ahead point; all other methods use `before`. */
+  evaluation: Point;
+  trueGradient: Point;
+  noise: Point;
+  gradient: Point;
+  delta: Point;
+  /** Multiplies the gradient, or Adam's bias-corrected first moment. */
+  scaling: Point;
+  memoryBefore: OptimizerMemory;
+  memoryAfter: OptimizerMemory;
+  denominator?: Point;
+  correctedFirstMoment?: Point;
+  correctedSecondMoment?: Point;
+  biasCorrection?: { first: number; second: number };
+}
+
 export interface TrajectoryPoint extends Point {
   step: number;
   loss: number;
   /** Norm of the true gradient at this point, before stochastic noise. */
   gradientNorm: number;
   stepNorm: number;
+  /** Absent at step zero or when update capture is disabled for a batch study. */
+  update?: StepUpdateDetails;
 }
 
 export interface OptimizerRun {
@@ -340,7 +373,9 @@ function isConverged(point: TrajectoryPoint, surface: SurfaceDefinition): boolea
 
 function isSafe(point: TrajectoryPoint): boolean {
   return (
-    Object.values(point).every(Number.isFinite) &&
+    [point.x, point.y, point.step, point.loss, point.gradientNorm, point.stepNorm].every(
+      Number.isFinite,
+    ) &&
     Math.abs(point.x) <= 1e6 &&
     Math.abs(point.y) <= 1e6 &&
     Math.abs(point.loss) <= 1e14 &&
@@ -353,10 +388,14 @@ function isSafe(point: TrajectoryPoint): boolean {
  * reordering, or removing an optimizer therefore cannot change another trace.
  * Numerical safety limits stop a divergent trace; positions are never clamped.
  */
-export function runExperiment(input: ExperimentConfig): ExperimentResult {
+export function runExperiment(
+  input: ExperimentConfig,
+  options: { captureUpdates?: boolean } = {},
+): ExperimentResult {
   const config = normalizeConfig(input);
   const surface = getSurface(config.surfaceId);
   const random = seededRandom(config.seed);
+  const captureUpdates = options.captureUpdates !== false;
   const noise = Array.from({ length: config.steps }, () => ({
     x: (random() * 2 - 1) * config.noise,
     y: (random() * 2 - 1) * config.noise,
@@ -367,6 +406,11 @@ export function runExperiment(input: ExperimentConfig): ExperimentResult {
     const velocity: Point = { x: 0, y: 0 };
     const firstMoment: Point = { x: 0, y: 0 };
     const secondMoment: Point = { x: 0, y: 0 };
+    const memory = (): OptimizerMemory => ({
+      ...(['momentum', 'nesterov'].includes(id) ? { velocity: { ...velocity } } : {}),
+      ...(id === 'adam' ? { firstMoment: { ...firstMoment } } : {}),
+      ...(['adagrad', 'rmsprop', 'adam'].includes(id) ? { secondMoment: { ...secondMoment } } : {}),
+    });
     const initial = trajectoryPoint(surface, position, 0, 0);
     const run: OptimizerRun = {
       id,
@@ -393,6 +437,30 @@ export function runExperiment(input: ExperimentConfig): ExperimentResult {
         y: rawGradient.y + noise[step - 1].y,
       };
       const next = { ...position };
+      const details: StepUpdateDetails | undefined = captureUpdates
+        ? {
+            before: { ...position },
+            evaluation: { ...evaluation },
+            trueGradient: { ...rawGradient },
+            noise: config.noise === 0 ? { x: 0, y: 0 } : { ...noise[step - 1] },
+            gradient: { ...gradient },
+            delta: { x: 0, y: 0 },
+            scaling: { x: config.learningRate, y: config.learningRate },
+            memoryBefore: memory(),
+            memoryAfter: {},
+            ...(['adagrad', 'rmsprop', 'adam'].includes(id) ? { denominator: { x: 0, y: 0 } } : {}),
+            ...(id === 'adam'
+              ? {
+                  correctedFirstMoment: { x: 0, y: 0 },
+                  correctedSecondMoment: { x: 0, y: 0 },
+                  biasCorrection: {
+                    first: 1 - config.momentum ** step,
+                    second: 1 - ADAM_BETA2 ** step,
+                  },
+                }
+              : {}),
+          }
+        : undefined;
       for (const coordinate of ['x', 'y'] as const) {
         const g = gradient[coordinate];
         let change = 0;
@@ -408,11 +476,19 @@ export function runExperiment(input: ExperimentConfig): ExperimentResult {
           case 'adagrad':
             secondMoment[coordinate] += g * g;
             change = (-config.learningRate * g) / (Math.sqrt(secondMoment[coordinate]) + EPSILON);
+            if (details?.denominator) {
+              details.denominator[coordinate] = Math.sqrt(secondMoment[coordinate]) + EPSILON;
+              details.scaling[coordinate] = config.learningRate / details.denominator[coordinate];
+            }
             break;
           case 'rmsprop':
             secondMoment[coordinate] =
               RMS_DECAY * secondMoment[coordinate] + (1 - RMS_DECAY) * g * g;
             change = (-config.learningRate * g) / (Math.sqrt(secondMoment[coordinate]) + EPSILON);
+            if (details?.denominator) {
+              details.denominator[coordinate] = Math.sqrt(secondMoment[coordinate]) + EPSILON;
+              details.scaling[coordinate] = config.learningRate / details.denominator[coordinate];
+            }
             break;
           case 'adam': {
             firstMoment[coordinate] =
@@ -423,10 +499,21 @@ export function runExperiment(input: ExperimentConfig): ExperimentResult {
             const correctedSecond = secondMoment[coordinate] / (1 - ADAM_BETA2 ** step);
             change =
               (-config.learningRate * correctedFirst) / (Math.sqrt(correctedSecond) + EPSILON);
+            if (
+              details?.denominator &&
+              details.correctedFirstMoment &&
+              details.correctedSecondMoment
+            ) {
+              details.correctedFirstMoment[coordinate] = correctedFirst;
+              details.correctedSecondMoment[coordinate] = correctedSecond;
+              details.denominator[coordinate] = Math.sqrt(correctedSecond) + EPSILON;
+              details.scaling[coordinate] = config.learningRate / details.denominator[coordinate];
+            }
             break;
           }
         }
         next[coordinate] += change;
+        if (details) details.delta[coordinate] = change;
       }
       const point = trajectoryPoint(
         surface,
@@ -437,6 +524,10 @@ export function runExperiment(input: ExperimentConfig): ExperimentResult {
       if (!isSafe(point)) {
         run.status = 'diverged';
         break;
+      }
+      if (details) {
+        details.memoryAfter = memory();
+        point.update = details;
       }
       position = next;
       run.points.push(point);

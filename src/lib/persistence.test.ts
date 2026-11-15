@@ -30,7 +30,18 @@ describe('portable JSON experiments', () => {
     expect(exported.runs).toHaveLength(result.runs.length);
     exported.runs.forEach((run: { id: string; points: unknown[] }, index: number) => {
       expect(run.id).toBe(result.runs[index].id);
-      expect(run.points).toEqual(result.runs[index].points.slice(0, 8));
+      expect(run.points).toEqual(
+        result.runs[index].points
+          .slice(0, 8)
+          .map(({ step, x, y, loss, gradientNorm, stepNorm }) => ({
+            step,
+            x,
+            y,
+            loss,
+            gradientNorm,
+            stepNorm,
+          })),
+      );
     });
   });
 
@@ -40,6 +51,14 @@ describe('portable JSON experiments', () => {
       expect(run.points).toHaveLength(1);
       expect(run.points[0].step).toBe(0);
     }
+  });
+
+  it('keeps a maximum-length noisy experiment within the import size limit', () => {
+    const large = runExperiment(normalizeConfig({ steps: 3000, noise: 0.1 }));
+    const json = exportJson(large, 3000);
+    expect(new TextEncoder().encode(json).length).toBeLessThan(8_000_000);
+    expect(JSON.parse(json).runs[0].points[1]).not.toHaveProperty('update');
+    expect(parseExperiment(JSON.parse(json)).config).toEqual(large.config);
   });
 
   it('recomputes imported traces instead of trusting file-provided measurements', () => {

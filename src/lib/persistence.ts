@@ -83,7 +83,18 @@ export function exportJson(result: ExperimentResult, iteration: number): string 
       note: 'Traces contain only steps up to the exported playback iteration. Import recomputes from the configuration.',
       runs: result.runs.map((run) => ({
         id: run.id,
-        points: run.points.filter((point) => point.step <= iteration),
+        // Internal update snapshots are rebuilt from the seed/configuration on import.
+        // Export only measurements so the largest supported trace stays portable.
+        points: run.points
+          .filter((point) => point.step <= iteration)
+          .map(({ step, x, y, loss, gradientNorm, stepNorm }) => ({
+            step,
+            x,
+            y,
+            loss,
+            gradientNorm,
+            stepNorm,
+          })),
       })),
     },
     null,

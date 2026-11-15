@@ -9,6 +9,7 @@ import {
   runExperiment,
   type ExperimentConfig,
   type OptimizerId,
+  type TrajectoryPoint,
 } from './engine';
 
 const config = (overrides: Partial<ExperimentConfig> = {}): ExperimentConfig => ({
@@ -17,6 +18,8 @@ const config = (overrides: Partial<ExperimentConfig> = {}): ExperimentConfig => 
   optimizerIds: [...DEFAULT_CONFIG.optimizerIds],
   ...overrides,
 });
+
+const scalarPoint = ({ update: _update, ...point }: TrajectoryPoint) => point;
 
 describe('benchmark definitions', () => {
   for (const surface of SURFACES) {
@@ -39,7 +42,8 @@ describe('benchmark definitions', () => {
       for (const { x, y } of surface.minima) {
         const gradient = surface.gradient(x, y);
         expect(Math.hypot(gradient.x, gradient.y)).toBeLessThan(0.001);
-        if (surface.id !== 'saddle') expect(surface.value(x, y)).toBeCloseTo(0, 6);
+        if (surface.id !== 'saddle' && surface.id !== 'regression')
+          expect(surface.value(x, y)).toBeCloseTo(0, 6);
       }
     });
   }
@@ -181,7 +185,8 @@ describe('convergence and numerical safety', () => {
     expect(run.status).toBe('diverged');
     expect(run.points.length).toBeLessThan(3001);
     expect(run.points.some(({ y }) => Math.abs(y) > 4)).toBe(true);
-    for (const point of run.points) expect(Object.values(point).every(Number.isFinite)).toBe(true);
+    for (const point of run.points)
+      expect(Object.values(scalarPoint(point)).every(Number.isFinite)).toBe(true);
     expect(run.bestLoss).toBe(Math.min(...run.points.map(({ loss }) => loss)));
   });
 
@@ -193,10 +198,140 @@ describe('convergence and numerical safety', () => {
         expect(run.points[0].step).toBe(0);
         run.points.forEach((point, index) => {
           expect(point.step).toBe(index);
-          expect(Object.values(point).every(Number.isFinite)).toBe(true);
+          expect(Object.values(scalarPoint(point)).every(Number.isFinite)).toBe(true);
         });
       }
     }
+  });
+});
+
+describe('inspectable optimizer updates', () => {
+  const traces = (optimizerIds: OptimizerId[], overrides: Partial<ExperimentConfig> = {}) =>
+    runExperiment(
+      config({ start: { x: 1, y: 1 }, learningRate: 0.1, steps: 3, optimizerIds, ...overrides }),
+    ).runs;
+
+  it('has no invented update at the initial state and records the first GD update', () => {
+    const points = traces(['gd'])[0].points;
+    expect(points[0].update).toBeUndefined();
+    expect(points[1].update).toMatchObject({
+      before: { x: 1, y: 1 },
+      evaluation: { x: 1, y: 1 },
+      trueGradient: { x: 1, y: 6 },
+      noise: { x: 0, y: 0 },
+      gradient: { x: 1, y: 6 },
+      scaling: { x: 0.1, y: 0.1 },
+      memoryBefore: {},
+      memoryAfter: {},
+    });
+    expect(points[1].update!.delta.x).toBeCloseTo(-0.1, 14);
+    expect(points[1].update!.delta.y).toBeCloseTo(-0.6, 14);
+  });
+
+  it('distinguishes Nesterov evaluation from the position being updated', () => {
+    const update = traces(['nesterov'])[0].points[2].update!;
+    expect(update.before.x).toBeCloseTo(0.9, 14);
+    expect(update.before.y).toBeCloseTo(0.4, 14);
+    expect(update.evaluation.x).toBeCloseTo(0.81, 14);
+    expect(update.evaluation.y).toBeCloseTo(-0.14, 14);
+    expect(update.trueGradient.x).toBeCloseTo(0.81, 14);
+    expect(update.trueGradient.y).toBeCloseTo(-0.84, 14);
+    expect(update.memoryBefore.velocity!.x).toBeCloseTo(-0.1, 14);
+    expect(update.memoryAfter.velocity!.x).toBeCloseTo(-0.171, 14);
+    expect(update.delta).toEqual(update.memoryAfter.velocity);
+  });
+
+  it('shows retained momentum plus the new correction without rescaling its history', () => {
+    const update = traces(['momentum'])[0].points[2].update!;
+    expect(update.evaluation).toEqual(update.before);
+    for (const axis of ['x', 'y'] as const) {
+      expect(update.delta[axis]).toBeCloseTo(
+        0.9 * update.memoryBefore.velocity![axis] - 0.1 * update.gradient[axis],
+        14,
+      );
+      expect(update.memoryAfter.velocity![axis]).toBe(update.delta[axis]);
+    }
+  });
+
+  it('records AdaGrad accumulated squares and the actual coordinate multipliers', () => {
+    const points = traces(['adagrad'])[0].points;
+    const first = points[1].update!,
+      second = points[2].update!;
+    expect(first.memoryBefore.secondMoment).toEqual({ x: 0, y: 0 });
+    expect(first.memoryAfter.secondMoment).toEqual({ x: 1, y: 36 });
+    expect(first.denominator!.x).toBe(1 + 1e-8);
+    expect(first.scaling.y).toBe(0.1 / (6 + 1e-8));
+    expect(second.memoryAfter.secondMoment!.x).toBeCloseTo(1 + points[1].x ** 2, 14);
+    expect(second.memoryBefore.secondMoment).toEqual(first.memoryAfter.secondMoment);
+  });
+
+  it('records RMSProp as a decaying uncorrected second moment', () => {
+    const points = traces(['rmsprop'])[0].points;
+    const first = points[1].update!,
+      second = points[2].update!;
+    expect(first.memoryAfter.secondMoment!.x).toBeCloseTo(0.1, 14);
+    expect(first.memoryAfter.secondMoment!.y).toBeCloseTo(3.6, 14);
+    expect(second.memoryAfter.secondMoment!.x).toBeCloseTo(0.9 * 0.1 + 0.1 * points[1].x ** 2, 14);
+    expect(first.correctedSecondMoment).toBeUndefined();
+    expect(first.biasCorrection).toBeUndefined();
+  });
+
+  it('records Adam moments and both bias corrections at the first and second updates', () => {
+    const points = traces(['adam'])[0].points;
+    const first = points[1].update!,
+      second = points[2].update!;
+    expect(first.memoryAfter.firstMoment!.x).toBeCloseTo(0.1, 14);
+    expect(first.memoryAfter.secondMoment!.x).toBeCloseTo(0.001, 14);
+    expect(first.correctedFirstMoment!.x).toBeCloseTo(1, 14);
+    expect(first.correctedSecondMoment!.y).toBeCloseTo(36, 14);
+    expect(second.biasCorrection).toEqual({ first: 1 - 0.9 ** 2, second: 1 - 0.999 ** 2 });
+    const expectedFirst = (0.9 * 0.1 + 0.1 * points[1].x) / (1 - 0.9 ** 2);
+    const expectedSecond = (0.999 * 0.001 + 0.001 * points[1].x ** 2) / (1 - 0.999 ** 2);
+    expect(second.correctedFirstMoment!.x).toBeCloseTo(expectedFirst, 13);
+    expect(second.correctedSecondMoment!.x).toBeCloseTo(expectedSecond, 13);
+    expect(second.scaling.x).toBeCloseTo(0.1 / (Math.sqrt(expectedSecond) + 1e-8), 13);
+    expect(second.delta.x).toBeCloseTo(-second.scaling.x * second.correctedFirstMoment!.x, 14);
+  });
+
+  it('decomposes the shared seeded noise from each optimizer’s true gradient', () => {
+    const runs = traces(['gd', 'nesterov', 'adam'], { noise: 0.7, seed: 910 });
+    for (let i = 1; i <= 3; i += 1) {
+      const expectedNoise = runs[0].points[i].update!.noise;
+      for (const run of runs) {
+        const update = run.points[i].update!;
+        expect(update.noise).toEqual(expectedNoise);
+        expect(update.gradient.x).toBe(update.trueGradient.x + update.noise.x);
+        expect(update.gradient.y).toBe(update.trueGradient.y + update.noise.y);
+        expect(update.before.x + update.delta.x).toBe(run.points[i].x);
+        expect(update.before.y + update.delta.y).toBe(run.points[i].y);
+      }
+    }
+  });
+
+  it('keeps every memory snapshot independent of later updates and other runs', () => {
+    const runs = traces(['adam', 'momentum'], { noise: 0.2 });
+    const first = runs[0].points[1].update!,
+      second = runs[0].points[2].update!;
+    const secondBefore = structuredClone(second);
+    const otherNoise = { ...runs[1].points[1].update!.noise };
+    first.memoryAfter.firstMoment!.x = 999;
+    first.noise.x = 999;
+    expect(second).toEqual(secondBefore);
+    expect(runs[1].points[1].update!.noise).toEqual(otherNoise);
+    expect(first.memoryAfter.secondMoment).not.toBe(second.memoryBefore.secondMoment);
+  });
+
+  it('can skip capture for batch experiments without changing any numerical result', () => {
+    const input = config({ noise: 0.4, steps: 40 });
+    const captured = runExperiment(input);
+    const compact = runExperiment(input, { captureUpdates: false });
+    expect(
+      compact.runs.every((run) => run.points.every((point) => point.update === undefined)),
+    ).toBe(true);
+    expect(compact).toEqual({
+      ...captured,
+      runs: captured.runs.map((run) => ({ ...run, points: run.points.map(scalarPoint) })),
+    });
   });
 });
 
