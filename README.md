@@ -29,7 +29,7 @@ Everything runs in your browser. The application has no backend, account require
 
 ## Run locally
 
-Use **Node.js 22.12+** and npm.
+Use **Node.js 24.x** and npm, matching CI and the production build.
 
 ```bash
 git clone https://github.com/guptavernit2-afk/idp-optimizer-visual-lab.git
