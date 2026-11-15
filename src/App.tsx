@@ -73,12 +73,12 @@ import {
 
 type Page = 'lab' | 'learn' | 'study' | 'experiments' | 'guide';
 type Modal = 'export' | 'share' | 'save' | 'help' | null;
-const REPO_URL = 'https://github.com/guptavernit2-afk/idp-optimizer-visual-lab';
+const REPO_URL = 'https://github.com/guptavernit2-afk/descent-lab';
 const PAGE_META = {
   lab: {
     label: 'Laboratory',
-    title: 'Every step tells a story.',
-    description: 'Explore the landscape. Compare the paths. Understand the descent.',
+    title: 'See every step.',
+    description: 'Understand every optimizer.',
   },
   learn: {
     label: 'Learning path',
@@ -460,6 +460,7 @@ export default function App() {
         <a
           className="brand"
           href="#"
+          aria-label="DescentLab home"
           onClick={(event) => {
             event.preventDefault();
             navigate('lab');
@@ -469,9 +470,12 @@ export default function App() {
             <Mountain size={25} strokeWidth={1.5} />
           </span>
           <span>
-            optimizer
+            Descent
             <span className="brand-light">
-              lab<span className="brand-dot">.</span>
+              Lab
+              <span className="brand-dot" aria-hidden="true">
+                .
+              </span>
             </span>
           </span>
         </a>
@@ -1181,11 +1185,15 @@ export default function App() {
           {page === 'guide' && <FieldGuide onStart={() => applyPreset(PRESETS[0])} />}
           <footer className="page-footer">
             <span>
-              optimizerlab<span className="brand-dot">.</span>{' '}
-              <span className="footer-separator">/</span> Made for the art of understanding.
+              DescentLab
+              <span className="brand-dot" aria-hidden="true">
+                .
+              </span>{' '}
+              <span className="footer-separator">/</span> See every step. Understand every
+              optimizer.
             </span>
             <span>
-              IDP PROJECT <span className="footer-separator">·</span> EST. 2026
+              OPEN LEARNING <span className="footer-separator">·</span> EST. 2026
             </span>
           </footer>
         </main>
@@ -1242,7 +1250,7 @@ export default function App() {
             <button
               onClick={() => {
                 downloadFile(
-                  `optimizer-lab-${surface.id}.csv`,
+                  `descent-lab-${surface.id}.csv`,
                   exportCsv(result, step),
                   'text/csv;charset=utf-8',
                 );
@@ -1260,7 +1268,7 @@ export default function App() {
             <button
               onClick={() => {
                 downloadFile(
-                  `optimizer-lab-${surface.id}.json`,
+                  `descent-lab-${surface.id}.json`,
                   exportJson(result, step),
                   'application/json',
                 );
@@ -1281,7 +1289,7 @@ export default function App() {
                 if (!canvas) return;
                 try {
                   const blob = await exportLandscapePng(canvas, config, step);
-                  downloadFile(`optimizer-lab-${surface.id}.png`, blob, 'image/png');
+                  downloadFile(`descent-lab-${surface.id}.png`, blob, 'image/png');
                   setToast('Landscape image exported.');
                   setModal(null);
                 } catch {

@@ -1,5 +1,7 @@
 # Project history
 
+The current platform is named **DescentLab**, with the repository at [`guptavernit2-afk/descent-lab`](https://github.com/guptavernit2-afk/descent-lab). The name connects the visual descent of an optimizer to the platform's purpose: **See every step. Understand every optimizer.** The rename preserves the repository history and original simulator.
+
 ## First-year foundation: 1D diagnostics
 
 The original project, _A Visual and Empirical Study of Gradient Descent Optimization Variants on Benchmark Loss Surfaces_, compared six optimization algorithms on one-dimensional loss curves.

@@ -4,9 +4,11 @@ The current laboratory builds to a static `dist/` directory. It requires no serv
 
 ## Production: Vercel
 
-The permanent application is [idp-optimizer-visual-lab.vercel.app](https://idp-optimizer-visual-lab.vercel.app/). It belongs to the repository owner's Vercel account and has no temporary-deployment expiry. The production domain is public; learners do not need a Vercel account.
+The permanent application is [descent-lab.vercel.app](https://descent-lab.vercel.app/). It belongs to the repository owner's Vercel account and has no temporary-deployment expiry. The production domain is public; learners do not need a Vercel account.
 
-The `idp-optimizer-visual-lab` Vercel project is connected to this GitHub repository. Pushes to `main` trigger production builds; other branches can produce protected previews. GitHub CI runs independently, and the separate GitHub Pages workflow publishes only after CI succeeds. A successful Vercel build alone does not mean the test suite passed.
+The previous production hostname remains attached to this same project for existing bookmarks and browser notebooks. New links use the DescentLab domain. Saved experiments and lesson progress belong to a browser origin, so they do not automatically transfer between hostnames. To move an experiment, export its JSON from the previous hostname and import it on DescentLab; existing JSON formats remain supported.
+
+The `descent-lab` Vercel project is connected to this GitHub repository. Pushes to `main` trigger production builds; other branches can produce protected previews. GitHub CI runs independently, and the separate GitHub Pages workflow publishes only after CI succeeds. A successful Vercel build alone does not mean the test suite passed.
 
 Vercel and Render both support static frontends. Vercel is a direct fit for this Vite project, with framework detection and Git-linked previews. The application does not need a continuously running Render web service; if deploying there, use a Static Site. See [Vercel's Vite documentation](https://vercel.com/docs/frameworks/frontend/vite) and [Render's static-site documentation](https://render.com/docs/static-sites).
 

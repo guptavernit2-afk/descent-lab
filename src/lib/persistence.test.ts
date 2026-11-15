@@ -156,11 +156,11 @@ describe('measurement CSV exports', () => {
 describe('shared experiment links', () => {
   it('round-trips settings and iteration on a repository subpath', () => {
     vi.stubGlobal('window', {
-      location: { href: 'https://example.test/idp-optimizer-visual-lab/?view=lab#old-fragment' },
+      location: { href: 'https://example.test/descent-lab/?view=lab#old-fragment' },
     });
     const url = new URL(shareUrl(configuration, 7));
     expect(url.origin).toBe('https://example.test');
-    expect(url.pathname).toBe('/idp-optimizer-visual-lab/');
+    expect(url.pathname).toBe('/descent-lab/');
     expect(url.search).toBe('?view=lab');
     expect(sharedExperiment(url.hash)).toEqual({ config: configuration, iteration: 7 });
   });

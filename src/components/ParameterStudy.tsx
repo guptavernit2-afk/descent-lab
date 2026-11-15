@@ -435,7 +435,7 @@ export default function ParameterStudy({
                   className="button secondary"
                   onClick={() =>
                     downloadFile(
-                      `optimizer-study-${result.config.surfaceId}.csv`,
+                      `descent-lab-study-${result.config.surfaceId}.csv`,
                       studyCsv(result),
                       'text/csv;charset=utf-8',
                     )
@@ -449,7 +449,7 @@ export default function ParameterStudy({
                   className="button secondary"
                   onClick={() =>
                     downloadFile(
-                      `optimizer-study-${result.config.surfaceId}.json`,
+                      `descent-lab-study-${result.config.surfaceId}.json`,
                       studyJson(result),
                       'application/json',
                     )

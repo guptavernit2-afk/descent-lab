@@ -1,5 +1,6 @@
 import { normalizeConfig, type ExperimentConfig, type ExperimentResult } from './engine';
 
+// Keep the original storage key and wire-format IDs so saved experiments survive the rebrand.
 const STORAGE_KEY = 'optimizer-lab.experiments.v2';
 export interface SavedExperiment {
   id: string;
@@ -52,10 +53,10 @@ function validIteration(value: unknown, budget: number): number {
 }
 
 export function parseExperiment(input: unknown): { config: ExperimentConfig; iteration: number } {
-  if (!input || typeof input !== 'object') throw new Error('Choose an Optimizer Lab JSON export.');
+  if (!input || typeof input !== 'object') throw new Error('Choose a DescentLab JSON export.');
   const data = input as Record<string, unknown>;
   if (data.format !== 'optimizer-lab/v2')
-    throw new Error('This file is not a supported Optimizer Lab v2 experiment.');
+    throw new Error('This file is not a supported DescentLab v2 experiment.');
   const config = normalizeConfig(data.config);
   return { config, iteration: validIteration(data.iteration, config.steps) };
 }

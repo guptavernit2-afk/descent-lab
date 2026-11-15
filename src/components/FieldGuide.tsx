@@ -113,7 +113,7 @@ export default function FieldGuide({ onStart }: FieldGuideProps) {
             AdaGrad paper <ExternalLink size={12} />
           </a>
           <a
-            href="https://github.com/guptavernit2-afk/idp-optimizer-visual-lab/blob/main/docs/methodology.md"
+            href="https://github.com/guptavernit2-afk/descent-lab/blob/main/docs/methodology.md"
             target="_blank"
             rel="noreferrer"
           >

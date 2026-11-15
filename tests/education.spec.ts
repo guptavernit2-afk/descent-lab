@@ -94,9 +94,7 @@ test('a lesson opens its exact experiment and browser history preserves the lab 
   const experiment = page.getByRole('region', { name: 'Double the learning rate', exact: true });
   await experiment.getByRole('button', { name: 'Open in lab', exact: true }).click();
   await expect(page).toHaveURL(/\?page=lab/);
-  await expect(
-    page.getByRole('heading', { name: 'Every step tells a story.', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'See every step.', exact: true })).toBeVisible();
   await expect(page.getByRole('spinbutton', { name: 'Learning rate', exact: true })).toHaveValue(
     '0.1',
   );

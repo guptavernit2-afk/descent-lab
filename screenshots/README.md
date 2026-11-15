@@ -1,4 +1,4 @@
-# Application screenshots
+# DescentLab screenshots
 
 `lab-desktop.png` is an actual capture of the current laboratory, used in the repository README. Screenshots show an example configuration rather than a benchmark claim.
 

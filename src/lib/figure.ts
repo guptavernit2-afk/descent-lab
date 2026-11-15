@@ -20,7 +20,7 @@ export async function exportLandscapePng(
   context.fillRect(0, 0, width, output.height);
   context.fillStyle = '#d7e7c7';
   context.font = '500 30px "DM Sans Variable", sans-serif';
-  context.fillText(`Optimizer Lab / ${surface.name}`, 38, 49);
+  context.fillText(`DescentLab / ${surface.name}`, 38, 49);
   context.fillStyle = '#b5cfbc';
   context.font = '18px "DM Sans Variable", sans-serif';
   context.fillText(surface.formula, 38, 88);

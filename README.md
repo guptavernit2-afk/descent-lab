@@ -1,10 +1,10 @@
-# IDP Optimizer Visual Lab
+# DescentLab
 
-**Predict the next step. Inspect the mathematics. Test your explanation.**
+**See every step. Understand every optimizer.**
 
-[Open the platform](https://idp-optimizer-visual-lab.vercel.app/) · [Start learning](https://idp-optimizer-visual-lab.vercel.app/?page=learn) · [Teaching guide](docs/learning-design.md) · [Development guide](CONTRIBUTING.md)
+[Open the platform](https://descent-lab.vercel.app/) · [Start learning](https://descent-lab.vercel.app/?page=learn) · [Teaching guide](docs/learning-design.md) · [Development guide](CONTRIBUTING.md)
 
-[![CI](https://github.com/guptavernit2-afk/idp-optimizer-visual-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/guptavernit2-afk/idp-optimizer-visual-lab/actions/workflows/ci.yml)
+[![CI](https://github.com/guptavernit2-afk/descent-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/guptavernit2-afk/descent-lab/actions/workflows/ci.yml)
 
 A browser-based educational platform for understanding gradient-based optimization. Learn through guided experiments, inspect the arithmetic and memory behind an update, fit a model to synthetic observations, and test learning-rate sensitivity across repeated trials.
 
@@ -32,8 +32,8 @@ Everything runs in your browser. The application has no backend, account require
 Use **Node.js 24.x** and npm, matching CI and the production build.
 
 ```bash
-git clone https://github.com/guptavernit2-afk/idp-optimizer-visual-lab.git
-cd idp-optimizer-visual-lab
+git clone https://github.com/guptavernit2-afk/descent-lab.git
+cd descent-lab
 npm ci
 npm run dev
 ```
@@ -112,7 +112,7 @@ The numerical engine is independent of React and rendering. This makes optimizer
 
 The production output is static and can be hosted on GitHub Pages or any static file host. Relative asset paths are used by default. `VITE_BASE_PATH` can override the deployment base when needed.
 
-**Production is live on [Vercel](https://idp-optimizer-visual-lab.vercel.app/).** The account-owned project is connected to this repository, and pushes to `main` trigger production builds. The public production domain requires no visitor login. [GitHub Pages](https://guptavernit2-afk.github.io/idp-optimizer-visual-lab/) remains an independent fallback. The repository includes `vercel.json` and an explicit upload exclusion list; hosting credentials stay outside Git. See [deployment instructions](docs/deployment.md) for build settings, verification, and preview access.
+**Production is live on [Vercel](https://descent-lab.vercel.app/).** The account-owned project is connected to this repository, and pushes to `main` trigger production builds. The public production domain requires no visitor login. [GitHub Pages](https://guptavernit2-afk.github.io/descent-lab/) remains an independent fallback. The repository includes `vercel.json` and an explicit upload exclusion list; hosting credentials stay outside Git. See [deployment instructions](docs/deployment.md) for build settings, verification, and preview access.
 
 GitHub Actions checks the project on pushes and pull requests. After a successful `CI` run on `main`, the Pages workflow builds and publishes `dist/`; it can also be run manually. This repository is configured to use **GitHub Actions** as its Pages source. See [deployment notes](docs/deployment.md) for setup and troubleshooting.
 

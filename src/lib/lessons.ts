@@ -336,6 +336,7 @@ export function runLesson(lesson: LearningLesson): ExperimentResult[] {
   return lesson.experiments.map(({ config }) => runExperiment(config));
 }
 
+// Preserve progress saved before the DescentLab rebrand.
 export const LEARNING_PROGRESS_KEY = 'optimizer-lab.learning.v1';
 
 export function validLessonProgress(value: unknown): string[] {

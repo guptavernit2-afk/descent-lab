@@ -48,6 +48,8 @@ The laboratory composes `SurfaceCanvas`, `LossChart`, and `StepInspector`; selec
 
 ## Persistence and export
 
+DescentLab retains the original `optimizer-lab` storage keys and JSON format identifiers for compatibility. Branding and download filenames changed; existing exported experiments and share fragments remain readable. Browser storage is origin-specific, so moving to a new hostname requires exporting experiments from the previous hostname and importing them on the new one.
+
 The application is a static browser app. Saved experiments use local browser storage; they are not synchronized across devices. Configuration exports and share URLs carry reproducible inputs and the playback position. CSV and JSON exports include recorded points through the current playback cursor. A JSON import recomputes the full experiment from the validated configuration rather than trusting stored numerical results.
 
 The versioned JSON envelope uses `format: "optimizer-lab/v2"`. A share URL stores the same inputs in its fragment, which is read by the application. Local storage retains up to 20 saved experiments under the `optimizer-lab.experiments.v2` key. Invalid stored entries are ignored when loading.

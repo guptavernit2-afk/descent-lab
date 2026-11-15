@@ -20,7 +20,7 @@ async function enterNumber(page: Page, label: string, value: string) {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./');
-  await expect(page.getByRole('heading', { name: 'Every step tells a story.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'See every step.' })).toBeVisible();
 });
 
 test('exports precise CSV measurements and a self-contained PNG figure', async ({ page }) => {
@@ -154,7 +154,7 @@ test('exports JSON traces and imports the same reproducible checkpoint', async (
   const downloaded = page.waitForEvent('download');
   await page.getByRole('button', { name: /Experiment as JSON/ }).click();
   const file = await downloaded;
-  expect(file.suggestedFilename()).toBe('optimizer-lab-quadratic.json');
+  expect(file.suggestedFilename()).toBe('descent-lab-quadratic.json');
   const filePath = await file.path();
   expect(filePath).not.toBeNull();
   const content = JSON.parse(await readFile(filePath!, 'utf8'));
@@ -183,9 +183,7 @@ test('rejects unsupported and malformed imports without losing the current setup
     mimeType: 'application/json',
     buffer: Buffer.from('{}'),
   });
-  await expect(page.getByRole('status')).toContainText(
-    'not a supported Optimizer Lab v2 experiment',
-  );
+  await expect(page.getByRole('status')).toContainText('not a supported DescentLab v2 experiment');
   await expect(page.getByRole('heading', { name: /^Quartic Saddle/ })).toBeVisible();
   await input.setInputFiles({
     name: 'broken.json',
