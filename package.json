@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "screenshots": "node scripts/visual-qa.mjs && node scripts/education-qa.mjs"
+    "screenshots": "node scripts/visual-qa.mjs && node scripts/education-qa.mjs",
+    "social:generate": "node scripts/generate-social-preview.mjs"
   },
   "engines": {
     "node": "24.x"
